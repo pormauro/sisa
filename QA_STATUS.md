@@ -201,6 +201,7 @@ Avance en esta etapa:
   - delete de `file_attachments` via sync conserva tombstone canonico
   - `reconcile` detecta drift cuando un attachment eliminado sigue activo del lado cliente
 - se agregaron contratos nuevos en `sisa.api/tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` para asegurar que `pull` y `events` propagan deletes de `file_attachments` con tombstones completos y que en sync v3 se mapean como `job_file`/`job_item_file` con accion `detach`
+- se agrego cobertura explicita para `worklog_file` en `sisa.api/tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php`, cerrando los tres tipos relacionales de adjuntos (`job_file`, `job_item_file`, `worklog_file`) en el feed incremental v3
 - se ajusto el double `FakeFileAttachmentsForSyncDeletes` para evitar lookups reales de archivos durante los tests de feed incremental y mantener el baseline estable
 
 Validacion:
@@ -216,6 +217,7 @@ Notas:
 - este cuarto slice extiende la garantia a `pull/events`, cerrando el circuito basico de bootstrap + verify + reconcile + feed incremental para referencias eliminadas
 - este quinto slice extiende el mismo criterio a `file_attachments`, cubriendo una de las areas de mayor riesgo de reaparicion operativa
 - este sexto slice cierra el feed incremental de adjuntos: snapshot, reconcile, pull y events ahora tienen cobertura minima para deletes relacionales de archivos
+- con la cobertura explicita de `worklog_file`, los tres attachables operativos mas sensibles ya tienen un contrato minimo de no reaparicion en sync incremental
 - el helper de baseline sigue filtrando el ruido espurio de conexion cuando PHPUnit termina bien, pero sin alterar el runtime productivo
 
 ## Intervenciones documentales recientes
