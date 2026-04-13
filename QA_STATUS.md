@@ -220,6 +220,33 @@ Notas:
 - con la cobertura explicita de `worklog_file`, los tres attachables operativos mas sensibles ya tienen un contrato minimo de no reaparicion en sync incremental
 - el helper de baseline sigue filtrando el ruido espurio de conexion cuando PHPUnit termina bien, pero sin alterar el runtime productivo
 
+### Milestone 4 - cobertura smoke de cliente/offline/store
+
+Estado: en progreso
+
+Objetivo:
+
+- agregar confianza del lado cliente para persistencia local y consumo correcto del feed incremental sin saltar todavia a E2E pesados
+
+Avance en esta etapa:
+
+- se expandio `sisa.ui/scripts/sync-smoke.js` para cubrir el tratamiento cliente de adjuntos relacionales eliminados
+- el smoke ahora exige que `usePullJobsSync`:
+  - reconozca `job_file`, `job_item_file` y `worklog_file`
+  - trate `detach/delete` como borrado local del attachment
+  - persista tombstones de `file_attachments` en snapshots locales
+- el smoke tambien valida en `sisa.ui/src/modules/jobs/data/db/syncState.ts` que `deleted_at` sobreviva al materializar entidades cliente para `reconcile`
+
+Validacion:
+
+- `npm run check:sync-smoke` -> pasa
+- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa
+
+Notas:
+
+- este primer slice de Milestone 4 todavia es smoke estructural, no test unitario del cliente
+- el foco fue mantener alineado el lado UI con los contratos de no reaparicion ya reforzados en backend
+
 ## Intervenciones documentales recientes
 
 - se tradujo al espanol la documentacion QA agregada en raiz y `qa/` para mantener consistencia con el idioma operativo del proyecto.
