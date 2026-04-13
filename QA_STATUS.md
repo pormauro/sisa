@@ -6,6 +6,7 @@
 - Principio activo: el QA de sync es generico y prioriza la operacion en campo, no solamente `jobs`
 - Topologia confirmada: raiz compartida mas dos proyectos independientes (`sisa.api`, `sisa.ui`)
 - Existe un helper compartido de baseline y actualmente pasa en este entorno
+- Se corrigio un problema de runtime en cliente ligado a handles SQLite liberados que podia romper corridas manuales en dispositivo
 
 ## Decisiones tomadas
 
@@ -159,6 +160,22 @@ Notas:
 - frontend sigue sin runner formal para cobertura unit/integration
 - los smoke scripts actuales del cliente son utiles pero angostos y parcialmente fragiles
 - la documentacion de sync existe, pero sigue repartida entre frontend y backend
+
+## Incidente de runtime corregido
+
+- Sintoma: error Expo SQLite `NativeDatabase.prepareAsync` con mensaje `Cannot use shared object that was already released`
+- Causa mas probable confirmada por inspeccion: `resetDatabaseConnection()` podia cerrar el handle SQLite compartido mientras `jobsDatabase.ts` seguia cacheando la instancia previa en `initializedDb`
+- Correccion aplicada:
+  - `sisa.ui/database/Database.ts` ahora expone `subscribeToDatabaseReset()`
+  - `sisa.ui/database/sqlite.ts` reexporta esa suscripcion
+  - `sisa.ui/src/modules/jobs/data/db/jobsDatabase.ts` invalida su cache cuando la conexion compartida se resetea
+- Alcance: solucion conservadora, sin reestructurar el acceso global a SQLite ni tocar la semantica de tracking mas alla de invalidar caches dependientes
+
+Validacion del fix:
+
+- `npm run lint` -> pasa
+- `npm run check:sync-smoke` -> pasa
+- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa
 
 ## Siguientes pasos
 
