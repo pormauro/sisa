@@ -282,6 +282,8 @@ Avance en esta etapa:
   - bootstrap limpio de dispositivo nuevo
 - se creo `qa/MULTI_DEVICE_EVIDENCE_TEMPLATE.md` como formato reutilizable para registrar corridas manuales de Milestone 5
 - se creo `qa/evidence/README.md` y `qa/evidence/2026-04-13-escenario-base.md` para dejar la estructura operativa lista para registrar corridas reales
+- se preparo `qa/evidence/2026-04-13-escenario-delete-propagation.md` como primera corrida manual real recomendada para validar no reaparicion
+- se selecciono `status` como primer tipo de entidad para la corrida manual real de delete propagation
 - se actualizo `qa/REGRESSION_CHECKLIST.md` para apuntar explicitamente al runbook
 - se actualizo `qa/REGRESSION_CHECKLIST.md` para apuntar tambien a la plantilla de evidencia
 - se actualizo `QA_ROADMAP.md` para declarar `qa/MULTI_DEVICE_RUNBOOK.md` como entregable minimo del milestone
