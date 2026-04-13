@@ -174,6 +174,7 @@ Este runbook es obligatorio mientras estos escenarios no tengan automatizacion c
 - cada corrida debe quedar registrada copiando `qa/MULTI_DEVICE_EVIDENCE_TEMPLATE.md`
 - nombre sugerido: `qa/evidence/YYYY-MM-DD-escenario-dispositivo.md`
 - si la corrida falla, el registro debe incluir hipotesis y siguiente accion concreta
+- la carpeta operativa es `qa/evidence/` y ya existe un ejemplo base en `qa/evidence/2026-04-13-escenario-base.md`
 
 ## Puntos ciegos actuales
 
