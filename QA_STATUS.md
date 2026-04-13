@@ -194,6 +194,12 @@ Avance en esta etapa:
 - se agrego un contrato nuevo en `sisa.api/tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` para asegurar que `bootstrap/references` puede incluir referencias eliminadas con `deleted_at` cuando existen tombstones
 - se agregaron contratos nuevos en `sisa.api/tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` para asegurar que `pull` y `events` entregan operaciones delete de referencias con tombstones completos (`deleted_at`, `source_device_id`, `version`)
 - se reforzaron los doubles de checkpoints/operations del test de sync para validar `listForPull`, `upsertCheckpoint` y snapshot de operaciones sin tocar el runtime productivo
+- se corrigio `sisa.api/src/Controllers/SyncOperationsController.php` para que delete de `file_attachments` via sync devuelva tombstone canonico con `deleted_at`, `source_device_id` y `version`
+- se agrego `findByUuidIncludingDeleted` en `sisa.api/src/Models/FileAttachments.php` y `sisa.api/src/Services/SyncEventGenerator.php` ahora lo usa para construir operaciones canonicas de adjuntos eliminados
+- se ajusto `listFileAttachmentsForVerify` en `sisa.api/src/Controllers/SyncOperationsController.php` para incluir tombstones y permitir detectar drift de adjuntos eliminados
+- se agregaron contratos nuevos en `sisa.api/tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` para asegurar que:
+  - delete de `file_attachments` via sync conserva tombstone canonico
+  - `reconcile` detecta drift cuando un attachment eliminado sigue activo del lado cliente
 
 Validacion:
 
@@ -206,6 +212,7 @@ Notas:
 - este segundo slice extiende esa misma garantia a `verify/reconcile`, para que los tombstones de referencias tambien participen de la deteccion de drift
 - este tercer slice extiende la misma garantia a `bootstrap/references`, reduciendo el riesgo de reaparicion de referencias eliminadas en dispositivos que reconstruyen estado desde snapshot
 - este cuarto slice extiende la garantia a `pull/events`, cerrando el circuito basico de bootstrap + verify + reconcile + feed incremental para referencias eliminadas
+- este quinto slice extiende el mismo criterio a `file_attachments`, cubriendo una de las areas de mayor riesgo de reaparicion operativa
 - el helper de baseline sigue filtrando el ruido espurio de conexion cuando PHPUnit termina bien, pero sin alterar el runtime productivo
 
 ## Intervenciones documentales recientes
