@@ -190,6 +190,10 @@ Validacion del fix:
     - al hacer fetch directo usa `?company_id=` cuando corresponde
     - refresca desde cache local sincronizada en vez de confiar solo en `replaceAll()` ciego
 - Resultado esperado: baja el riesgo de residuos locales y reduce la divergencia entre dispositivos para `statuses`
+- Ajuste adicional aplicado:
+  - `sisa.ui/contexts/StatusesContext.tsx` ahora envia `company_id` desde la empresa seleccionada de la barra inferior al crear y actualizar estados
+  - tambien envia `source_device_id` para mantener trazabilidad de origen
+  - cuando el backend devuelve el objeto `status`, el cliente usa esa respuesta canonica; si no, fuerza `loadStatuses(true)` para refrescar desde servidor
 
 Validacion del ajuste:
 
