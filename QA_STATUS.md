@@ -107,6 +107,8 @@ Avance en esta etapa:
 - se corrigio `sisa.api/src/Models/Clients.php` para respetar soft delete y no devolver clientes borrados en `find/list`
 - se alineo `sisa.api/install.php` con el modelo actual de clients agregando `uuid`, `version`, `source_device_id` y `deleted_at` al schema de instalacion
 - se agrego `sisa.api/tests/Models/StatusTest.php` para asegurar que statuses globales + company-scoped filtren bien y que un soft delete saque al status de los lookups asignables
+- se agrego `sisa.api/tests/Controllers/StatusControllerTest.php` para cubrir filtros por scope y rechazo de `company_id` fuera de alcance en el controlador
+- se actualizo `sisa.api/update_install.php` y se agrego `sisa.api/scripts/migrations/clients-folders-sync-alignment-phase25.php` para que instalaciones existentes reciban la alineacion de columnas/indexes de `clients` y `folders`
 - se documento explicitamente que `clients` y `providers` son referencias operativas basadas en `empresas` dentro del ecosistema de companias
 
 Validacion:
@@ -116,7 +118,7 @@ Validacion:
 Notas:
 
 - este es solo el primer tramo incremental del Milestone 2, no el milestone completo
-- los siguientes objetivos de servidor pasan a ser una capa adicional de cobertura de controladores para `clients` y `statuses`, ademas de revisar `providers` como referencia company-backed del ecosistema
+- los siguientes objetivos de servidor pasan a ser una capa adicional de cobertura de controladores para `clients`, ademas de revisar `providers` como referencia company-backed del ecosistema
 
 ## Riesgos priorizados actualmente
 
