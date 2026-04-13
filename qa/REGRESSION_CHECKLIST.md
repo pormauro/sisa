@@ -43,6 +43,7 @@
 ## Escenarios manuales multi-dispositivo
 
 - Runbook fuente: `qa/MULTI_DEVICE_RUNBOOK.md`
+- Plantilla de evidencia: `qa/MULTI_DEVICE_EVIDENCE_TEMPLATE.md`
 
 ### Escenario A - create offline y convergencia posterior
 

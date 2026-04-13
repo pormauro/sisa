@@ -280,7 +280,9 @@ Avance en esta etapa:
   - conflicto visible y resoluble
   - orden de dependencias
   - bootstrap limpio de dispositivo nuevo
+- se creo `qa/MULTI_DEVICE_EVIDENCE_TEMPLATE.md` como formato reutilizable para registrar corridas manuales de Milestone 5
 - se actualizo `qa/REGRESSION_CHECKLIST.md` para apuntar explicitamente al runbook
+- se actualizo `qa/REGRESSION_CHECKLIST.md` para apuntar tambien a la plantilla de evidencia
 - se actualizo `QA_ROADMAP.md` para declarar `qa/MULTI_DEVICE_RUNBOOK.md` como entregable minimo del milestone
 
 Validacion:
@@ -291,6 +293,7 @@ Notas:
 
 - este primer slice de Milestone 5 no automatiza dispositivos reales; deja un procedimiento manual estricto y auditable
 - la prioridad del runbook esta alineada con no reaparicion, convergencia y control de drift visible en campo
+- este segundo slice endurece el milestone con un formato de evidencia repetible para que futuras corridas no dependan de memoria de sesion
 
 ## Intervenciones documentales recientes
 

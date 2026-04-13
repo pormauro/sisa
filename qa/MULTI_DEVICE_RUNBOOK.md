@@ -32,6 +32,7 @@ Este runbook es obligatorio mientras estos escenarios no tengan automatizacion c
 - comandos corridos (`qa/run-baseline.ps1`, smokes o capturas de sync state)
 - resultado esperado vs resultado real
 - evidencia adjunta: screenshots, logs o export de SQLite cuando aplique
+- usar `qa/MULTI_DEVICE_EVIDENCE_TEMPLATE.md` como formato base de registro
 
 ## Regla de aprobacion
 
@@ -167,6 +168,12 @@ Este runbook es obligatorio mientras estos escenarios no tengan automatizacion c
 - no hubo duplicados
 - `verify/reconcile` no dejan drift inexplicable
 - evidencia archivada
+
+## Criterio de archivo
+
+- cada corrida debe quedar registrada copiando `qa/MULTI_DEVICE_EVIDENCE_TEMPLATE.md`
+- nombre sugerido: `qa/evidence/YYYY-MM-DD-escenario-dispositivo.md`
+- si la corrida falla, el registro debe incluir hipotesis y siguiente accion concreta
 
 ## Puntos ciegos actuales
 
