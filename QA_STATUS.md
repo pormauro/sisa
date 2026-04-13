@@ -243,6 +243,12 @@ Avance en esta etapa:
   - marque `sync_state = 'conflict'`
   - eleve `conflict_flag = 1` en tablas locales
   - limpie conflictos resueltos desde `useSyncStatus.ts`
+- se expandio otra vez `sisa.ui/scripts/sync-smoke.js` para cubrir garantias operativas base del cliente:
+  - `usePullJobsSync` espera hidratacion de permisos
+  - lee y persiste checkpoints de sync
+  - emite refresh local de jobs al finalizar importacion relevante
+  - `useBootstrapJobsFromApi` persiste el checkpoint maximo de `sync/v3/state`
+  - `app/_layout.tsx` refresca bootstrap y autosync ante `sync_hint` con scopes relevantes
 
 Validacion:
 
@@ -255,6 +261,7 @@ Notas:
 - el foco fue mantener alineado el lado UI con los contratos de no reaparicion ya reforzados en backend
 - este segundo slice baja la misma garantia a `bootstrap/references`, evitando que el cliente reanime referencias eliminadas al reconstruir cache local
 - este tercer slice refuerza el lado cliente de `reconcile`, dejando controlado que el drift detectado por servidor quede persistido localmente y visible para resolucion posterior
+- este cuarto slice deja cubiertos los minimos operativos de Milestone 4: persistencia local, checkpoints, bootstrap, consumo de hints y smokes de no reaparicion en el cliente
 
 ### Milestone 5 - runbook multi-dispositivo y offline-to-online
 
