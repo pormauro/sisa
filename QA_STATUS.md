@@ -177,6 +177,26 @@ Validacion del fix:
 - `npm run check:sync-smoke` -> pasa
 - `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa
 
+## Alineacion de statuses con sync
+
+- Diagnostico: `StatusesContext` seguia siendo mas legacy que sync-first; mezclaba SQLite local con fetch directo a `/statuses` y `replaceAll()` sin filtrar por `selectedCompanyId`
+- Riesgo observado: un dispositivo podia ver `statuses` residuales o de un scope distinto mientras otro no, y el resultado parecia no venir del flujo de sync sino de una capa de contexto mas vieja
+- Correccion aplicada:
+  - `sisa.ui/src/modules/jobs/data/repositories/SQLiteStatusesRepository.ts` ahora soporta `listAll(companyId)` e `hydrateIfEmpty(..., companyId)`
+  - `sisa.ui/contexts/StatusesContext.tsx` ahora:
+    - usa `selected-company-id`
+    - respeta permiso `listStatuses`
+    - hidrata desde SQLite filtrando por company/global
+    - al hacer fetch directo usa `?company_id=` cuando corresponde
+    - refresca desde cache local sincronizada en vez de confiar solo en `replaceAll()` ciego
+- Resultado esperado: baja el riesgo de residuos locales y reduce la divergencia entre dispositivos para `statuses`
+
+Validacion del ajuste:
+
+- `npm run lint` -> pasa
+- `npm run check:sync-smoke` -> pasa
+- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa
+
 ## Siguientes pasos
 
 1. continuar Milestone 2 con PHPUnit focalizado para `jobs`, `job_items`, `work_logs`, `file_attachments`, `clients`, `folders` y `statuses`
