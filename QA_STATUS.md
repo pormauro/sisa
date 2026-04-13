@@ -166,6 +166,32 @@ Notas:
 2. aislar la deuda restante de ruido en backend si PHPUnit sigue imprimiendo errores de conexion mientras pasa
 3. despues de reforzar los contratos del servidor, expandir smoke coverage del cliente para persistencia local y convergencia generica de sync
 
+### Milestone 3 - contratos genericos de sync en backend
+
+Estado: en progreso
+
+Objetivo:
+
+- asegurar consistencia generica de sync para referencias y deletes, no solo CRUD puntual
+
+Avance en esta etapa:
+
+- se corrigio `sisa.api/src/Controllers/SyncOperationsController.php` para que delete de `clients` y `folders` via sync use soft delete en vez de hard delete
+- `listClientsForSync` y `listFoldersForSync` ahora incluyen `deleted_at`, permitiendo propagar tombstones y prevenir reapariciones
+- se expandio `sisa.api/tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` con dos contratos nuevos:
+  - delete de `clients` via sync deja tombstone visible, conserva `source_device_id` y aumenta `version`
+  - delete de `folders` via sync deja tombstone visible, conserva `source_device_id` y aumenta `version`
+
+Validacion:
+
+- `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php tests/Controllers/ProvidersControllerOfflineFirstTest.php tests/Controllers/ClientsControllerTest.php` -> pasa
+- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa
+
+Notas:
+
+- este es el primer slice de Milestone 3 y ataca una de las deudas mas criticas: no reaparicion de referencias eliminadas
+- el helper de baseline sigue filtrando el ruido espurio de conexion cuando PHPUnit termina bien, pero sin alterar el runtime productivo
+
 ## Intervenciones documentales recientes
 
 - se tradujo al espanol la documentacion QA agregada en raiz y `qa/` para mantener consistencia con el idioma operativo del proyecto.
