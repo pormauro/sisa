@@ -216,6 +216,11 @@ Validacion del fix:
   - `sisa.ui/contexts/StatusesContext.tsx` ahora envia `source_device_id` tambien en delete de `statuses`
   - `sisa.api/src/Controllers/StatusController.php` ahora lee payload opcional en delete y propaga `source_device_id` a `softDelete()` y `recordDelete()`
   - se agrego cobertura en `sisa.api/tests/Controllers/StatusControllerTest.php` para asegurar que delete conserve `source_device_id`
+- Visibilidad de sync agregada en UI:
+  - `sisa.ui/src/modules/jobs/data/db/syncState.ts` ahora expone `getEntitySyncInfo()` para consultar estado de sync local por `entity_type + uuid`
+  - `sisa.ui/app/statuses/[id].tsx` ahora muestra bloque `Sync` con icono, estado, UUID, version, device, empresa, ultimo sync y error/conflicto si aplica
+  - `sisa.ui/app/statuses/index.tsx` ahora muestra icono de sync y metadata minima (`version`, `source_device_id`) en cada fila
+  - `sisa.ui/scripts/sync-smoke.js` se expandio para exigir esta visibilidad minima en `statuses`
 
 Validacion del ajuste:
 
