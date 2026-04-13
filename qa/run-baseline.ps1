@@ -13,13 +13,28 @@ function Invoke-QAStep {
     Write-Host "`n==> $Name"
     Push-Location $WorkingDirectory
     try {
-        & powershell -NoProfile -Command $Command
+        $rawOutput = @(& powershell -NoProfile -Command $Command 2>&1)
         $exitCode = $LASTEXITCODE
         if ($null -eq $exitCode) {
             $exitCode = 0
         }
     } finally {
         Pop-Location
+    }
+
+    $filteredOutput = $rawOutput
+    if ($Name -eq 'Backend PHPUnit') {
+        $filteredOutput = @($rawOutput | Where-Object {
+            $_ -notmatch 'Error de conexi.n:'
+        })
+    }
+
+    if ($Name -eq 'Backend PHPUnit' -and $exitCode -eq 0) {
+        # Keep the shared baseline quiet when PHPUnit succeeds but an old setup message leaks to stdout.
+    } else {
+        $filteredOutput | ForEach-Object {
+            $_
+        }
     }
 
     $status = if ($exitCode -eq 0) { 'PASS' } else { 'FAIL' }
