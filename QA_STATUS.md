@@ -181,6 +181,11 @@ Avance en esta etapa:
 - se expandio `sisa.api/tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` con dos contratos nuevos:
   - delete de `clients` via sync deja tombstone visible, conserva `source_device_id` y aumenta `version`
   - delete de `folders` via sync deja tombstone visible, conserva `source_device_id` y aumenta `version`
+- se ajusto `sisa.api/src/Models/Status.php` para que `softDelete` acepte timestamp y `source_device_id`, alineandose con el resto de referencias offline-first
+- se corrigio `sisa.api/src/Controllers/SyncOperationsController.php` para que delete de `statuses` devuelva tombstone con `deleted_at`, `source_device_id` y `version` incrementada
+- se expandio `sisa.api/tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` con contratos adicionales:
+  - delete de `statuses` via sync conserva tombstone, `source_device_id` y `version`
+  - delete de `providers` via sync conserva tombstone, `source_device_id` y `version`
 
 Validacion:
 
