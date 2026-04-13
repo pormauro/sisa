@@ -186,6 +186,10 @@ Avance en esta etapa:
 - se expandio `sisa.api/tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` con contratos adicionales:
   - delete de `statuses` via sync conserva tombstone, `source_device_id` y `version`
   - delete de `providers` via sync conserva tombstone, `source_device_id` y `version`
+- se separo en `sisa.api/src/Controllers/SyncOperationsController.php` la lectura de referencias para verify/reconcile en `statuses` y `providers`, de modo que esos flujos puedan incluir tombstones y no solo registros activos
+- se agregaron contratos nuevos en `sisa.api/tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` para asegurar que:
+  - `verify` contabiliza `statuses` y `providers` eliminados cuando existen tombstones
+  - `reconcile` detecta drift cuando el cliente conserva una referencia eliminada como activa
 
 Validacion:
 
@@ -195,6 +199,7 @@ Validacion:
 Notas:
 
 - este es el primer slice de Milestone 3 y ataca una de las deudas mas criticas: no reaparicion de referencias eliminadas
+- este segundo slice extiende esa misma garantia a `verify/reconcile`, para que los tombstones de referencias tambien participen de la deteccion de drift
 - el helper de baseline sigue filtrando el ruido espurio de conexion cuando PHPUnit termina bien, pero sin alterar el runtime productivo
 
 ## Intervenciones documentales recientes
