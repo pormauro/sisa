@@ -200,6 +200,11 @@ Validacion del fix:
   - `sisa.api/src/Services/SyncEventGenerator.php` ahora emite hints con scopes especificos de referencias (`statuses`, `clients`, `folders`, `providers`, etc.) ademas de `jobs`
   - `sisa.ui/app/_layout.tsx` ahora refresca bootstrap al recibir `sync_hint` de `statuses`, `clients` y `folders`
 - Hipotesis principal del incidente funcional: las altas/ediciones de `statuses` actualizaban version y backend, pero no disparaban un camino de refresco claro en el otro dispositivo porque el hint venia demasiado centrado en `jobs` y el cache local de `statuses` no retenia suficiente metadata de scope
+- Ajuste adicional de visibilidad aplicado:
+  - `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` ahora considera rutas de referencias (`/statuses`, `/clients`, `/providers`, `/folders`) como rutas validas para autosync/pull incremental
+  - `sisa.ui/app/statuses/index.tsx` ahora fuerza `loadStatuses(true)` al entrar en foco
+  - `sisa.ui/app/statuses/[id].tsx` ahora fuerza `loadStatuses(true)` al intentar recargar el item
+- Hipotesis complementaria: aun con eventos correctos, en pantallas de referencias el autosync podia no correr por restriccion de ruta y la UI podia quedar mostrando cache vieja hasta reiniciar o volver a una ruta de jobs/home
 
 Validacion del ajuste:
 
