@@ -1,76 +1,76 @@
-# Regression Checklist
+# Checklist de Regresion
 
-## Release gate - minimum pass
+## Gate de release - minimo exigible
 
-### 1. Session and scope
+### 1. Sesion y scope
 
-- login works and session restore does not loop or blank the shell
-- selected company is stable after bootstrap
-- memberships and permissions match the active company
+- login funciona y la restauracion de sesion no deja loops ni shell en blanco
+- la empresa seleccionada permanece estable despues de bootstrap
+- membresias y permisos coinciden con la empresa activa
 
-### 2. Core field dataset
+### 2. Dataset central de campo
 
-- clients load inside the correct company scope
-- folders preserve hierarchy and valid parentage
-- statuses are visible and usable by operational forms
-- jobs can be created, edited, and deleted without orphaning child data
-- job items respect required parent job and folder-tree rules
-- worklogs keep valid participants and do not lose metadata after sync
-- appointments preserve participants and `visited_at`
-- attachments can be added, synced, opened, and removed without reappearing
+- clients cargan dentro del scope correcto de empresa
+- folders preservan jerarquia y parentage valido
+- statuses son visibles y utilizables por los formularios operativos
+- jobs pueden crearse, editarse y eliminarse sin dejar hijos huerfanos
+- job items respetan el parent `job` requerido y las reglas del arbol de folders
+- worklogs mantienen participantes validos y no pierden metadata despues de sync
+- appointments preservan participantes y `visited_at`
+- attachments pueden agregarse, sincronizarse, abrirse y eliminarse sin reaparecer
 
-### 3. Offline-first and sync
+### 3. Offline-first y sync
 
-- an offline write converges after reconnect
-- a deleted record does not revive after pull or bootstrap
-- `verify/reconcile` do not show unexplained drift for touched entities
-- second device receives the change and origin device is not echoed by mistake
-- operations that must be `delete + create` or `detach + attach` are still enforced
+- una escritura offline converge despues de reconectar
+- un registro eliminado no revive despues de pull o bootstrap
+- `verify/reconcile` no muestran drift inexplicable para entidades tocadas
+- un segundo dispositivo recibe el cambio y el dispositivo origen no recibe ecos incorrectos
+- se sigue forzando la semantica `delete + create` o `detach + attach` donde corresponda
 
-### 4. Support references
+### 4. Referencias de soporte
 
-- providers, categories, products/services, tariffs, payment templates, and cash boxes load for the active company
-- reference updates become visible without requiring a full app reset
+- providers, categories, products/services, tariffs, payment templates y cash boxes cargan para la empresa activa
+- los updates de referencias se vuelven visibles sin requerir reinicio total de la app
 
-### 5. Validation commands
+### 5. Comandos de validacion
 
 - `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1`
-- if any step fails, classify it as:
-  - pre-existing baseline debt,
-  - known accepted limitation,
-  - new regression that blocks progress
+- si algun paso falla, clasificarlo como:
+  - deuda previa de baseline,
+  - limitacion conocida aceptada,
+  - regresion nueva que bloquea el avance
 
-## Multi-device manual scenarios
+## Escenarios manuales multi-dispositivo
 
-### Scenario A - offline create then converge
+### Escenario A - create offline y convergencia posterior
 
-1. Device A goes offline.
-2. Create or edit a Tier A entity.
-3. Reconnect device A and run sync.
-4. Confirm device B receives the converged state.
+1. El dispositivo A pasa a offline.
+2. Crear o editar una entidad Tier A.
+3. Reconectar el dispositivo A y correr sync.
+4. Confirmar que el dispositivo B recibe el estado convergente.
 
-### Scenario B - delete propagation
+### Escenario B - propagacion de delete
 
-1. Delete a Tier A entity or attachment on device A.
-2. Pull or wait for hint on device B.
-3. Confirm the record does not reappear after refresh, pull, or bootstrap.
+1. Eliminar una entidad Tier A o un attachment en el dispositivo A.
+2. Hacer pull o esperar el hint en el dispositivo B.
+3. Confirmar que el registro no reaparece despues de refresh, pull o bootstrap.
 
-### Scenario C - ordering dependency
+### Escenario C - dependencia de orden
 
-1. Create dependent records in a realistic order.
-2. Confirm the server rejects invalid parent/scope relationships.
-3. Confirm the client eventually reflects the canonical state.
+1. Crear registros dependientes en un orden realista.
+2. Confirmar que el servidor rechaza relaciones invalidas de parent/scope.
+3. Confirmar que el cliente termina reflejando el estado canonico.
 
-### Scenario D - fresh bootstrap
+### Escenario D - bootstrap limpio
 
-1. Start with a fresh device or clean local store.
-2. Bootstrap references and operational data.
-3. Confirm Tier A dataset is enough to operate on site.
+1. Partir de un dispositivo nuevo o de un store local limpio.
+2. Ejecutar bootstrap de referencias y datos operativos.
+3. Confirmar que el dataset Tier A alcanza para operar en sitio.
 
-## Evidence to capture
+## Evidencia a capturar
 
-- commands run
-- affected entity UUIDs if available
-- device/company used
-- whether the result came from bootstrap, pull, or direct CRUD
-- screenshots/logs/db exports when the issue is sync-related
+- comandos ejecutados
+- UUIDs de entidades afectadas, si existen
+- dispositivo/empresa usados
+- si el resultado provino de bootstrap, pull o CRUD directo
+- screenshots/logs/exports de base cuando el problema esta relacionado con sync

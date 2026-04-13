@@ -1,128 +1,136 @@
-# QA Status
+# Estado QA
 
-## Current state
+## Estado actual
 
-- Phase: initial QA foundation established
-- Active principle: sync QA is generic and field-operation-first, not jobs-only
-- Workspace topology confirmed: shared root plus two independent projects (`sisa.api`, `sisa.ui`)
-- Shared baseline helper exists and currently passes in this environment
+- Fase: base inicial de QA establecida
+- Principio activo: el QA de sync es generico y prioriza la operacion en campo, no solamente `jobs`
+- Topologia confirmada: raiz compartida mas dos proyectos independientes (`sisa.api`, `sisa.ui`)
+- Existe un helper compartido de baseline y actualmente pasa en este entorno
 
-## Decisions taken
+## Decisiones tomadas
 
-- Shared QA documentation lives at workspace root.
-- The first QA priority is the minimum dataset required to keep operating on-site with unstable connectivity.
-- Existing failures found during baseline are treated as pre-existing QA debt, not as regressions introduced by this session.
-- Milestones will prefer server contract coverage first, then client storage/smoke coverage, then multi-device runbooks.
+- La documentacion QA compartida vive en la raiz del workspace.
+- La primera prioridad de QA es el dataset minimo necesario para seguir operando en sitio con conectividad inestable.
+- Las fallas existentes detectadas en el baseline se tratan como deuda previa, no como regresiones introducidas por esta sesion.
+- Los milestones priorizan primero contratos del servidor, luego storage/smokes del cliente y despues runbooks multi-dispositivo.
 
 ## Milestones
 
-### Milestone 0 - QA operating base
+### Milestone 0 - base operativa de QA
 
-Status: completed
+Estado: completado
 
-What changed:
+Que cambio:
 
-- created `AGENTS.md`
-- created `QA_ROADMAP.md`
-- created `QA_STATUS.md`
-- created `qa/run-baseline.ps1`
-- repaired stale baseline tooling so the shared helper is trustworthy again
+- se creo `AGENTS.md`
+- se creo `QA_ROADMAP.md`
+- se creo `QA_STATUS.md`
+- se creo `qa/run-baseline.ps1`
+- se reparo tooling viejo del baseline para que el helper compartido vuelva a ser confiable
 
-Validation runs:
+Corridas de validacion:
 
-Initial run:
+Corrida inicial:
 
-- backend: `vendor/bin/phpunit` -> failed from `PaymentsControllerTest` fake signature drift
-- frontend: `npm run lint` -> passed
-- frontend: `npm run check:cache` -> failed from stale cache-guard assumptions
-- frontend: `npm run check:sync-smoke` -> failed from stale UI label expectation
+- backend: `vendor/bin/phpunit` -> fallo por drift de firmas fake en `PaymentsControllerTest`
+- frontend: `npm run lint` -> paso
+- frontend: `npm run check:cache` -> fallo por supuestos viejos de la guardia de cache
+- frontend: `npm run check:sync-smoke` -> fallo por expectativa vieja de labels en UI
 
-Follow-up fixes applied:
+Correcciones aplicadas:
 
-- updated `sisa.api/tests/Controllers/PaymentsControllerTest.php` fake signatures to match production APIs
-- updated `sisa.ui/scripts/verify-context-cache.js` to recognize SQLite/repository persistence and explicit non-field-critical exceptions
-- updated `sisa.ui/scripts/sync-smoke.js` to check current conflict labels
+- se actualizaron las firmas fake en `sisa.api/tests/Controllers/PaymentsControllerTest.php` para alinearlas con las APIs reales
+- se actualizo `sisa.ui/scripts/verify-context-cache.js` para reconocer persistencia via SQLite/repositorios y excepciones explicitas fuera del flujo critico de campo
+- se actualizo `sisa.ui/scripts/sync-smoke.js` para validar los labels actuales de conflicto
 
-Current validation status:
+Estado actual de validacion:
 
-- backend: `vendor/bin/phpunit` -> pass
-- frontend: `npm run lint` -> pass
-- frontend: `npm run check:cache` -> pass
-- frontend: `npm run check:sync-smoke` -> pass
+- backend: `vendor/bin/phpunit` -> pasa
+- frontend: `npm run lint` -> pasa
+- frontend: `npm run check:cache` -> pasa
+- frontend: `npm run check:sync-smoke` -> pasa
 
-Notes:
+Notas:
 
-- PHPUnit still prints a database connection error line during the run even though the suite exits successfully; keep that under observation as output noise or hidden test setup debt.
+- PHPUnit todavia imprime una linea de error de conexion durante la corrida aunque la suite termina bien; mantenerlo observado como ruido de salida o deuda oculta de setup.
 
-### Milestone 1 - Domain map and regression contract
+### Milestone 1 - mapa de dominio y contrato de regresion
 
-Status: completed
+Estado: completado
 
-What changed:
+Que cambio:
 
-- created `qa/FIELD_DATASET_MAP.md`
-- created `qa/REGRESSION_CHECKLIST.md`
-- aligned the roadmap to a generic sync model prioritized by field-operable data
+- se creo `qa/FIELD_DATASET_MAP.md`
+- se creo `qa/REGRESSION_CHECKLIST.md`
+- se alineo el roadmap a un modelo de sync generico priorizado por datos operables en campo
 
-Outcome:
+Resultado:
 
-- Tier A, B, and C data groups are explicitly defined
-- the minimum release gate is documented
-- relationship, delete, and metadata rules now have a shared QA reference
+- quedaron definidos explicitamente los grupos Tier A, B y C
+- quedo documentada la puerta minima de release
+- las reglas de relaciones, delete y metadata ahora tienen una referencia QA compartida
 
-Validation:
+Validacion:
 
-- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pass
+- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa
 
-### Milestone 2 - Backend domain integrity tests
+### Milestone 2 - tests de integridad de dominio en backend
 
-Status: in progress
+Estado: en progreso
 
-Target:
+Objetivo:
 
-- add focused PHPUnit coverage for highest-risk Tier A server contracts beyond the current baseline
+- agregar cobertura focalizada con PHPUnit sobre contratos Tier A del servidor mas alla del baseline existente
 
-Progress in this session:
+Avance en esta etapa:
 
-- added `sisa.api/tests/Controllers/FileAttachmentsControllerTest.php`
-- covered two critical attachment rules:
-  - attachable reassignment must fail with `detach + attach` semantics instead of silent update
-  - delete must emit the sync delete path and keep company-scoped attachment semantics
+- se agrego `sisa.api/tests/Controllers/FileAttachmentsControllerTest.php`
+- se cubrieron dos reglas criticas de adjuntos:
+  - la reasignacion de attachable debe fallar con semantica `detach + attach` en vez de update silencioso
+  - delete debe emitir el camino de sync delete y preservar la semantica de scope por empresa
+- se agrego `sisa.api/tests/Controllers/WorkLogsControllerTest.php`
+- se cubrieron dos contratos de worklogs ligados a la integridad de sync generico:
+  - create exitoso agrega por defecto al creador como participante, persiste historial y emite evento de sync create
+  - create rechaza `job_item_id` cuando no pertenece al `job` seleccionado
 
-Validation:
+Validacion:
 
-- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pass after adding the new controller test
+- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa despues de agregar los nuevos tests de controladores
 
-Notes:
+Notas:
 
-- this is the first incremental slice of Milestone 2, not the full milestone
-- next server-side targets remain `jobs`, `job_items`, `work_logs`, `clients`, `folders`, and `statuses`
+- este es solo el primer tramo incremental del Milestone 2, no el milestone completo
+- los siguientes objetivos de servidor siguen siendo `jobs`, `job_items`, `clients`, `folders` y `statuses`
 
-## Risks currently prioritized
+## Riesgos priorizados actualmente
 
-### High
+### Alta prioridad
 
-- sync drift in `version`, `payload.version`, `source_device_id`, `deleted_at`
-- delete propagation failures and resurrection of deleted attachments
-- orphaned relations across clients/folders/jobs/job_items/work_logs/appointments
-- mixed legacy CRUD vs offline-first behavior causing inconsistent convergence
-- shell/bootstrap regressions in `sisa.ui/app/_layout.tsx`
+- drift de sync en `version`, `payload.version`, `source_device_id`, `deleted_at`
+- fallas de propagacion de delete y resurreccion de attachments eliminados
+- relaciones huerfanas entre clients/folders/jobs/job_items/work_logs/appointments
+- convivencia de CRUD legacy y offline-first provocando convergencia inconsistente
+- regresiones de shell/bootstrap en `sisa.ui/app/_layout.tsx`
 
-### Medium
+### Prioridad media
 
-- incomplete cache/local-store guarantees for contexts still outside the stronger sync path
-- stale smoke scripts creating false confidence or false failures
-- multi-company scope regressions in permissions/references
+- garantias incompletas de cache/storage local en contextos todavia fuera del camino fuerte de sync
+- smoke scripts viejos que generan falsa confianza o falsos fallos
+- regresiones de scope multi-company en permisos/referencias
 
-## Problems found that can block QA expansion
+## Problemas encontrados que pueden bloquear la expansion de QA
 
-- backend full-suite baseline is currently broken before adding new tests
-- frontend has no formal test runner for unit/integration coverage
-- existing client smoke scripts are narrow and partially stale
-- sync documentation exists but is split across frontend and backend docs
+- el baseline completo de backend estuvo roto antes de agregar nuevos tests
+- frontend sigue sin runner formal para cobertura unit/integration
+- los smoke scripts actuales del cliente son utiles pero angostos y parcialmente fragiles
+- la documentacion de sync existe, pero sigue repartida entre frontend y backend
 
-## Next steps
+## Siguientes pasos
 
-1. start Milestone 2 with focused PHPUnit for `jobs`, `job_items`, `work_logs`, `file_attachments`, `clients`, `folders`, and `statuses`
-2. isolate any remaining backend output-noise debt if PHPUnit keeps printing connection errors while passing
-3. after server-contract coverage improves, expand client smoke coverage for local persistence and generic sync convergence
+1. continuar Milestone 2 con PHPUnit focalizado para `jobs`, `job_items`, `work_logs`, `file_attachments`, `clients`, `folders` y `statuses`
+2. aislar la deuda restante de ruido en backend si PHPUnit sigue imprimiendo errores de conexion mientras pasa
+3. despues de reforzar los contratos del servidor, expandir smoke coverage del cliente para persistencia local y convergencia generica de sync
+
+## Intervenciones documentales recientes
+
+- se tradujo al espanol la documentacion QA agregada en raiz y `qa/` para mantener consistencia con el idioma operativo del proyecto.

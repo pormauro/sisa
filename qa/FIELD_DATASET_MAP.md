@@ -1,53 +1,53 @@
-# Field Dataset Map
+# Mapa de Dataset de Campo
 
-## Purpose
+## Proposito
 
-This map defines the minimum data and behaviors that QA must protect so the app remains usable during unstable connectivity and converges safely afterward.
+Este mapa define los datos minimos y los comportamientos que QA debe proteger para que la app siga siendo util con conectividad inestable y pueda converger de forma segura despues.
 
-## Tier A - field-operable core
+## Tier A - nucleo operable en campo
 
-| Domain | Entities | Why it matters on site | Main risks | Current control |
+| Dominio | Entidades | Por que importa en sitio | Riesgos principales | Control actual |
 |---|---|---|---|---|
-| access and scope | memberships, selected company, permissions, users | without them the operator cannot see the right workspace or assign work | wrong company scope, stale permissions, missing participants | partial backend coverage, manual checks, cache guard debt |
-| customer structure | clients, folders | lets the operator locate who and where work belongs | orphaned folders, wrong company/client scope, hard-delete drift | sync docs exist, limited focused tests |
-| execution state | statuses | required to move operational flow safely | wrong status catalog, stale reference cache, delete drift | backend status controller logic exists, little direct QA |
-| operational work | jobs, job_items, work_logs, appointments | core field work, timing, participants, scheduling | invalid parent relations, folder-tree violations, conflict/version drift | partial docs, appointments tests, low direct coverage elsewhere |
-| evidence | files, file_attachments | proof of work and later auditability | upload state drift, detach errors, deleted attachments reappearing | file attachment model/controller coverage is partial |
+| acceso y scope | membresias, empresa seleccionada, permisos, usuarios | sin esto el operador no puede ver el workspace correcto ni asignar trabajo | scope de empresa incorrecto, permisos viejos, participantes faltantes | cobertura parcial en backend, checks manuales, deuda en guardia de cache |
+| estructura del cliente | clients, folders | permite ubicar a quien pertenece el trabajo y donde | folders huerfanos, scope cliente/empresa incorrecto, drift en deletes | existen docs de sync, pocos tests focalizados |
+| estado de ejecucion | statuses | es necesario para mover el flujo operativo con seguridad | catalogo de estados incorrecto, cache de referencias viejo, drift de deletes | existe logica en backend para statuses, poca QA directa |
+| trabajo operativo | jobs, job_items, work_logs, appointments | son el nucleo del trabajo de campo, tiempos, participantes y agenda | relaciones padre invalidas, violaciones del arbol de folders, drift de conflicto/version | docs parciales, tests de appointments, poca cobertura directa en el resto |
+| evidencia | files, file_attachments | prueba de trabajo y auditabilidad posterior | drift de upload state, errores de detach, reaparicion de attachments borrados | cobertura parcial en modelo/controlador de attachments |
 
-## Tier B - field support references
+## Tier B - referencias de soporte en campo
 
-| Domain | Entities | Why it matters on site | Main risks | Current control |
+| Dominio | Entidades | Por que importa en sitio | Riesgos principales | Control actual |
 |---|---|---|---|---|
-| commercial/support catalogs | providers, categories, products_services, tariffs | needed to classify and price field work without round-tripping online | stale cache, cross-company bleed, duplicate/default drift | backend offline-first tests exist for several references |
-| reusable operations | payment_templates, cash_boxes | helps perform repeated financial/operational actions in the field | missing bootstrap, stale permissions, wrong local refresh | backend smoke/contract tests exist, client smoke limited |
+| catalogos comerciales/de soporte | providers, categories, products_services, tariffs | sirven para clasificar y valorar trabajo de campo sin depender de ida y vuelta online | cache viejo, bleed entre empresas, drift de duplicados/defaults | existen tests offline-first en backend para varias referencias |
+| operaciones reutilizables | payment_templates, cash_boxes | ayudan a ejecutar acciones operativas/financieras repetidas en campo | bootstrap incompleto, permisos viejos, refresh local incorrecto | existen tests smoke/contrato en backend, smoke de cliente limitado |
 
-## Tier C - extended operations
+## Tier C - operaciones extendidas
 
-| Domain | Entities | Why it matters on site | Main risks | Current control |
+| Dominio | Entidades | Por que importa en sitio | Riesgos principales | Control actual |
 |---|---|---|---|---|
-| financial execution | payments, receipts, invoices, invoice_items, invoice_receipt_payments | may be needed to close work on-site | payload drift, attachment coupling, scope mistakes | backend smoke coverage exists, client validation still light |
-| telemetry | tracking and device lifecycle | supports field coordination and diagnosis | device identity drift, push/scope issues, manual-only validation | docs exist, automation limited |
+| ejecucion financiera | payments, receipts, invoices, invoice_items, invoice_receipt_payments | puede ser necesario para cerrar trabajo en sitio | drift de payload, acople con attachments, errores de scope | existe coverage smoke en backend, validacion de cliente todavia liviana |
+| telemetria | tracking y ciclo de vida del dispositivo | ayuda a coordinacion y diagnostico en campo | drift de identidad de dispositivo, problemas de push/scope, validacion solo manual | existen docs, automatizacion limitada |
 
-## Relationship rules that must not regress
+## Reglas de relacion que no deben degradarse
 
-| Rule area | Required rule |
+| Area de regla | Regla requerida |
 |---|---|
-| company scope | synchronized business data must resolve to a valid `company_id` or an explicit equivalent path |
-| folder hierarchy | `job_items.folder_id` must stay within the allowed client/job subtree |
-| participants | appointment and worklog participants must belong to the correct company scope |
-| attachments | changing an attachable must be treated as `detach + attach`, not implicit reassignment |
-| link entities | pure links must use `delete + create` instead of silent reassignment |
-| delete semantics | deleted records must not accept operational updates or reappear as active after pull/bootstrap |
-| metadata integrity | `version`, `source_device_id`, audit timestamps, and delete markers must remain coherent across snapshots and event streams |
+| scope de empresa | los datos sincronizados de negocio deben resolver a un `company_id` valido o a un camino equivalente explicito |
+| jerarquia de folders | `job_items.folder_id` debe permanecer dentro del subarbol permitido de client/job |
+| participantes | los participantes de appointments y worklogs deben pertenecer al scope correcto de empresa |
+| attachments | cambiar el attachable debe tratarse como `detach + attach`, no como reasignacion implicita |
+| entidades de enlace | los links puros deben usar `delete + create` en vez de reasignacion silenciosa |
+| semantica de delete | un registro eliminado no debe aceptar updates operativos ni reaparecer como activo despues de pull/bootstrap |
+| integridad de metadata | `version`, `source_device_id`, timestamps de auditoria y marcas de delete deben permanecer coherentes entre snapshots y streams de eventos |
 
-## Generic sync controls
+## Controles genericos de sync
 
-Every synchronized entity should eventually have all of these controls:
+Toda entidad sincronizada deberia terminar teniendo estos controles:
 
-1. bootstrap coverage
-2. incremental events coverage
-3. push/write coverage when offline writes are supported
-4. verify/reconcile coverage
-5. server-side event generation outside sync push
-6. local persistence auditable on the client side
-7. manual or automated multi-device check for create/update/delete
+1. cobertura de bootstrap
+2. cobertura de eventos incrementales
+3. cobertura de push/write cuando existan escrituras offline
+4. cobertura de verify/reconcile
+5. generacion de eventos del lado servidor fuera del sync push
+6. persistencia local auditable del lado cliente
+7. check manual o automatizado multi-dispositivo para create/update/delete

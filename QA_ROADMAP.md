@@ -1,31 +1,31 @@
 # QA Roadmap
 
-## Objective
+## Objetivo
 
-Build a persistent QA system for `sisa.api` + `sisa.ui` focused on real stability, regression prevention, end-to-end functional validation, and especially generic sync behavior for the data that must remain usable in unstable-signal field work.
+Construir un sistema de QA persistente para `sisa.api` + `sisa.ui`, enfocado en estabilidad real, prevencion de regresiones, validacion funcional de punta a punta y, especialmente, en el comportamiento generico de sync para los datos que deben seguir siendo utilizables en trabajo de campo con senal inestable.
 
-This roadmap intentionally avoids making sync QA jobs-specific. The first-class question is:
+Este roadmap evita de forma intencional que el QA de sync quede atado solo a `jobs`. La pregunta central es:
 
-> Can a technician or operator continue working with the minimum reliable dataset, then converge safely once connectivity returns?
+> Puede un tecnico u operador seguir trabajando con el conjunto minimo de datos confiables y luego converger de forma segura cuando vuelve la conectividad?
 
-## Scope baseline
+## Baseline de alcance
 
-### Tier A - field-operable core
+### Tier A - nucleo operable en campo
 
-- auth/session continuity
-- selected company and memberships
-- permissions
-- users needed for assignment/participants
-- clients
+- continuidad de auth/sesion
+- empresa seleccionada y membresias
+- permisos
+- usuarios necesarios para asignacion/participantes
+- clientes
 - folders
-- statuses
+- estados
 - jobs
 - job items
 - worklogs
 - appointments
-- files and file attachments
+- archivos y adjuntos
 
-### Tier B - field support and reference data
+### Tier B - datos de referencia y soporte en campo
 
 - providers
 - tariffs
@@ -34,39 +34,39 @@ This roadmap intentionally avoids making sync QA jobs-specific. The first-class 
 - payment templates
 - cash boxes
 
-### Tier C - extended operational/financial data
+### Tier C - datos operativos/financieros extendidos
 
 - payments
 - receipts
 - invoices
 - invoice items
 - invoice receipt payments
-- tracking and related diagnostics
+- tracking y diagnosticos relacionados
 
-## QA principles
+## Principios de QA
 
-- Start with the highest-risk, least-trustworthy surfaces.
-- Prefer a few reliable controls over many shallow checks.
-- Cover create, update, delete, sync, and re-sync as one system.
-- Every milestone must leave the workspace in a measurably better state.
-- Documentation is part of the deliverable, not an afterthought.
-- Conservative default: if something cannot be automated yet, write the manual procedure and the current blocker.
+- Empezar por las superficies de mayor riesgo y menor confianza.
+- Preferir pocos controles confiables antes que muchos checks superficiales.
+- Cubrir create, update, delete, sync y re-sync como un unico sistema.
+- Cada milestone debe dejar el workspace en un estado mediblemente mejor.
+- La documentacion es parte del entregable, no un agregado posterior.
+- Regla conservadora: si algo todavia no puede automatizarse, escribir el procedimiento manual y el bloqueo actual.
 
-## Known baseline from discovery
+## Baseline conocido desde discovery
 
-- Backend already has useful PHPUnit coverage for appointments, sync formatting, references, and some model-level soft-delete behavior.
-- Backend lacks focused coverage for `jobs`, `job_items`, `work_logs`, `clients`, `folders`, `statuses`, and raw file flows.
-- Frontend has no formal unit/integration/e2e framework configured; only custom smoke scripts and lint.
-- Sync knowledge exists but is fragmented across `sisa.api/docs/*` and `sisa.ui/docs/*`.
-- Architecture is mixed: legacy CRUD + newer offline-first flows coexist.
+- El backend ya tiene cobertura util con PHPUnit para appointments, formato de sync, referencias y parte del comportamiento de soft delete a nivel modelo.
+- El backend todavia no tiene cobertura focalizada suficiente para `jobs`, `job_items`, `work_logs`, `clients`, `folders`, `statuses` y flujos crudos de archivos.
+- El frontend no tiene framework formal de unit/integration/e2e configurado; hoy depende de scripts smoke propios y lint.
+- El conocimiento de sync existe, pero esta fragmentado entre `sisa.api/docs/*` y `sisa.ui/docs/*`.
+- La arquitectura es mixta: conviven CRUD legacy y flujos offline-first mas nuevos.
 
 ## Milestones
 
-### Milestone 0 - QA operating base
+### Milestone 0 - base operativa de QA
 
-Goal: create persistent shared instructions, plan, session status, and a baseline validation entry point.
+Objetivo: crear instrucciones compartidas persistentes, plan, estado de sesion y un punto unico de entrada para el baseline de validacion.
 
-Deliverables:
+Entregables:
 
 - `AGENTS.md`
 - `QA_ROADMAP.md`
@@ -75,47 +75,47 @@ Deliverables:
 - `qa/REGRESSION_CHECKLIST.md`
 - `qa/run-baseline.ps1`
 
-Validation:
+Validacion:
 
-- Run current backend and frontend validation commands.
-- Record pass/fail and classify failures as baseline debt vs new regressions.
+- Ejecutar los comandos actuales de validacion de backend y frontend.
+- Registrar pass/fail y clasificar fallas como deuda de baseline o regresion nueva.
 
-Done when:
+Se considera terminado cuando:
 
-- future sessions can continue without re-discovery,
-- baseline commands are documented and runnable,
-- current failures are explicit or the stale baseline tooling has been repaired.
+- futuras sesiones pueden continuar sin redescubrir el repo,
+- los comandos de baseline quedan documentados y son corribles,
+- las fallas actuales quedan explicitas o el tooling viejo del baseline fue reparado.
 
-### Milestone 1 - Domain map and regression contract
+### Milestone 1 - mapa de dominio y contrato de regresion
 
-Goal: define what must never silently regress across both projects.
+Objetivo: definir que no debe degradarse silenciosamente entre ambos proyectos.
 
-Coverage:
+Cobertura:
 
-- domain map and entity relationships,
-- required foreign-by-application relationships,
-- delete propagation rules,
-- attach/detach vs update semantics,
-- operation ordering dependencies,
-- field-operable minimum dataset,
-- manual regression checklist before deploy.
+- mapa de dominio y relaciones entre entidades,
+- relaciones obligatorias impuestas por la aplicacion,
+- reglas de propagacion de delete,
+- semantica `attach/detach` frente a `update`,
+- dependencias de orden de operaciones,
+- dataset minimo operable en campo,
+- checklist manual de regresion previo a deploy.
 
-Implementation:
+Implementacion:
 
-- document the regression contract and manual checklist,
-- document the field-operable minimum dataset,
-- link each risk to current automation or manual fallback.
+- documentar el contrato de regresion y el checklist manual,
+- documentar el dataset minimo operable en campo,
+- vincular cada riesgo con su automatizacion actual o su fallback manual.
 
-Validation:
+Validacion:
 
-- ensure each critical entity has a documented create/update/delete/sync stance,
-- run baseline validations again after documentation changes.
+- asegurar que cada entidad critica tenga postura documentada para create/update/delete/sync,
+- volver a correr el baseline luego de cambios documentales.
 
-### Milestone 2 - Backend domain integrity tests
+### Milestone 2 - tests de integridad de dominio en backend
 
-Goal: raise trust in server-side business rules independent of UI.
+Objetivo: aumentar la confianza en las reglas de negocio del servidor de forma independiente de la UI.
 
-First targets:
+Primeros objetivos:
 
 - `JobsController`
 - `JobItemsController`
@@ -125,114 +125,114 @@ First targets:
 - `FoldersController`
 - `StatusController`
 
-Minimum cases:
+Casos minimos:
 
-- create/update/delete happy path,
-- required relationship validation,
-- invalid parent/scope rejection,
-- post-delete guardrails,
-- forbidden reassignments (`delete + create`, `detach + attach`).
+- happy path de create/update/delete,
+- validacion de relaciones obligatorias,
+- rechazo de parents/scopes invalidos,
+- guardas despues de delete,
+- reasignaciones prohibidas (`delete + create`, `detach + attach`).
 
-Validation:
+Validacion:
 
-- focused PHPUnit runs for each new test file,
-- then broader `vendor/bin/phpunit` once baseline blockers are resolved or isolated.
+- corridas focalizadas de PHPUnit para cada archivo nuevo de tests,
+- luego `vendor/bin/phpunit` mas amplio cuando los bloqueos de baseline queden resueltos o aislados.
 
-### Milestone 3 - Backend sync contract tests
+### Milestone 3 - tests de contrato de sync en backend
 
-Goal: verify generic sync consistency, not only module CRUD.
+Objetivo: verificar consistencia generica de sync, no solo CRUD por modulo.
 
-Coverage:
+Cobertura:
 
 - `bootstrap`, `events`, `push`, `verify`, `reconcile`,
-- `version` consistency,
+- consistencia de `version`,
 - `payload.version`,
 - `source_device_id`,
-- delete propagation,
-- no resurrection after delete,
-- idempotency-key behavior,
-- company/device scope.
+- propagacion de deletes,
+- no resurreccion despues de delete,
+- comportamiento de claves de idempotencia,
+- scope por empresa/dispositivo.
 
-Priority order:
+Orden de prioridad:
 
-1. Tier A entities
-2. Tier B references
-3. Tier C financial flows
+1. Entidades Tier A
+2. Referencias Tier B
+3. Flujos financieros Tier C
 
-Validation:
+Validacion:
 
-- focused sync PHPUnit runs,
-- manual cross-checks only for gaps that are not yet automatable.
+- corridas focalizadas de PHPUnit de sync,
+- checks manuales solo en los huecos que todavia no se puedan automatizar.
 
-### Milestone 4 - Client offline/store smoke coverage
+### Milestone 4 - cobertura smoke de cliente/offline/store
 
-Goal: add client-side confidence without overcommitting to heavyweight E2E.
+Objetivo: agregar confianza del lado cliente sin saltar demasiado pronto a E2E pesados.
 
-Coverage:
+Cobertura:
 
-- local persistence and hydration,
-- queue/checkpoint behavior,
-- reference cache propagation,
-- attachment local/remote transitions,
-- reconnect smoke flows,
-- shell/bootstrap no-regression checks.
+- persistencia local e hidratacion,
+- comportamiento de cola/checkpoints,
+- propagacion del cache de referencias,
+- transiciones local/remoto de attachments,
+- smokes de reconexion,
+- checks de no regresion del shell/bootstrap.
 
-Implementation options, in this order:
+Opciones de implementacion, en este orden:
 
-1. harden existing custom smoke scripts,
-2. add pure-function or repository tests,
-3. add lightweight mocked hook tests,
-4. defer full device E2E until lower layers are trustworthy.
+1. endurecer los smoke scripts existentes,
+2. agregar tests de funciones puras o repositorios,
+3. agregar tests livianos de hooks con mocks,
+4. postergar E2E de dispositivo completo hasta que las capas inferiores sean confiables.
 
-### Milestone 5 - Multi-device and offline-to-online runbook
+### Milestone 5 - runbook multi-dispositivo y offline-to-online
 
-Goal: make the hardest sync scenarios executable and auditable.
+Objetivo: volver ejecutables y auditables los escenarios de sync mas dificiles.
 
-Mandatory scenarios:
+Escenarios obligatorios:
 
-- device A offline create -> online convergence,
-- device A delete -> device B no reappearance,
-- attachment delete propagation,
-- same-entity edit conflict,
-- dependent operation ordering,
-- bootstrap of a fresh device,
-- company-scoped propagation excluding origin device.
+- dispositivo A crea offline y luego converge online,
+- dispositivo A elimina y dispositivo B no debe ver reaparicion,
+- propagacion de delete de attachments,
+- conflicto de edicion sobre la misma entidad,
+- orden correcto de operaciones dependientes,
+- bootstrap de un dispositivo nuevo,
+- propagacion por empresa excluyendo el dispositivo de origen.
 
-Validation:
+Validacion:
 
-- manual runbook with expected evidence,
-- export/log artifacts where possible.
+- runbook manual con evidencia esperada,
+- export/logs cuando sea posible.
 
-### Milestone 6 - Release gate and expansion strategy
+### Milestone 6 - gate de release y estrategia de expansion
 
-Goal: define the minimum QA gate before deploy and the path to expand coverage.
+Objetivo: definir la puerta minima de QA antes de deploy y el camino para ampliar cobertura.
 
-Coverage:
+Cobertura:
 
-- release smoke command set,
-- regression checklist,
-- blocker handling policy,
-- matrix of automated vs manual coverage,
-- next entities to bring into stronger QA.
+- set minimo de comandos smoke para release,
+- checklist de regresion,
+- politica de tratamiento de bloqueos,
+- matriz de cobertura automatizada vs manual,
+- siguientes entidades a incorporar a QA mas fuerte.
 
-## Regression checklist baseline
+## Baseline del checklist de regresion
 
-Before deploy, at minimum verify:
+Antes de deploy, como minimo verificar:
 
-- login/session restore do not break shell/bootstrap,
-- selected company, memberships, and permissions converge correctly,
-- clients/folders/statuses are visible and editable within proper scope,
-- jobs/job items/worklogs/appointments support create/edit/delete without orphaning data,
-- deleted attachments do not reappear after pull/bootstrap,
-- offline writes converge after reconnect,
-- a second device receives expected changes but not origin-only echoes,
-- `verify/reconcile` do not report unexplained drift for changed entities,
-- no new baseline commands fail without explicit sign-off.
+- login/restauracion de sesion no rompen shell/bootstrap,
+- empresa seleccionada, membresias y permisos convergen correctamente,
+- clientes/folders/statuses son visibles y editables dentro del scope correcto,
+- jobs/job items/worklogs/appointments soportan create/edit/delete sin dejar datos huerfanos,
+- adjuntos eliminados no reaparecen despues de pull/bootstrap,
+- escrituras offline convergen al reconectar,
+- un segundo dispositivo recibe los cambios esperados sin ecos incorrectos del origen,
+- `verify/reconcile` no reportan drift inexplicable para entidades tocadas,
+- ningun comando nuevo del baseline falla sin aprobacion explicita.
 
-## Exit criteria for the initial QA system
+## Criterios de salida para el sistema QA inicial
 
-- shared documentation exists and is current,
-- baseline commands are centralized,
-- Tier A risks are at least mapped with either automation or manual control,
-- new sessions can continue the program from `QA_STATUS.md` without rediscovery,
-- the next highest-value gap is explicit.
+- la documentacion compartida existe y esta actualizada,
+- los comandos de baseline estan centralizados,
+- los riesgos de Tier A estan al menos mapeados con automatizacion o control manual,
+- nuevas sesiones pueden continuar desde `QA_STATUS.md` sin redescubrir el sistema,
+- el siguiente hueco de mayor valor queda explicitado.

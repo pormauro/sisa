@@ -1,79 +1,79 @@
 # AGENTS
 
-## Workspace topology
+## Topologia del workspace
 
-- Root workspace: `C:\Users\Mauri\Documents\GitHub\sisas`
-- This root is not a Git repository.
-- `sisa.api/` and `sisa.ui/` are separate projects with their own `.git` directories.
-- Shared QA documentation for the whole workspace lives at the root unless a document is clearly project-specific.
+- Workspace raiz: `C:\Users\Mauri\Documents\GitHub\sisas`
+- Esta raiz no es un repositorio Git unico para toda la solucion.
+- `sisa.api/` y `sisa.ui/` son proyectos separados con sus propios `.git`.
+- La documentacion QA compartida de todo el workspace vive en la raiz, salvo que un documento sea claramente especifico de un proyecto.
 
-## Mission for future agents
+## Mision para futuros agentes
 
-- Treat QA as a cross-project system, not as isolated tests.
-- Prioritize the data and flows required to operate in unstable-signal, field-work scenarios.
-- Do not optimize for cosmetic coverage. Prefer a small number of trustworthy controls.
-- Keep sync generic: jobs are only one consumer of the sync model.
-- Preserve existing architecture unless a minimal change is required to make QA executable.
+- Tratar QA como un sistema transversal entre proyectos, no como tests aislados.
+- Priorizar los datos y flujos necesarios para operar en escenarios de trabajo de campo con senal inestable.
+- No optimizar por cobertura cosmetica. Preferir pocos controles confiables antes que muchos superficiales.
+- Mantener sync como capacidad generica: `jobs` es solo uno de los consumidores del modelo de sincronizacion.
+- Preservar la arquitectura existente salvo que un cambio minimo sea necesario para volver ejecutable el QA.
 
-## Source of truth
+## Fuente de verdad
 
 - Plan: `QA_ROADMAP.md`
-- Session and milestone log: `QA_STATUS.md`
-- Existing sync/domain references:
+- Registro de sesion e hitos: `QA_STATUS.md`
+- Referencias existentes de sync/dominio:
   - `sisa.api/docs/sync-propagation-matrix.md`
   - `sisa.api/docs/sync-references-qa-guide.md`
   - `sisa.ui/docs/architecture/sync_propagation_matrix.md`
   - `sisa.ui/docs/architecture/devices-sync-and-offline-first-standard.md`
 
-## Operating rules
+## Reglas operativas
 
-- Update `QA_STATUS.md` every time you finish, block, or partially complete a milestone.
-- Do discovery before broad edits.
-- Work in small milestones and validate after each one.
-- Do not continue to the next milestone if you introduced a new failure without documenting it and attempting a reasonable fix.
-- If a blocker is pre-existing, record it as baseline debt instead of hiding it.
-- Do not move unrelated files or refactor outside the active QA milestone.
+- Actualizar `QA_STATUS.md` cada vez que se completa, bloquea o avanza parcialmente un hito.
+- Hacer discovery antes de editar en amplitud.
+- Trabajar en hitos pequenos y validar despues de cada uno.
+- No avanzar al siguiente hito si se introdujo una falla nueva sin documentarla y sin intentar una correccion razonable.
+- Si un bloqueo ya existia, registrarlo como deuda de baseline en vez de ocultarlo.
+- No mover archivos no relacionados ni refactorizar fuera del hito QA activo.
 
-## QA priorities
+## Prioridades de QA
 
-1. Field-operable sync baseline: users, memberships, permissions, clients, folders, statuses, jobs, job items, worklogs, appointments, file attachments.
-2. Data integrity: required relationships, delete propagation, orphan prevention, idempotency, version/source metadata.
-3. Offline-first behavior: local persistence, queueing, bootstrap, pull, reconcile, reconnect.
-4. Multi-device convergence: device identity, hint propagation, conflict handling, non-reappearance of deleted data.
-5. Operational support data needed on-site: providers, categories, products/services, tariffs, cash boxes, payments, receipts, invoices.
+1. Baseline de sync operable en campo: usuarios, membresias, permisos, clientes, folders, estados, jobs, job items, worklogs, appointments y adjuntos.
+2. Integridad de datos: relaciones obligatorias, propagacion de deletes, prevencion de huerfanos, idempotencia y metadata de version/origen.
+3. Comportamiento offline-first: persistencia local, cola, bootstrap, pull, reconcile y reconexion.
+4. Convergencia multi-dispositivo: identidad de dispositivo, propagacion de hints, manejo de conflictos y no reaparicion de datos eliminados.
+5. Datos de soporte operativo necesarios en sitio: providers, categories, products/services, tariffs, cash boxes, payments, receipts e invoices.
 
-## Validation commands
+## Comandos de validacion
 
 ### Backend (`sisa.api`)
 
-- Full suite: `vendor/bin/phpunit`
-- Example focused runs:
+- Suite completa: `vendor/bin/phpunit`
+- Ejemplos de corridas focalizadas:
   - `vendor/bin/phpunit tests/Controllers/AppointmentsControllerCrudOfflineFirstTest.php`
   - `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php`
 
 ### Frontend (`sisa.ui`)
 
 - Lint: `npm run lint`
-- Cache guard: `npm run check:cache`
-- Sync smoke: `npm run check:sync-smoke`
+- Guardia de cache: `npm run check:cache`
+- Smoke de sync: `npm run check:sync-smoke`
 
-### Workspace helper
+### Helper del workspace
 
-- Root helper: `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1`
+- Entrada compartida desde raiz: `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1`
 
-## Editing guidance
+## Guia de edicion
 
-- If you add or change QA automation, document:
-  - what it protects,
-  - which risk it covers,
-  - how to run it,
-  - known blind spots.
-- Prefer backend PHPUnit for server contracts and domain rules.
-- Prefer lightweight client checks for storage, mapping, sync hooks, and smoke conditions before introducing heavyweight E2E tooling.
-- For multi-device flows that cannot yet be automated reliably, leave a strict manual runbook instead of pretending they are covered.
+- Si agregas o cambias automatizacion de QA, documentar:
+  - que protege,
+  - que riesgo cubre,
+  - como se corre,
+  - que puntos ciegos conocidos mantiene.
+- Preferir PHPUnit en backend para contratos del servidor y reglas de dominio.
+- Preferir checks livianos en cliente para storage, mapeos, hooks de sync y smokes antes de incorporar E2E pesados.
+- Para flujos multi-dispositivo que todavia no se puedan automatizar de forma confiable, dejar un runbook manual estricto en vez de simular cobertura.
 
-## Current QA baseline notes
+## Notas actuales del baseline QA
 
-- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` is the shared entry point and currently passes.
-- `sisa.api` PHPUnit currently emits a database connection error line even when the suite exits successfully; treat that as output noise or hidden setup debt until explicitly diagnosed.
-- `sisa.ui` cache guard now accepts SQLite/repository-backed persistence and explicitly exempted non-field-critical contexts; any new exception should be justified in code review and mirrored in `QA_STATUS.md`.
+- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` es la entrada compartida y actualmente pasa.
+- `sisa.api` PHPUnit sigue emitiendo una linea de error de conexion a base de datos aunque la suite termine bien; tratarlo como ruido de salida o deuda oculta de setup hasta diagnosticarlo.
+- La guardia de cache en `sisa.ui` ahora acepta persistencia basada en SQLite/repositorios y excepciones explicitas fuera del flujo critico de campo; cualquier nueva excepcion debe justificarse en review y reflejarse en `QA_STATUS.md`.
