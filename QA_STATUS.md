@@ -205,6 +205,13 @@ Validacion del fix:
   - `sisa.ui/app/statuses/index.tsx` ahora fuerza `loadStatuses(true)` al entrar en foco
   - `sisa.ui/app/statuses/[id].tsx` ahora fuerza `loadStatuses(true)` al intentar recargar el item
 - Hipotesis complementaria: aun con eventos correctos, en pantallas de referencias el autosync podia no correr por restriccion de ruta y la UI podia quedar mostrando cache vieja hasta reiniciar o volver a una ruta de jobs/home
+- Causa raiz adicional encontrada con evidencia real:
+  - el payload incremental de `statuses` salia sin `id` desde `sisa.api/src/Services/SyncEventGenerator.php`
+  - en `usePullJobsSync` el cliente exige `payload.id > 0` para hacer `mergeStatusesCache`, asi que los updates de status llegaban pero eran descartados silenciosamente del upsert local
+- Correccion aplicada:
+  - `sisa.api/src/Services/SyncEventGenerator.php` ahora incluye `id` canonico en `serializeStatus()`
+  - se agrego prueba en `sisa.api/tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` para bloquear regresiones del payload de `statuses`
+- Esta causa explica el sintoma observado: bootstrap inicial traia el ultimo estado, pero las ediciones posteriores no se reflejaban por feed incremental aunque `version` subiera en servidor
 
 Validacion del ajuste:
 
