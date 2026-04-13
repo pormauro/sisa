@@ -92,6 +92,22 @@ Avance en esta etapa:
 - se cubrieron dos contratos de worklogs ligados a la integridad de sync generico:
   - create exitoso agrega por defecto al creador como participante, persiste historial y emite evento de sync create
   - create rechaza `job_item_id` cuando no pertenece al `job` seleccionado
+- se agrego `sisa.api/tests/Controllers/JobItemsControllerTest.php`
+- se cubrieron dos contratos de `job_items` de alta sensibilidad operativa:
+  - create resuelve automaticamente un estado final cuando el item nace terminado y deja rastro en history + status history + sync event
+  - create rechaza `folder_id` cuando el item queda fuera del arbol permitido del job
+- se agrego `sisa.api/tests/Controllers/JobsControllerCrudOfflineFirstTest.php`
+- se cubrieron dos contratos de `jobs` alineados con la regla de folders y el delete propagado:
+  - update permite limpiar `jobs.folder_id` a `null` sin invalidar items existentes, dejando que usen cualquier carpeta valida del mismo cliente
+  - delete expone el resultado del borrado propagado basado en soft delete sobre hijos y adjuntos
+- se agrego `sisa.api/tests/Models/FoldersTest.php`
+- se corrigio `sisa.api/src/Models/Folders.php` para respetar soft delete cuando existe `deleted_at`, ocultando folders borrados de `find/list`
+- se alineo `sisa.api/install.php` con el modelo actual de folders agregando `uuid`, `version`, `source_device_id` y `deleted_at` al schema de instalacion
+- se agrego `sisa.api/tests/Models/ClientsTest.php`
+- se corrigio `sisa.api/src/Models/Clients.php` para respetar soft delete y no devolver clientes borrados en `find/list`
+- se alineo `sisa.api/install.php` con el modelo actual de clients agregando `uuid`, `version`, `source_device_id` y `deleted_at` al schema de instalacion
+- se agrego `sisa.api/tests/Models/StatusTest.php` para asegurar que statuses globales + company-scoped filtren bien y que un soft delete saque al status de los lookups asignables
+- se documento explicitamente que `clients` y `providers` son referencias operativas basadas en `empresas` dentro del ecosistema de companias
 
 Validacion:
 
@@ -100,7 +116,7 @@ Validacion:
 Notas:
 
 - este es solo el primer tramo incremental del Milestone 2, no el milestone completo
-- los siguientes objetivos de servidor siguen siendo `jobs`, `job_items`, `clients`, `folders` y `statuses`
+- los siguientes objetivos de servidor pasan a ser una capa adicional de cobertura de controladores para `clients` y `statuses`, ademas de revisar `providers` como referencia company-backed del ecosistema
 
 ## Riesgos priorizados actualmente
 

@@ -9,7 +9,7 @@ Este mapa define los datos minimos y los comportamientos que QA debe proteger pa
 | Dominio | Entidades | Por que importa en sitio | Riesgos principales | Control actual |
 |---|---|---|---|---|
 | acceso y scope | membresias, empresa seleccionada, permisos, usuarios | sin esto el operador no puede ver el workspace correcto ni asignar trabajo | scope de empresa incorrecto, permisos viejos, participantes faltantes | cobertura parcial en backend, checks manuales, deuda en guardia de cache |
-| estructura del cliente | clients, folders | permite ubicar a quien pertenece el trabajo y donde | folders huerfanos, scope cliente/empresa incorrecto, drift en deletes | existen docs de sync, pocos tests focalizados |
+| estructura del cliente | clients, folders | permite ubicar a quien pertenece el trabajo y donde; `clients` representa empresas del ecosistema referenciadas desde `empresas` y condiciona el scope operativo real | folders huerfanos, scope cliente/empresa incorrecto, drift en deletes, referencias inconsistentes a empresas del ecosistema | existen docs de sync, pocos tests focalizados |
 | estado de ejecucion | statuses | es necesario para mover el flujo operativo con seguridad | catalogo de estados incorrecto, cache de referencias viejo, drift de deletes | existe logica en backend para statuses, poca QA directa |
 | trabajo operativo | jobs, job_items, work_logs, appointments | son el nucleo del trabajo de campo, tiempos, participantes y agenda | relaciones padre invalidas, violaciones del arbol de folders, drift de conflicto/version | docs parciales, tests de appointments, poca cobertura directa en el resto |
 | evidencia | files, file_attachments | prueba de trabajo y auditabilidad posterior | drift de upload state, errores de detach, reaparicion de attachments borrados | cobertura parcial en modelo/controlador de attachments |
@@ -18,7 +18,7 @@ Este mapa define los datos minimos y los comportamientos que QA debe proteger pa
 
 | Dominio | Entidades | Por que importa en sitio | Riesgos principales | Control actual |
 |---|---|---|---|---|
-| catalogos comerciales/de soporte | providers, categories, products_services, tariffs | sirven para clasificar y valorar trabajo de campo sin depender de ida y vuelta online | cache viejo, bleed entre empresas, drift de duplicados/defaults | existen tests offline-first en backend para varias referencias |
+| catalogos comerciales/de soporte | providers, categories, products_services, tariffs | sirven para clasificar y valorar trabajo de campo sin depender de ida y vuelta online; `providers` tambien representa empresas del ecosistema y debe converger como referencia de `empresas` | cache viejo, bleed entre empresas, drift de duplicados/defaults, referencias inconsistentes a empresas del ecosistema | existen tests offline-first en backend para varias referencias |
 | operaciones reutilizables | payment_templates, cash_boxes | ayudan a ejecutar acciones operativas/financieras repetidas en campo | bootstrap incompleto, permisos viejos, refresh local incorrecto | existen tests smoke/contrato en backend, smoke de cliente limitado |
 
 ## Tier C - operaciones extendidas
@@ -33,7 +33,7 @@ Este mapa define los datos minimos y los comportamientos que QA debe proteger pa
 | Area de regla | Regla requerida |
 |---|---|
 | scope de empresa | los datos sincronizados de negocio deben resolver a un `company_id` valido o a un camino equivalente explicito |
-| jerarquia de folders | `job_items.folder_id` debe permanecer dentro del subarbol permitido de client/job |
+| jerarquia de folders | si `jobs.folder_id` es `null`, los `job_items` pueden usar cualquier folder del mismo cliente; si `jobs.folder_id` tiene valor, cada `job_items.folder_id` debe ser esa misma carpeta o una subcarpeta valida |
 | participantes | los participantes de appointments y worklogs deben pertenecer al scope correcto de empresa |
 | attachments | cambiar el attachable debe tratarse como `detach + attach`, no como reasignacion implicita |
 | entidades de enlace | los links puros deben usar `delete + create` en vez de reasignacion silenciosa |
