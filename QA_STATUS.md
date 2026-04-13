@@ -238,6 +238,11 @@ Avance en esta etapa:
 - el smoke tambien valida en `sisa.ui/src/modules/jobs/data/db/syncState.ts` que `deleted_at` sobreviva al materializar entidades cliente para `reconcile`
 - se ajusto `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` para que `bootstrap/references` quite de cache local `statuses`, `providers`, `clients` y `folders` cuando llegan con `deleted_at`, en vez de reinsertarlos como activos
 - se expandio `sisa.ui/scripts/sync-smoke.js` para exigir esa logica de remocion por tombstone durante bootstrap de referencias
+- se expandio nuevamente `sisa.ui/scripts/sync-smoke.js` para cubrir persistencia local del drift de `reconcile`, validando que `syncState.ts`:
+  - inserte conflictos en `entity_sync_state`
+  - marque `sync_state = 'conflict'`
+  - eleve `conflict_flag = 1` en tablas locales
+  - limpie conflictos resueltos desde `useSyncStatus.ts`
 
 Validacion:
 
@@ -249,6 +254,7 @@ Notas:
 - este primer slice de Milestone 4 todavia es smoke estructural, no test unitario del cliente
 - el foco fue mantener alineado el lado UI con los contratos de no reaparicion ya reforzados en backend
 - este segundo slice baja la misma garantia a `bootstrap/references`, evitando que el cliente reanime referencias eliminadas al reconstruir cache local
+- este tercer slice refuerza el lado cliente de `reconcile`, dejando controlado que el drift detectado por servidor quede persistido localmente y visible para resolucion posterior
 
 ## Intervenciones documentales recientes
 
