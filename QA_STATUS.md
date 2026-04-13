@@ -212,6 +212,10 @@ Validacion del fix:
   - `sisa.api/src/Services/SyncEventGenerator.php` ahora incluye `id` canonico en `serializeStatus()`
   - se agrego prueba en `sisa.api/tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` para bloquear regresiones del payload de `statuses`
 - Esta causa explica el sintoma observado: bootstrap inicial traia el ultimo estado, pero las ediciones posteriores no se reflejaban por feed incremental aunque `version` subiera en servidor
+- Ajuste final de metadata aplicado:
+  - `sisa.ui/contexts/StatusesContext.tsx` ahora envia `source_device_id` tambien en delete de `statuses`
+  - `sisa.api/src/Controllers/StatusController.php` ahora lee payload opcional en delete y propaga `source_device_id` a `softDelete()` y `recordDelete()`
+  - se agrego cobertura en `sisa.api/tests/Controllers/StatusControllerTest.php` para asegurar que delete conserve `source_device_id`
 
 Validacion del ajuste:
 
