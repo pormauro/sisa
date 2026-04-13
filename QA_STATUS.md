@@ -1,12 +1,23 @@
 # Estado QA
 
+## Ultima actualizacion
+
+- Fecha: 2026-04-13
+- Corrida baseline: PASS
+- PHPUnit suite: ~60 tests pasan (ruido de conexion filtrado)
+- Lint: PASS
+- Cache guard: PASS
+- Sync smoke: PASS
+
 ## Estado actual
 
 - Fase: base inicial de QA establecida
 - Principio activo: el QA de sync es generico y prioriza la operacion en campo, no solamente `jobs`
 - Topologia confirmada: raiz compartida mas dos proyectos independientes (`sisa.api`, `sisa.ui`)
 - Existe un helper compartido de baseline y actualmente pasa en este entorno
-- Se corrigio un problema de runtime en cliente ligado a handles SQLite liberados que podia romper corridas manuales en dispositivo
+- Se corrigio un problema de runtime ligado a handles SQLite liberados que podia romper corridas manuales en dispositivo
+- Se documentaron 5 escenarios manuales en runbook multi-dispositivo
+- Se cubrio delete propagation con tests automatizados completos (tombstones en server, pull, bootstrap, reconcile, verify)
 
 ## Decisiones tomadas
 
