@@ -256,6 +256,35 @@ Notas:
 - este segundo slice baja la misma garantia a `bootstrap/references`, evitando que el cliente reanime referencias eliminadas al reconstruir cache local
 - este tercer slice refuerza el lado cliente de `reconcile`, dejando controlado que el drift detectado por servidor quede persistido localmente y visible para resolucion posterior
 
+### Milestone 5 - runbook multi-dispositivo y offline-to-online
+
+Estado: en progreso
+
+Objetivo:
+
+- volver ejecutables y auditables los escenarios manuales mas criticos de convergencia multi-dispositivo
+
+Avance en esta etapa:
+
+- se creo `qa/MULTI_DEVICE_RUNBOOK.md`
+- el runbook define preparacion, evidencia obligatoria, regla de aprobacion y cinco escenarios manuales:
+  - create offline y convergencia
+  - delete propagation sin reaparicion
+  - conflicto visible y resoluble
+  - orden de dependencias
+  - bootstrap limpio de dispositivo nuevo
+- se actualizo `qa/REGRESSION_CHECKLIST.md` para apuntar explicitamente al runbook
+- se actualizo `QA_ROADMAP.md` para declarar `qa/MULTI_DEVICE_RUNBOOK.md` como entregable minimo del milestone
+
+Validacion:
+
+- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa
+
+Notas:
+
+- este primer slice de Milestone 5 no automatiza dispositivos reales; deja un procedimiento manual estricto y auditable
+- la prioridad del runbook esta alineada con no reaparicion, convergencia y control de drift visible en campo
+
 ## Intervenciones documentales recientes
 
 - se tradujo al espanol la documentacion QA agregada en raiz y `qa/` para mantener consistencia con el idioma operativo del proyecto.

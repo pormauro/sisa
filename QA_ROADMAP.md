@@ -203,6 +203,10 @@ Validacion:
 - runbook manual con evidencia esperada,
 - export/logs cuando sea posible.
 
+Entregable minimo:
+
+- `qa/MULTI_DEVICE_RUNBOOK.md`
+
 ### Milestone 6 - gate de release y estrategia de expansion
 
 Objetivo: definir la puerta minima de QA antes de deploy y el camino para ampliar cobertura.

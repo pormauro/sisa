@@ -42,6 +42,8 @@
 
 ## Escenarios manuales multi-dispositivo
 
+- Runbook fuente: `qa/MULTI_DEVICE_RUNBOOK.md`
+
 ### Escenario A - create offline y convergencia posterior
 
 1. El dispositivo A pasa a offline.
