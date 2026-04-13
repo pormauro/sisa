@@ -236,6 +236,8 @@ Avance en esta etapa:
   - trate `detach/delete` como borrado local del attachment
   - persista tombstones de `file_attachments` en snapshots locales
 - el smoke tambien valida en `sisa.ui/src/modules/jobs/data/db/syncState.ts` que `deleted_at` sobreviva al materializar entidades cliente para `reconcile`
+- se ajusto `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` para que `bootstrap/references` quite de cache local `statuses`, `providers`, `clients` y `folders` cuando llegan con `deleted_at`, en vez de reinsertarlos como activos
+- se expandio `sisa.ui/scripts/sync-smoke.js` para exigir esa logica de remocion por tombstone durante bootstrap de referencias
 
 Validacion:
 
@@ -246,6 +248,7 @@ Notas:
 
 - este primer slice de Milestone 4 todavia es smoke estructural, no test unitario del cliente
 - el foco fue mantener alineado el lado UI con los contratos de no reaparicion ya reforzados en backend
+- este segundo slice baja la misma garantia a `bootstrap/references`, evitando que el cliente reanime referencias eliminadas al reconstruir cache local
 
 ## Intervenciones documentales recientes
 
