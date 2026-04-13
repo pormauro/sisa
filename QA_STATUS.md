@@ -194,11 +194,18 @@ Validacion del fix:
   - `sisa.ui/contexts/StatusesContext.tsx` ahora envia `company_id` desde la empresa seleccionada de la barra inferior al crear y actualizar estados
   - tambien envia `source_device_id` para mantener trazabilidad de origen
   - cuando el backend devuelve el objeto `status`, el cliente usa esa respuesta canonica; si no, fuerza `loadStatuses(true)` para refrescar desde servidor
+- Ajuste de propagacion aplicado:
+  - `sisa.ui/src/modules/jobs/data/repositories/SQLiteStatusesRepository.ts` ahora persiste `uuid`, `company_id` y `source_device_id` en SQLite local
+  - `sisa.ui/src/modules/jobs/presentation/sync/referenceCache.ts` ahora baja esos mismos campos al cachear `statuses`
+  - `sisa.api/src/Services/SyncEventGenerator.php` ahora emite hints con scopes especificos de referencias (`statuses`, `clients`, `folders`, `providers`, etc.) ademas de `jobs`
+  - `sisa.ui/app/_layout.tsx` ahora refresca bootstrap al recibir `sync_hint` de `statuses`, `clients` y `folders`
+- Hipotesis principal del incidente funcional: las altas/ediciones de `statuses` actualizaban version y backend, pero no disparaban un camino de refresco claro en el otro dispositivo porque el hint venia demasiado centrado en `jobs` y el cache local de `statuses` no retenia suficiente metadata de scope
 
 Validacion del ajuste:
 
 - `npm run lint` -> pasa
 - `npm run check:sync-smoke` -> pasa
+- `vendor/bin/phpunit tests/Controllers/StatusControllerTest.php tests/Models/StatusTest.php` -> pasa
 - `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa
 
 ## Siguientes pasos
