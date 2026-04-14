@@ -2,13 +2,13 @@
 
 ## Ultima actualizacion
 
-- Fecha: 2026-04-13
+- Fecha: 2026-04-14
 - Corrida baseline: PASS
 - PHPUnit suite: ~60 tests pasan (ruido de conexion filtrado)
 - Lint: PASS
 - Cache guard: PASS
 - Sync smoke: PASS
-- Tests integracion multi-dispositivo: 101/101 PASS
+- Tests integracion multi-dispositivo: 119/119 PASS
 ## Tests de Integracion Multi-Dispositivo
 
 Estado: completado
@@ -27,8 +27,9 @@ Archivos creados:
 - `sisa.api/tests/Integration/MultiDevice/WorklogsAppointmentsAttachmentsTest.php`
 - `sisa.api/tests/Integration/MultiDevice/ReconcileVerifyBootstrapTest.php`
 - `sisa.api/tests/Integration/MultiDevice/OfflineQueueRetryTest.php`
+- `sisa.api/tests/Integration/MultiDevice/ReferencesSyncTest.php`
 
-Suite de tests (101 tests, 237 assertions):
+Suite de tests (119 tests, 298 assertions):
 
 - Delete propagation (status, client, provider, file_attachments)
 - Drift detection y conflict resolution
@@ -38,10 +39,11 @@ Suite de tests (101 tests, 237 assertions):
 - Reconcile, verify, bootstrap y checkpoints
 - Offline queue y retry logic
 - Error recovery y consistencia
+- References sync (tariffs, categories, products_services, payment_templates, cash_boxes, permissions, payments, receipts, invoices, job_groups, root_causes, etc.)
 
 Validacion:
 
-- `vendor/bin/phpunit tests/Integration/MultiDevice/` -> 101/101 pass
+- `vendor/bin/phpunit tests/Integration/MultiDevice/` -> 119/119 pass
 - `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa
 
 ## Estado actual
