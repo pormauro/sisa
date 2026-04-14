@@ -8,7 +8,7 @@
 - Lint: PASS
 - Cache guard: PASS
 - Sync smoke: PASS
-- Tests integracion multi-dispositivo: 19/19 PASS
+- Tests integracion multi-dispositivo: 33/33 PASS
 
 ## Estado actual
 
