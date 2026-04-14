@@ -8,8 +8,7 @@
 - Lint: PASS
 - Cache guard: PASS
 - Sync smoke: PASS
-- Tests integracion multi-dispositivo: 40/40 PASS
-
+- Tests integracion multi-dispositivo: 101/101 PASS
 ## Tests de Integracion Multi-Dispositivo
 
 Estado: completado
@@ -29,7 +28,7 @@ Archivos creados:
 - `sisa.api/tests/Integration/MultiDevice/ReconcileVerifyBootstrapTest.php`
 - `sisa.api/tests/Integration/MultiDevice/OfflineQueueRetryTest.php`
 
-Suite de tests (40 tests, 110 assertions):
+Suite de tests (101 tests, 237 assertions):
 
 - Delete propagation (status, client, provider, file_attachments)
 - Drift detection y conflict resolution
@@ -38,10 +37,11 @@ Suite de tests (40 tests, 110 assertions):
 - Worklogs, appointments y archivos adjuntos
 - Reconcile, verify, bootstrap y checkpoints
 - Offline queue y retry logic
+- Error recovery y consistencia
 
 Validacion:
 
-- `vendor/bin/phpunit tests/Integration/MultiDevice/` -> 40/40 pass
+- `vendor/bin/phpunit tests/Integration/MultiDevice/` -> 101/101 pass
 - `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa
 
 ## Estado actual
