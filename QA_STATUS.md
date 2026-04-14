@@ -8,7 +8,41 @@
 - Lint: PASS
 - Cache guard: PASS
 - Sync smoke: PASS
-- Tests integracion multi-dispositivo: 33/33 PASS
+- Tests integracion multi-dispositivo: 40/40 PASS
+
+## Tests de Integracion Multi-Dispositivo
+
+Estado: completado
+
+Objetivo:
+
+- simular dispositivos multiples con SQLite real y validar flujos de sync distribuido
+
+Archivos creados:
+
+- `sisa.api/tests/Integration/MultiDevice/TestDevice.php`
+- `sisa.api/tests/Integration/MultiDevice/DeletePropagationTest.php`
+- `sisa.api/tests/Integration/MultiDevice/DriftConflictTest.php`
+- `sisa.api/tests/Integration/MultiDevice/MultiCompanyIsolationTest.php`
+- `sisa.api/tests/Integration/MultiDevice/JobsSyncTest.php`
+- `sisa.api/tests/Integration/MultiDevice/WorklogsAppointmentsAttachmentsTest.php`
+- `sisa.api/tests/Integration/MultiDevice/ReconcileVerifyBootstrapTest.php`
+- `sisa.api/tests/Integration/MultiDevice/OfflineQueueRetryTest.php`
+
+Suite de tests (40 tests, 110 assertions):
+
+- Delete propagation (status, client, provider, file_attachments)
+- Drift detection y conflict resolution
+- Multi-company isolation (empresas aisladas, global statuses)
+- Jobs y job_items sync
+- Worklogs, appointments y archivos adjuntos
+- Reconcile, verify, bootstrap y checkpoints
+- Offline queue y retry logic
+
+Validacion:
+
+- `vendor/bin/phpunit tests/Integration/MultiDevice/` -> 40/40 pass
+- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa
 
 ## Estado actual
 
