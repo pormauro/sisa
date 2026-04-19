@@ -22,6 +22,8 @@
 
 - Baseline corrido: si/no
 - Resultado baseline:
+- Login previo online confirmado: si/no
+- Logout manual evitado antes de la prueba: si/no/no aplica
 - Estado inicial confirmado en A: si/no
 - Estado inicial confirmado en B: si/no
 - Estado inicial confirmado en servidor: si/no
@@ -54,6 +56,7 @@
 - A converge: si/no
 - B converge: si/no
 - Servidor converge: si/no
+- Reapertura offline conserva sesion: si/no/no aplica
 - Sin reaparicion: si/no
 - Sin duplicados: si/no
 - Drift visible/resuelto: si/no/no aplica

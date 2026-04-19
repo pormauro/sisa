@@ -5,6 +5,7 @@
 ### 1. Sesion y scope
 
 - login funciona y la restauracion de sesion no deja loops ni shell en blanco
+- si el usuario ya inicio sesion una vez y no hizo logout, reabrir sin red sigue dejando la app operable en modo offline
 - la empresa seleccionada permanece estable despues de bootstrap
 - membresias y permisos coinciden con la empresa activa
 

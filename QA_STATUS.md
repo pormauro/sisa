@@ -2,7 +2,7 @@
 
 ## Ultima actualizacion
 
-- Fecha: 2026-04-14
+- Fecha: 2026-04-19
 - Corrida baseline: PASS
 - PHPUnit suite: ~60 tests pasan (ruido de conexion filtrado)
 - Lint: PASS
@@ -366,6 +366,10 @@ Avance en esta etapa:
   - emite refresh local de jobs al finalizar importacion relevante
   - `useBootstrapJobsFromApi` persiste el checkpoint maximo de `sync/v3/state`
   - `app/_layout.tsx` refresca bootstrap y autosync ante `sync_hint` con scopes relevantes
+- se endurecio `sisa.ui/contexts/AuthContext.tsx` para que una sesion ya autenticada pueda reabrirse offline aunque el token local haya vencido, manteniendo la app operable hasta logout manual
+- se expandio `sisa.ui/scripts/sync-smoke.js` para bloquear regresiones de restauracion offline de sesion persistida y del hydrator comun de auth
+- se actualizaron `sisa.ui/docs/architecture/authentication.md`, `sisa.ui/docs/architecture/startup-and-shell.md` y `qa/REGRESSION_CHECKLIST.md` para declarar este contrato como parte del baseline Tier A
+- se expandio `qa/MULTI_DEVICE_RUNBOOK.md` con un escenario explicito de reapertura offline con sesion previa y se ajusto `qa/MULTI_DEVICE_EVIDENCE_TEMPLATE.md` para auditar esa corrida manual
 
 Validacion:
 
@@ -379,6 +383,8 @@ Notas:
 - este segundo slice baja la misma garantia a `bootstrap/references`, evitando que el cliente reanime referencias eliminadas al reconstruir cache local
 - este tercer slice refuerza el lado cliente de `reconcile`, dejando controlado que el drift detectado por servidor quede persistido localmente y visible para resolucion posterior
 - este cuarto slice deja cubiertos los minimos operativos de Milestone 4: persistencia local, checkpoints, bootstrap, consumo de hints y smokes de no reaparicion en el cliente
+- este quinto slice agrega una guarda explicita para continuidad de sesion offline: una autenticacion previa ya no depende de conectividad al reabrir la app para seguir operando en campo
+- el milestone manual ahora tambien exige evidencia repetible de que la shell autenticada reabre sin red despues de un login previo
 
 ### Milestone 5 - runbook multi-dispositivo y offline-to-online
 

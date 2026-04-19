@@ -159,6 +159,34 @@ Este runbook es obligatorio mientras estos escenarios no tengan automatizacion c
 4. Verificar especificamente que referencias o attachments eliminados no reaparecen.
 5. Correr un pull incremental posterior y confirmar que no revive informacion borrada.
 
+## Escenario 6 - reapertura offline con sesion previa
+
+### Protege
+
+- continuidad de auth/sesion
+- shell-first sin bloqueo por red
+- operacion offline despues de login previo
+- persistencia local de datos Tier A hasta reconexion
+
+### Pasos
+
+1. En A, iniciar sesion online con usuario y password validos.
+2. Confirmar que el bootstrap critico termina y que el dataset Tier A minimo queda visible.
+3. Cerrar completamente la app sin hacer logout manual.
+4. Cortar conectividad real del dispositivo A.
+5. Reabrir la app en A.
+6. Confirmar que entra a la shell autenticada y no redirige a login.
+7. Abrir al menos una vista operativa (`statuses`, `clients`, `jobs` o equivalente) y confirmar que sigue leyendo cache local.
+8. Crear o editar un dato offline si el flujo lo permite y confirmar que queda visible/localmente persistido.
+9. Volver a online, correr sync y confirmar que el cambio converge o, si no hubo escritura, que la sesion sigue estable sin logout espurio.
+
+### Resultado esperado
+
+- A reabre autenticado aunque no tenga red.
+- la app queda marcada como offline, pero operable.
+- la shell no vuelve a login salvo logout manual o limpieza explicita de credenciales.
+- al reconectar, la sesion puede retomar sync sin inconsistencias nuevas.
+
 ## Checklist de cierre por corrida
 
 - A converge
