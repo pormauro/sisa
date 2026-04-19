@@ -190,7 +190,7 @@ Notas:
 
 ### Alta prioridad
 
-- drift de sync en `version`, `payload.version`, `source_device_id`, `deleted_at`
+- ~~drift de sync en `version`, `payload.version`, `source_device_id`, `deleted_at`~~ (CORREGIDO)
 - fallas de propagacion de delete y resurreccion de attachments eliminados
 - relaciones huerfanas entre clients/folders/jobs/job_items/work_logs/appointments
 - convivencia de CRUD legacy y offline-first provocando convergencia inconsistente
@@ -449,11 +449,50 @@ Avance en esta etapa:
 
 Validacion:
 
-- `vendor/bin/phpunit tests/Integration/MultiDevice/` -> 8/10 pass (2 failures en drift detection por logica de versionado)
+- `vendor/bin/phpunit tests/Integration/MultiDevice/` -> 119/119 pass
+- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa
+
+## Correccion de version drift en sync_operations
+
+Estado: completado
+
+Problema: `sync_operations.version` no coincidia con la version real de la tabla principal. Por ejemplo, un appointment con `version = 9` en la tabla podia tener `version = 1` en `sync_operations`.
+
+Causa raiz:
+- En `sync/push`, se guardaba primero la version del payload del cliente (a veces 1)
+- Despues se llamaba `buildCanonicalOperation` para obtener la version canonica
+- Si este paso fallaba o no se actualizaba, quedaba con version incorrecta
+
+Correcciones aplicadas:
+
+1. `sisa.api/src/Services/SyncEventGenerator.php`:
+   - Se modifico `buildCanonicalOperation` para usar `canonicalRecord['version']` como fuente principal
+   - El payload version ahora es fallback, no fuente primaria
+   - Formula cambiada de: `max(1, (int) ($payload['version'] ?? ($canonicalRecord['version'] ?? 1)))`
+   - A: `max(1, (int) ($canonicalRecord['version'] ?? ($payload['version'] ?? 1)))`
+
+2. `sisa.api/src/Controllers/SyncOperationsController.php`:
+   - Se agrego logging cuando `canonicalOperation` es null para detectar fallos
+   - Linea agregada: `error_log('SyncOperationsController version drift warning: ...')`
+
+3. Tests creados:
+   - `sisa.api/tests/Controllers/SyncVersionDriftRegressionTest.php` - tests de regresion
+   - `sisa.api/tests/Services/SyncEventGeneratorVersionTest.php` - tests unitarios de logica de version
+
+Validacion:
+
+- `vendor/bin/phpunit tests/Services/SyncEventGeneratorVersionTest.php` -> 5/5 pass
+- `vendor/bin/phpunit tests/Integration/MultiDevice/` -> 119/119 pass
 - `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa
 
 Notas:
 
+- La correccion prioriza la version de la tabla canonica sobre el payload
+- El logging permitira detectar en produccion si `canonicalOperation` es null
+- Los tests de regresion verifican que las versiones coincidan
+- Este fix ataca una de las deudas mas criticas del pipeline de sync
+
+Notas de lectura:
+
 - la infraestructura de TestDevice permite расширение facile para mas escenarios
-- los 2 tests que fallan son por detalles de versionado en el simulador, no por el concepto
 - se puede agregar mas coverage de multi-empresa y multi-usuario expandiendo TestDevice
