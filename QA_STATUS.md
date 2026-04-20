@@ -163,6 +163,33 @@ Avance en esta etapa:
 - se ajusto `sisa.api/src/Controllers/ClientsController.php` para permitir inyeccion de dependencias y volver testeable el controlador sin alterar su contrato HTTP
 - se documento explicitamente que `clients` y `providers` son referencias operativas basadas en `empresas` dentro del ecosistema de companias
 
+### Avance parcial - reportes PDF operativos y trazabilidad
+
+Estado: en progreso
+
+Que cambio:
+
+- se fortalecio `sisa.api/src/Models/Reports.php` para persistir `company_id` en filas de reportes
+- se ajusto `sisa.api/src/History/ReportsHistory.php` para arrastrar `company_id` al historial de reportes
+- se amplio `sisa.api/src/Controllers/JobReportsController.php` para aceptar variantes y secciones de reporte via payload (`report_variant`, `include_sections`, banderas auxiliares y display options extendidas)
+- el reporte PDF operativo de jobs ahora puede consolidar `worklogs`, participantes, tarifas aplicadas, appointments, timeline operativo y gastos a cargo del cliente desde `payments`
+- se agrego resumen operativo/economico enriquecido en el PDF de jobs sin romper la ruta existente
+- se alinearon `sisa.api/src/Controllers/InvoicesController.php` y `sisa.api/src/Controllers/PaymentsController.php` para registrar `company_id` en `reports` cuando generan PDFs
+- se agregaron tests focalizados en `sisa.api/tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php`
+- se agrego `sisa.api/tests/Models/ReportsTest.php` para cubrir persistencia de `company_id` y metadata en `reports` + `reports_history`
+- se creo `qa/REPORTS_TRANSFORMATION_CHECKLIST.md` como checklist integral para transformar los informes de jobs y llevarlos hasta estado de cuenta cliente + reportes economicos/contables por `company_id`
+- el checklist nuevo cubre arquitectura, payloads, persistencia, dataset assembly, informe operativo, timeline, cuenta corriente, reportes economicos, QA automatizado/manual, migraciones, riesgos y criterio de terminado
+
+Validacion:
+
+- `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Models/ReportsTest.php` -> pasa (7 tests, 29 assertions)
+
+Notas:
+
+- esta etapa cubre el primer tramo recomendado: ampliacion del informe operativo de jobs con variantes, timeline y trazabilidad basica de reports
+- ya existe una guia/checklist ejecutable para completar el resto del roadmap de reportes sin redescubrir alcance ni criterios
+- quedan pendientes el estado de cuenta por cliente y los reportes economicos/contables dedicados por `company_id`/caja como siguiente tramo incremental
+
 ### Limpieza de baseline
 
 Estado: completado
