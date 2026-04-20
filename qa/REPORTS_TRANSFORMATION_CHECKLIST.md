@@ -39,16 +39,16 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 - [x] No romper rutas actuales ni respuesta base (`file_id`, `report_id`, `download_url`).
 - [x] Mantener la compatibilidad con consumidores existentes del backend y UI.
 - [x] Filtrar siempre por `company_id` y respetar scope del usuario.
-- [ ] Separar claramente capas de:
-  - recoleccion de datos
-  - normalizacion
-  - calculo economico
-  - timeline
-  - render HTML/PDF
-  - persistencia del reporte
-  - QA
-- [ ] Evitar duplicar logica entre reportes operativos, financieros y de cuenta corriente.
-- [ ] Asegurar que la metadata persistida permita regenerar el reporte en el futuro.
+- [x] Separar claramente capas de:
+   - recoleccion de datos
+   - normalizacion
+   - calculo economico
+   - timeline
+   - render HTML/PDF
+   - persistencia del reporte
+   - QA
+- [x] Evitar duplicar logica entre reportes operativos, financieros y de cuenta corriente.
+- [x] Asegurar que la metadata persistida permita regenerar el reporte en el futuro.
 - [ ] Documentar toda deuda de schema legacy vs schema actual antes de profundizar el alcance.
 
 ---
@@ -139,8 +139,8 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ### 3.3 Regeneracion y reutilizacion
 
-- [ ] Poder reejecutar un reporte usando metadata persistida.
-- [ ] Definir si regenerar crea nuevo `file_id` y nuevo `report_id`, o nueva version del mismo reporte.
+- [x] Poder reejecutar un reporte usando metadata persistida (POST /reports/{id}/regenerate).
+- [x] Regenerar crea nuevo `file_id` y nuevo `report_id` (nueva generacion, no versionado).
 - [ ] Definir criterio de deduplicacion futura por hash/firma del contenido.
 - [x] Documentar estrategia de naming de archivo.
 
