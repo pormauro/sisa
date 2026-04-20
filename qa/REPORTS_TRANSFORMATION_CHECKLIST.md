@@ -156,7 +156,7 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 - [x] Permitir abrir el detalle de un reporte desde UI.
 - [x] Permitir ver historial basico del reporte desde UI.
 - [x] Permitir regenerar desde UI cuando exista permiso `regenerateReport`.
-- [ ] Conectar generadores contextuales (clientes/contabilidad/invoices/payments) al hub comun de reportes.
+- [~] Conectar generadores contextuales (clientes/contabilidad/invoices/payments) al hub comun de reportes. Avance: clientes + payments ya alimentan la bandeja; faltan contabilidad global e invoices.
 
 ---
 

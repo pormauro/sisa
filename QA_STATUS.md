@@ -206,6 +206,7 @@ Que cambio:
 - se transformo `sisa.ui/app/reports/index.tsx` de bandeja payment-only a centro generico de reportes con filtros por tipo, variante, estado, empresa, cliente, usuario y rango de fechas
 - se creo `sisa.ui/app/reports/[id].tsx` para detalle, historial basico, apertura de PDF y regeneracion desde UI
 - se alineo `sisa.ui/src/constants/permissionCatalog.ts` y `sisa.ui/docs/features/reports-api.md` con `regenerateReport` y el contrato nuevo de `/reports`
+- se actualizaron `sisa.ui/app/clients/[id].tsx` y `sisa.ui/app/clients/viewModal.tsx` para generar variantes nuevas (`full_detailed`, `technical_timeline`, `client_account_statement`, `accounting_general`, `landscape_summary`) sobre el endpoint comun y refrescar la bandeja de reportes
 
 Validacion:
 
@@ -215,6 +216,7 @@ Validacion:
 - `vendor/bin/phpunit tests/Models/ReportsTest.php tests/Controllers/ReportsControllerRegenerateTest.php` -> pasa (7 tests, 24 assertions)
 - `npm run lint` -> pasa despues del refactor del centro de reportes
 - `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa con el nuevo hub generico de reportes
+- `npm run lint` -> pasa despues de conectar los generadores contextuales de cliente al hub de reportes
 
 Notas:
 
@@ -224,6 +226,7 @@ Notas:
 - el contrato del payload ahora esta mas cerrado y falla rapido ante combinaciones inconsistentes, reduciendo riesgo de PDFs mal armados o ambiguos
 - `/reports` ya tiene un primer corte mas util para la app porque puede listar y resolver reportes dentro del scope real del usuario, pero todavia faltan filtros por entidad principal, detalle/historial de UI y regeneracion generalizada para invoices/payments
 - la UI ya puede listar, abrir, inspeccionar y regenerar reportes de jobs desde un centro generico, aunque todavia falta conectar los generadores contextuales de clientes/contabilidad al nuevo flujo comun
+- los generadores de cliente ya alimentan el flujo comun y pueden derivar al detalle del reporte creado, aunque contabilidad global e invoices siguen sin integracion equivalente
 - siguen pendientes el detalle contable mas profundo por caja/libro, el refinamiento visual, la regeneracion generalizada mas alla de jobs y la cobertura QA de performance/escenarios de alto volumen
 
 ### Limpieza de baseline
