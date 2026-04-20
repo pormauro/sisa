@@ -98,8 +98,8 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 - [x] Validar formatos de fechas.
 - [x] Validar consistencia `start_date <= end_date`.
 - [ ] Validar combinaciones incompatibles entre variante y secciones.
-- [ ] Validar strings permitidos en `group_by`.
-- [ ] Validar strings permitidos en `timeline_order`.
+- [x] Validar strings permitidos en `group_by`.
+- [x] Validar strings permitidos en `timeline_order`.
 - [x] Validar que `include_sections` solo contenga secciones soportadas.
 - [ ] Validar que filtros por ids sean arrays de enteros positivos.
 
@@ -630,9 +630,9 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 - [x] Tests basicos de `display_options` existentes.
 - [x] Tests basicos de `report_variant` e `include_sections`.
-- [ ] Tests de `group_by`.
+- [x] Tests de `group_by`.
 - [ ] Tests de flags auxiliares.
-- [ ] Tests de combinaciones invalidas por variante.
+- [x] Tests de combinaciones invalidas por variante.
 
 ### 11.2 Dataset operativo
 

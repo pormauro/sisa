@@ -191,17 +191,25 @@ Que cambio:
   - reporte operativo detallado
   - estado de cuenta cliente
   - reporte economico general
+- se endurecio la validacion del payload en `sisa.api/src/Controllers/JobReportsController.php` para rechazar:
+  - `timeline_order` invalido
+  - `group_by` no permitido para la variante elegida
+  - `include_sections` incompatibles con la variante
+  - combinaciones invalidas como `status_ids` o `include_timeline` sobre `accounting_general`/`client_account_statement`
+- se expandio `sisa.api/tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` para cubrir estas reglas de validacion endurecidas
 
 Validacion:
 
 - `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Models/ReportsTest.php` -> pasa (7 tests, 29 assertions)
 - `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Models/ReportsTest.php tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php` -> pasa (15 tests, 74 assertions)
+- `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Models/ReportsTest.php tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php` -> pasa despues del hardening (17 tests, 80 assertions)
 
 Notas:
 
 - esta etapa cubre el primer tramo recomendado: ampliacion del informe operativo de jobs con variantes, timeline y trazabilidad basica de reports
 - ya existe una guia/checklist ejecutable para completar el resto del roadmap de reportes sin redescubrir alcance ni criterios
 - ya existe un primer corte ejecutable de estado de cuenta cliente y reporte economico general dentro del mismo endpoint extendido
+- el contrato del payload ahora esta mas cerrado y falla rapido ante combinaciones inconsistentes, reduciendo riesgo de PDFs mal armados o ambiguos
 - siguen pendientes el hardening de metadata/regeneracion, el detalle contable mas profundo por caja/libro, el refinamiento visual y la cobertura QA de performance/escenarios de alto volumen
 
 ### Limpieza de baseline
