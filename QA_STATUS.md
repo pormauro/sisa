@@ -179,16 +179,30 @@ Que cambio:
 - se agrego `sisa.api/tests/Models/ReportsTest.php` para cubrir persistencia de `company_id` y metadata en `reports` + `reports_history`
 - se creo `qa/REPORTS_TRANSFORMATION_CHECKLIST.md` como checklist integral para transformar los informes de jobs y llevarlos hasta estado de cuenta cliente + reportes economicos/contables por `company_id`
 - el checklist nuevo cubre arquitectura, payloads, persistencia, dataset assembly, informe operativo, timeline, cuenta corriente, reportes economicos, QA automatizado/manual, migraciones, riesgos y criterio de terminado
+- se amplio `sisa.api/src/Controllers/JobReportsController.php` con dos variantes nuevas dentro del mismo endpoint/patron operativo:
+  - `client_account_statement`: estado de cuenta por cliente con facturas, recibos, pagos/cargos, aplicaciones y aging
+  - `accounting_general`: reporte economico general filtrado por `company_id` y periodo, reutilizando `AccountingSummaryService`
+- se ajusto `sisa.api/src/Services/AccountingSummaryService.php` para aceptar recorte opcional por `company_id` sin romper llamadas existentes
+- se expandio `sisa.api/tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` para cubrir aging/saldos de cuenta y render PDF economico general
+- se actualizo `qa/REPORTS_TRANSFORMATION_CHECKLIST.md` tachando los bloques ya implementados de payload, persistencia, cuenta corriente, accounting general, QA y soporte Postman/documental
+- se creo `sisa.api/docs/reports-pdf-variants.md` para documentar el contrato extendido del endpoint `POST /jobs/client/{clientId}/report/pdf`
+- se actualizo `sisa.api/docs/reports-table.md` con `company_id`, tipos de reporte nuevos y metadata persistida por variante
+- se agrego una carpeta `Reports` a `sisa.api/Sistema.postman_collection.json` con requests listas para:
+  - reporte operativo detallado
+  - estado de cuenta cliente
+  - reporte economico general
 
 Validacion:
 
 - `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Models/ReportsTest.php` -> pasa (7 tests, 29 assertions)
+- `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Models/ReportsTest.php tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php` -> pasa (15 tests, 74 assertions)
 
 Notas:
 
 - esta etapa cubre el primer tramo recomendado: ampliacion del informe operativo de jobs con variantes, timeline y trazabilidad basica de reports
 - ya existe una guia/checklist ejecutable para completar el resto del roadmap de reportes sin redescubrir alcance ni criterios
-- quedan pendientes el estado de cuenta por cliente y los reportes economicos/contables dedicados por `company_id`/caja como siguiente tramo incremental
+- ya existe un primer corte ejecutable de estado de cuenta cliente y reporte economico general dentro del mismo endpoint extendido
+- siguen pendientes el hardening de metadata/regeneracion, el detalle contable mas profundo por caja/libro, el refinamiento visual y la cobertura QA de performance/escenarios de alto volumen
 
 ### Limpieza de baseline
 

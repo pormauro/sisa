@@ -36,9 +36,9 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ## 0. Criterios rectores
 
-- [ ] No romper rutas actuales ni respuesta base (`file_id`, `report_id`, `download_url`).
-- [ ] Mantener la compatibilidad con consumidores existentes del backend y UI.
-- [ ] Filtrar siempre por `company_id` y respetar scope del usuario.
+- [x] No romper rutas actuales ni respuesta base (`file_id`, `report_id`, `download_url`).
+- [x] Mantener la compatibilidad con consumidores existentes del backend y UI.
+- [x] Filtrar siempre por `company_id` y respetar scope del usuario.
 - [ ] Separar claramente capas de:
   - recoleccion de datos
   - normalizacion
@@ -84,23 +84,23 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ### 2.1 Payload estandar
 
-- [~] Soportar `report_variant`.
-- [~] Soportar `include_sections`.
-- [~] Soportar `display_options`.
-- [~] Soportar banderas auxiliares (`include_timeline`, `include_financials`, `include_attachments`, `include_account_summary`).
-- [ ] Soportar `group_by` consistente entre variantes.
+- [x] Soportar `report_variant`.
+- [x] Soportar `include_sections`.
+- [x] Soportar `display_options`.
+- [x] Soportar banderas auxiliares (`include_timeline`, `include_financials`, `include_attachments`, `include_account_summary`).
+- [x] Soportar `group_by` consistente entre variantes.
 - [ ] Soportar `orientation`/layout cuando aplique.
 - [ ] Soportar `entity_ids` explicitos cuando se necesite corte quirurgico.
-- [ ] Soportar `status_ids`, `cash_box_id`, `invoice_status`, `aging_bucket` y otros filtros por variante.
+- [~] Soportar `status_ids`, `cash_box_id`, `invoice_status`, `aging_bucket` y otros filtros por variante.
 
 ### 2.2 Reglas de validacion del payload
 
-- [ ] Validar formatos de fechas.
-- [ ] Validar consistencia `start_date <= end_date`.
+- [x] Validar formatos de fechas.
+- [x] Validar consistencia `start_date <= end_date`.
 - [ ] Validar combinaciones incompatibles entre variante y secciones.
 - [ ] Validar strings permitidos en `group_by`.
 - [ ] Validar strings permitidos en `timeline_order`.
-- [ ] Validar que `include_sections` solo contenga secciones soportadas.
+- [x] Validar que `include_sections` solo contenga secciones soportadas.
 - [ ] Validar que filtros por ids sean arrays de enteros positivos.
 
 ### 2.3 Versionado semantico del contrato
@@ -117,16 +117,16 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 ### 3.1 Tabla `reports`
 
 - [x] Persistir `company_id` en nuevas filas.
-- [ ] Persistir `client_id` en metadata estandarizada.
-- [ ] Persistir `report_variant` de forma estable.
-- [ ] Persistir `start_date` y `end_date` a nivel metadata estandar.
-- [ ] Persistir `generated_by_user_id`.
-- [ ] Persistir `include_sections`.
-- [ ] Persistir `display_options`.
-- [ ] Persistir `group_by`.
+- [x] Persistir `client_id` en metadata estandarizada.
+- [x] Persistir `report_variant` de forma estable.
+- [x] Persistir `start_date` y `end_date` a nivel metadata estandar.
+- [x] Persistir `generated_by_user_id`.
+- [x] Persistir `include_sections`.
+- [x] Persistir `display_options`.
+- [x] Persistir `group_by`.
 - [ ] Persistir entidad principal (`client`, `company`, `cash_box`, `invoice`, etc.).
-- [ ] Persistir ids relacionados (`job_ids`, `invoice_ids`, `payment_ids`, `receipt_ids`).
-- [ ] Persistir resumen numerico clave (totales, conteos, importes visibles).
+- [x] Persistir ids relacionados (`job_ids`, `invoice_ids`, `payment_ids`, `receipt_ids`).
+- [x] Persistir resumen numerico clave (totales, conteos, importes visibles).
 - [ ] Evaluar columna dedicada para `report_variant` si la metadata queda insuficiente para consultas.
 
 ### 3.2 Tabla `reports_history`
@@ -142,7 +142,7 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 - [ ] Poder reejecutar un reporte usando metadata persistida.
 - [ ] Definir si regenerar crea nuevo `file_id` y nuevo `report_id`, o nueva version del mismo reporte.
 - [ ] Definir criterio de deduplicacion futura por hash/firma del contenido.
-- [ ] Documentar estrategia de naming de archivo.
+- [x] Documentar estrategia de naming de archivo.
 
 ### 3.4 Consulta operativa de reportes
 
@@ -186,9 +186,9 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 - [x] Cliente.
 - [x] Variante.
 - [x] Company ID.
-- [ ] Tipo de informe legible.
+- [x] Tipo de informe legible.
 - [ ] Usuario que genero el reporte con nombre legible.
-- [ ] Codigo interno del reporte reutilizable.
+- [x] Codigo interno del reporte reutilizable.
 - [ ] Filtros aplicados visibles en el PDF.
 
 ### 5.2 Datos de empresa emisora
@@ -204,7 +204,7 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ### 5.3 Datos del cliente
 
-- [ ] `client_id`.
+- [x] `client_id`.
 - [ ] Codigo interno visible.
 - [ ] Razon social/nombre.
 - [ ] Nombre de fantasia.
@@ -219,7 +219,7 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ### 5.4 Datos de job
 
-- [ ] `job_id`.
+- [x] `job_id`.
 - [ ] UUID.
 - [ ] Codigo visible si existe.
 - [x] Carpeta.
@@ -248,8 +248,8 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 ### 5.5 Datos de job items
 
 - [x] Descripcion.
-- [ ] `job_item_id`.
-- [ ] Estado.
+- [x] `job_item_id`.
+- [x] Estado.
 - [ ] Detalle.
 - [ ] Diagnostico.
 - [ ] Solucion aplicada.
@@ -425,10 +425,10 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 - [x] Gasto cargado al cliente.
 - [x] Historial de pago relevante.
-- [ ] Factura emitida.
-- [ ] Recibo generado.
-- [ ] Pago aplicado a factura.
-- [ ] Saldo actualizado.
+- [x] Factura emitida.
+- [x] Recibo generado.
+- [x] Pago aplicado a factura.
+- [x] Saldo actualizado.
 
 ### 6.8 Render del timeline
 
@@ -445,50 +445,50 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ### 7.1 Variante `client_account_statement`
 
-- [ ] Crear/terminar variante dedicada en el backend.
-- [ ] Reusar patron actual de PDF + `files` + `reports`.
-- [ ] Definir payload estandar para cuenta corriente.
+- [x] Crear/terminar variante dedicada en el backend.
+- [x] Reusar patron actual de PDF + `files` + `reports`.
+- [x] Definir payload estandar para cuenta corriente.
 
 ### 7.2 Dataset de facturas
 
-- [ ] `invoice_id`.
-- [ ] Numero.
-- [ ] Fecha emision.
-- [ ] Fecha vencimiento.
-- [ ] Estado.
+- [x] `invoice_id`.
+- [x] Numero.
+- [x] Fecha emision.
+- [x] Fecha vencimiento.
+- [x] Estado.
 - [ ] Subtotal.
 - [ ] Impuestos.
-- [ ] Total.
-- [ ] Saldo pendiente.
+- [x] Total.
+- [x] Saldo pendiente.
 - [ ] Saldo cancelado.
 - [ ] Moneda.
 
 ### 7.3 Dataset de recibos
 
-- [ ] `receipt_id`.
+- [x] `receipt_id`.
 - [ ] Numero/codigo visible si existe.
-- [ ] Fecha.
-- [ ] Total.
+- [x] Fecha.
+- [x] Total.
 - [ ] Estado.
-- [ ] Comprobantes vinculados.
+- [x] Comprobantes vinculados.
 
 ### 7.4 Dataset de pagos y cargos
 
-- [ ] `payment_id`.
-- [ ] Fecha.
+- [x] `payment_id`.
+- [x] Fecha.
 - [ ] Concepto.
-- [ ] Importe.
-- [ ] Caja.
+- [x] Importe.
+- [x] Caja.
 - [ ] Medio de pago.
 - [ ] Observaciones.
-- [ ] Distinguir pago normal vs gasto trasladable.
+- [x] Distinguir pago normal vs gasto trasladable.
 
 ### 7.5 Aplicaciones factura-recibo
 
-- [ ] Factura.
-- [ ] Recibo.
-- [ ] Importe aplicado.
-- [ ] Fecha de aplicacion.
+- [x] Factura.
+- [x] Recibo.
+- [x] Importe aplicado.
+- [x] Fecha de aplicacion.
 - [ ] Saldo remanente.
 
 ### 7.6 Otros movimientos
@@ -500,22 +500,22 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ### 7.7 Resumen de cuenta
 
-- [ ] Total facturado.
-- [ ] Total cobrado.
-- [ ] Total pendiente.
-- [ ] Total vencido.
-- [ ] Total por vencer.
-- [ ] Total gastos trasladables.
-- [ ] Saldo neto del cliente.
+- [x] Total facturado.
+- [x] Total cobrado.
+- [x] Total pendiente.
+- [x] Total vencido.
+- [x] Total por vencer.
+- [x] Total gastos trasladables.
+- [x] Saldo neto del cliente.
 
 ### 7.8 Aging
 
-- [ ] Al dia.
-- [ ] Vencido 1-30.
-- [ ] Vencido 31-60.
-- [ ] Vencido 61-90.
-- [ ] Vencido +90.
-- [ ] Regla unica para computar buckets.
+- [x] Al dia.
+- [x] Vencido 1-30.
+- [x] Vencido 31-60.
+- [x] Vencido 61-90.
+- [x] Vencido +90.
+- [x] Regla unica para computar buckets.
 
 ### 7.9 Formato para reclamo
 
@@ -532,26 +532,26 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ### 8.1 Variante `accounting_general`
 
-- [ ] Crear/terminar variante dedicada.
-- [ ] Reusar `AccountingSummaryService` donde sirva.
+- [x] Crear/terminar variante dedicada.
+- [x] Reusar `AccountingSummaryService` donde sirva.
 - [ ] Definir cuando usar resumen vs `accounting_entries` detallado.
 
 ### 8.2 Resumen general por periodo
 
-- [ ] Ingresos totales.
-- [ ] Egresos totales.
-- [ ] Balance neto.
-- [ ] Movimientos por periodo.
+- [x] Ingresos totales.
+- [x] Egresos totales.
+- [x] Balance neto.
+- [x] Movimientos por periodo.
 - [ ] Comparativo entre periodos.
 
 ### 8.3 Resumen por caja
 
-- [ ] `cash_box_id`.
-- [ ] Nombre de caja.
+- [x] `cash_box_id`.
+- [x] Nombre de caja.
 - [ ] Saldo inicial.
-- [ ] Ingresos.
-- [ ] Egresos.
-- [ ] Saldo final.
+- [x] Ingresos.
+- [x] Egresos.
+- [x] Saldo final.
 - [ ] Cantidad de movimientos.
 - [ ] Diferencias/conciliacion.
 
@@ -602,7 +602,7 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ## 9. UI/API de soporte operativo
 
-- [ ] Definir requests en Postman/coleccion para cada variante.
+- [x] Definir requests en Postman/coleccion para cada variante.
 - [ ] Definir como la UI selecciona variante y secciones.
 - [ ] Definir presets reutilizables por modulo.
 - [ ] Definir defaults de filtros por ultima ejecucion.
@@ -614,10 +614,10 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ## 10. Documentacion tecnica necesaria
 
-- [ ] Actualizar `sisa.api/docs/reports-table.md` con nuevas variantes y metadata obligatoria.
-- [ ] Crear doc especifica para payload comun de reportes.
-- [ ] Crear doc especifica para `client_account_statement`.
-- [ ] Crear doc especifica para reportes economicos/contables.
+- [x] Actualizar `sisa.api/docs/reports-table.md` con nuevas variantes y metadata obligatoria.
+- [x] Crear doc especifica para payload comun de reportes.
+- [x] Crear doc especifica para `client_account_statement`.
+- [x] Crear doc especifica para reportes economicos/contables.
 - [ ] Documentar reglas de calculo economico de jobs/worklogs.
 - [ ] Documentar limites de performance y puntos ciegos actuales.
 - [ ] Documentar deudas conocidas de schema legacy.
@@ -668,25 +668,25 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ### 11.5 Cuenta corriente cliente
 
-- [ ] Facturas emitidas.
-- [ ] Pagos parciales.
+- [x] Facturas emitidas.
+- [x] Pagos parciales.
 - [ ] Pagos totales.
-- [ ] Recibos aplicados.
-- [ ] Saldo pendiente.
-- [ ] Aging correcto.
-- [ ] Gastos trasladables incluidos.
+- [x] Recibos aplicados.
+- [x] Saldo pendiente.
+- [x] Aging correcto.
+- [x] Gastos trasladables incluidos.
 - [ ] Cliente sin movimientos.
 - [ ] Cliente con muchos movimientos.
 
 ### 11.6 Economicos/contables
 
-- [ ] Resumen general.
-- [ ] Resumen por caja.
-- [ ] Ingresos.
-- [ ] Egresos.
-- [ ] Balance neto.
-- [ ] Movimientos por periodo.
-- [ ] Aislamiento por `company_id`.
+- [x] Resumen general.
+- [x] Resumen por caja.
+- [x] Ingresos.
+- [x] Egresos.
+- [x] Balance neto.
+- [x] Movimientos por periodo.
+- [x] Aislamiento por `company_id`.
 - [ ] Datos vacios.
 - [ ] Cajas sin movimientos.
 
@@ -694,10 +694,10 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 - [x] `company_id` en `reports`.
 - [x] `company_id` en `reports_history`.
-- [ ] `client_id` en metadata consistente.
-- [ ] `report_variant` persistido.
-- [ ] `start_date`/`end_date` persistidos.
-- [ ] `include_sections` persistidas.
+- [x] `client_id` en metadata consistente.
+- [x] `report_variant` persistido.
+- [x] `start_date`/`end_date` persistidos.
+- [x] `include_sections` persistidas.
 - [ ] Regeneracion de reporte.
 - [ ] Historial de regeneracion.
 - [ ] Descarga posterior por `/reports`/`/files`.
@@ -764,7 +764,7 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ### Tramo A - consolidacion del operativo de jobs
 
-- [~] Variantes y secciones en endpoint actual.
+- [x] Variantes y secciones en endpoint actual.
 - [~] Worklogs + participants + tarifas.
 - [~] Timeline inicial.
 - [~] Gastos cliente desde `payments`.
@@ -773,16 +773,16 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ### Tramo B - cuenta corriente por cliente
 
-- [ ] Variante `client_account_statement`.
-- [ ] Facturas + recibos + aplicaciones.
-- [ ] Saldo + aging.
+- [x] Variante `client_account_statement`.
+- [x] Facturas + recibos + aplicaciones.
+- [x] Saldo + aging.
 - [ ] Formato enviable a cliente.
 
 ### Tramo C - economicos/contables
 
-- [ ] Variante `accounting_general`.
-- [ ] Resumen por caja.
-- [ ] Resumen general company.
+- [x] Variante `accounting_general`.
+- [x] Resumen por caja.
+- [x] Resumen general company.
 - [ ] Ranking y vistas ejecutivas.
 - [ ] Libro/detalle contable.
 
@@ -801,9 +801,9 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 Se considera cumplido el objetivo de transformacion cuando:
 
 - [ ] el informe operativo de jobs puede mostrar de forma confiable jobs + items + worklogs + participantes + tarifas + timeline + gastos trasladables
-- [ ] existe estado de cuenta PDF por cliente con saldo, recibos, pagos y aging
+- [x] existe estado de cuenta PDF por cliente con saldo, recibos, pagos y aging
 - [ ] existen reportes economicos/contables por company y por caja
-- [ ] toda generacion queda trazada en `reports` y `reports_history`
+- [x] toda generacion queda trazada en `reports` y `reports_history`
 - [ ] la metadata permite reubicar y regenerar reportes
 - [ ] hay QA automatizado focalizado para filtros, dataset, timeline, persistencia y contabilidad
 - [ ] existe checklist/manual suficiente para operar y mantener el modulo sin redescubrirlo
