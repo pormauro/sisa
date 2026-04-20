@@ -207,6 +207,10 @@ Que cambio:
 - se creo `sisa.ui/app/reports/[id].tsx` para detalle, historial basico, apertura de PDF y regeneracion desde UI
 - se alineo `sisa.ui/src/constants/permissionCatalog.ts` y `sisa.ui/docs/features/reports-api.md` con `regenerateReport` y el contrato nuevo de `/reports`
 - se actualizaron `sisa.ui/app/clients/[id].tsx` y `sisa.ui/app/clients/viewModal.tsx` para generar variantes nuevas (`full_detailed`, `technical_timeline`, `client_account_statement`, `accounting_general`, `landscape_summary`) sobre el endpoint comun y refrescar la bandeja de reportes
+- se alineo `sisa.ui/app/invoices/[id].tsx` para que la generacion/apertura de PDF de factura refresque la bandeja comun de `reports` y derive al detalle del reporte cuando el backend devuelve `report_id`
+- se agrego un acceso rapido al centro de reportes desde `sisa.ui/app/accounting/summary.tsx` con filtro inicial para reportes contables
+- se extrajo `sisa.ui/src/features/reports/components/ClientReportModal.tsx` para dejar un unico modal compartido de generacion de reportes de cliente y reducir drift entre `clients/[id]` y `clients/viewModal`
+- `sisa.ui/app/reports/index.tsx` ahora acepta `start_date` y `end_date` por params para aterrizar desde otros modulos con filtros precargados
 
 Validacion:
 
@@ -217,6 +221,8 @@ Validacion:
 - `npm run lint` -> pasa despues del refactor del centro de reportes
 - `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> pasa con el nuevo hub generico de reportes
 - `npm run lint` -> pasa despues de conectar los generadores contextuales de cliente al hub de reportes
+- `npm run lint` -> pasa despues de conectar invoices + accesso contable al hub de reportes
+- `npm run lint` -> pasa despues de unificar el modal compartido de cliente y aceptar filtros precargados en `/reports`
 
 Notas:
 
@@ -227,6 +233,8 @@ Notas:
 - `/reports` ya tiene un primer corte mas util para la app porque puede listar y resolver reportes dentro del scope real del usuario, pero todavia faltan filtros por entidad principal, detalle/historial de UI y regeneracion generalizada para invoices/payments
 - la UI ya puede listar, abrir, inspeccionar y regenerar reportes de jobs desde un centro generico, aunque todavia falta conectar los generadores contextuales de clientes/contabilidad al nuevo flujo comun
 - los generadores de cliente ya alimentan el flujo comun y pueden derivar al detalle del reporte creado, aunque contabilidad global e invoices siguen sin integracion equivalente
+- invoices ya alimenta la bandeja comun cuando el backend devuelve `report_id`, y contabilidad global ya tiene punto de entrada al hub; sigue faltando profundizar generacion contable contextual desde UI
+- la duplicacion mas visible de UI de reportes en cliente ya quedo reducida a un componente compartido; sigue pendiente una generacion contable verdaderamente global desde UI si el backend expone un contrato mas directo para ese caso
 - siguen pendientes el detalle contable mas profundo por caja/libro, el refinamiento visual, la regeneracion generalizada mas alla de jobs y la cobertura QA de performance/escenarios de alto volumen
 
 ### Limpieza de baseline
