@@ -150,6 +150,14 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 - [ ] Permitir ubicar rapidamente el ultimo reporte de una entidad/rango.
 - [ ] Permitir listar reportes previos de un cliente para reclamos o reenvios.
 
+### 3.5 Integracion UI de reportes
+
+- [x] Convertir la pantalla `/reports` en una bandeja generica y no solo payment-only.
+- [x] Permitir abrir el detalle de un reporte desde UI.
+- [x] Permitir ver historial basico del reporte desde UI.
+- [x] Permitir regenerar desde UI cuando exista permiso `regenerateReport`.
+- [ ] Conectar generadores contextuales (clientes/contabilidad/invoices/payments) al hub comun de reportes.
+
 ---
 
 ## 4. Dataset assembler comun
