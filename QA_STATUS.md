@@ -48,13 +48,14 @@ Validacion:
 
 ## Estado actual
 
-- Fase: base inicial de QA establecida
+- Fase: base inicial de QA establecida + transformacion de reportes completada
 - Principio activo: el QA de sync es generico y prioriza la operacion en campo, no solamente `jobs`
 - Topologia confirmada: raiz compartida mas dos proyectos independientes (`sisa.api`, `sisa.ui`)
 - Existe un helper compartido de baseline y actualmente pasa en este entorno
 - Se corrigio un problema de runtime ligado a handles SQLite liberados que podia romper corridas manuales en dispositivo
 - Se documentaron 5 escenarios manuales en runbook multi-dispositivo
 - Se cubrio delete propagation con tests automatizados completos (tombstones en server, pull, bootstrap, reconcile, verify)
+- Transformacion de reportes completada: variantes multiples, hub unificado, filtros extendidos, regeneracion habilitada
 
 ## Decisiones tomadas
 

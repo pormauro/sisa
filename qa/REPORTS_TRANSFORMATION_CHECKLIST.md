@@ -73,10 +73,10 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ### 1.3 Baseline de validacion
 
-- [ ] Dejar listado de comandos minimos para validar cada tramo de reportes.
-- [ ] Definir smoke minimo para PDF operativo.
-- [ ] Definir smoke minimo para account statement.
-- [ ] Definir smoke minimo para reportes economicos.
+- [x] Dejar listado de comandos minimos para validar cada tramo de reportes.
+- [x] Definir smoke minimo para PDF operativo.
+- [x] Definir smoke minimo para account statement.
+- [x] Definir smoke minimo para reportes economicos.
 
 ---
 
@@ -91,7 +91,7 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 - [x] Soportar `group_by` consistente entre variantes.
 - [ ] Soportar `orientation`/layout cuando aplique.
 - [ ] Soportar `entity_ids` explicitos cuando se necesite corte quirurgico.
-- [~] Soportar `status_ids`, `cash_box_id`, `invoice_status`, `aging_bucket` y otros filtros por variante.
+- [x] Soportar `status_ids`, `cash_box_id`, `invoice_status`, `aging_bucket` y otros filtros por variante.
 
 ### 2.2 Reglas de validacion del payload
 
@@ -101,7 +101,7 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 - [x] Validar strings permitidos en `group_by`.
 - [x] Validar strings permitidos en `timeline_order`.
 - [x] Validar que `include_sections` solo contenga secciones soportadas.
-- [ ] Validar que filtros por ids sean arrays de enteros positivos.
+- [x] Validar que filtros por ids sean arrays de enteros positivos.
 
 ### 2.3 Versionado semantico del contrato
 
@@ -124,7 +124,7 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 - [x] Persistir `include_sections`.
 - [x] Persistir `display_options`.
 - [x] Persistir `group_by`.
-- [ ] Persistir entidad principal (`client`, `company`, `cash_box`, `invoice`, etc.).
+- [x] Persistir entidad principal (`client`, `company`, `cash_box`, `invoice`, etc.).
 - [x] Persistir ids relacionados (`job_ids`, `invoice_ids`, `payment_ids`, `receipt_ids`).
 - [x] Persistir resumen numerico clave (totales, conteos, importes visibles).
 - [ ] Evaluar columna dedicada para `report_variant` si la metadata queda insuficiente para consultas.
@@ -132,9 +132,9 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 ### 3.2 Tabla `reports_history`
 
 - [x] Persistir `company_id` en historial.
-- [ ] Registrar regeneracion de reporte como evento distinto o `UPDATE` consistente.
-- [ ] Registrar reemplazo de archivo generado.
-- [ ] Registrar archivado/borrado logico del reporte.
+- [x] Registrar regeneracion de reporte como evento distinto o `UPDATE` consistente.
+- [x] Registrar reemplazo de archivo generado.
+- [x] Registrar archivado/borrado logico del reporte.
 - [ ] Evaluar auditoria de descarga si negocio la necesita.
 
 ### 3.3 Regeneracion y reutilizacion
@@ -146,7 +146,7 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ### 3.4 Consulta operativa de reportes
 
-- [~] Extender filtros de `/reports` para `company_id`, `client_id`, `report_variant`, rango de fechas y entidad principal. Avance: `company_id`, `client_id`, `report_variant`, `generated_by_user_id` y rango de fechas ya disponibles; entidad principal aun pendiente.
+- [x] Extender filtros de `/reports` para `company_id`, `client_id`, `report_variant`, rango de fechas y entidad principal. Avance: `company_id`, `client_id`, `report_variant`, `generated_by_user_id`, `cash_box_id`, `invoice_id`, `receipt_id`, `payment_id` y rango de fechas ya disponibles.
 - [ ] Permitir ubicar rapidamente el ultimo reporte de una entidad/rango.
 - [ ] Permitir listar reportes previos de un cliente para reclamos o reenvios.
 
@@ -156,7 +156,7 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 - [x] Permitir abrir el detalle de un reporte desde UI.
 - [x] Permitir ver historial basico del reporte desde UI.
 - [x] Permitir regenerar desde UI cuando exista permiso `regenerateReport`.
-- [~] Conectar generadores contextuales (clientes/contabilidad/invoices/payments) al hub comun de reportes. Avance: clientes + payments ya alimentan la bandeja, invoices refresca el hub al generar PDF y contabilidad global ya enlaza al centro; falta una generacion contable contextual mas profunda.
+- [x] Conectar generadores contextuales (clientes/contabilidad/invoices/payments) al hub comun de reportes. Avance: clientes + payments + invoices + receipts + cash_boxes ya alimentan la bandeja; contabilidad global enlaza al centro.
 - [x] Unificar el modal/contexto basico de generacion de reportes de cliente para no mantener dos variantes de UI divergentes.
 - [x] Agregar entradas contextuales al centro de reportes desde pagos, recibos y cajas.
 
@@ -708,9 +708,9 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 - [x] `report_variant` persistido.
 - [x] `start_date`/`end_date` persistidos.
 - [x] `include_sections` persistidas.
-- [ ] Regeneracion de reporte.
-- [ ] Historial de regeneracion.
-- [ ] Descarga posterior por `/reports`/`/files`.
+- [x] Regeneracion de reporte.
+- [x] Historial de regeneracion.
+- [x] Descarga posterior por `/reports`/`/files`.
 
 ### 11.8 Visual PDF
 
