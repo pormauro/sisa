@@ -146,7 +146,7 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ### 3.4 Consulta operativa de reportes
 
-- [ ] Extender filtros de `/reports` para `company_id`, `client_id`, `report_variant`, rango de fechas y entidad principal.
+- [~] Extender filtros de `/reports` para `company_id`, `client_id`, `report_variant`, rango de fechas y entidad principal. Avance: `company_id`, `client_id`, `report_variant`, `generated_by_user_id` y rango de fechas ya disponibles; entidad principal aun pendiente.
 - [ ] Permitir ubicar rapidamente el ultimo reporte de una entidad/rango.
 - [ ] Permitir listar reportes previos de un cliente para reclamos o reenvios.
 

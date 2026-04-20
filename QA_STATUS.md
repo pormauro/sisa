@@ -2,7 +2,7 @@
 
 ## Ultima actualizacion
 
-- Fecha: 2026-04-19
+- Fecha: 2026-04-20
 - Corrida baseline: PASS
 - PHPUnit suite: ~60 tests pasan (ruido de conexion filtrado)
 - Lint: PASS
@@ -197,12 +197,18 @@ Que cambio:
   - `include_sections` incompatibles con la variante
   - combinaciones invalidas como `status_ids` o `include_timeline` sobre `accounting_general`/`client_account_statement`
 - se expandio `sisa.api/tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` para cubrir estas reglas de validacion endurecidas
+- se endurecio `sisa.api/src/Controllers/ReportsController.php` para recortar `/reports` al scope de companias aprobadas del usuario y validar `company_id` en create/update/list/get/delete/history/regenerate
+- se amplio `sisa.api/src/Models/Reports.php` para soportar consulta accesible por `company_scope` y filtros operativos por metadata (`client_id`, `report_variant`, `generated_by_user_id`, `start_date`, `end_date`)
+- se agrego `regenerateReport` al catalogo de permisos de reportes en `sisa.api/src/Models/Permission.php` y una migracion incremental en `sisa.api/update_install.php` para sembrarlo en instalaciones existentes
+- se actualizo `sisa.api/docs/reports-table.md` y `sisa.api/docs/reports-pdf-variants.md` con el endpoint `POST /reports/{id}/regenerate` y los nuevos filtros operativos de `GET /reports`
+- se expandieron `sisa.api/tests/Models/ReportsTest.php` y `sisa.api/tests/Controllers/ReportsControllerRegenerateTest.php` para cubrir scope/filtros de reportes y presencia del permiso nuevo
 
 Validacion:
 
 - `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Models/ReportsTest.php` -> pasa (7 tests, 29 assertions)
 - `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Models/ReportsTest.php tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php` -> pasa (15 tests, 74 assertions)
 - `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Models/ReportsTest.php tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php` -> pasa despues del hardening (17 tests, 80 assertions)
+- `vendor/bin/phpunit tests/Models/ReportsTest.php tests/Controllers/ReportsControllerRegenerateTest.php` -> pasa (7 tests, 24 assertions)
 
 Notas:
 
@@ -210,7 +216,8 @@ Notas:
 - ya existe una guia/checklist ejecutable para completar el resto del roadmap de reportes sin redescubrir alcance ni criterios
 - ya existe un primer corte ejecutable de estado de cuenta cliente y reporte economico general dentro del mismo endpoint extendido
 - el contrato del payload ahora esta mas cerrado y falla rapido ante combinaciones inconsistentes, reduciendo riesgo de PDFs mal armados o ambiguos
-- siguen pendientes el hardening de metadata/regeneracion, el detalle contable mas profundo por caja/libro, el refinamiento visual y la cobertura QA de performance/escenarios de alto volumen
+- `/reports` ya tiene un primer corte mas util para la app porque puede listar y resolver reportes dentro del scope real del usuario, pero todavia faltan filtros por entidad principal, detalle/historial de UI y regeneracion generalizada para invoices/payments
+- siguen pendientes el detalle contable mas profundo por caja/libro, el refinamiento visual, la regeneracion generalizada mas alla de jobs y la cobertura QA de performance/escenarios de alto volumen
 
 ### Limpieza de baseline
 
