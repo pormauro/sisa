@@ -211,6 +211,7 @@ Que cambio:
 - se agrego un acceso rapido al centro de reportes desde `sisa.ui/app/accounting/summary.tsx` con filtro inicial para reportes contables
 - se extrajo `sisa.ui/src/features/reports/components/ClientReportModal.tsx` para dejar un unico modal compartido de generacion de reportes de cliente y reducir drift entre `clients/[id]` y `clients/viewModal`
 - `sisa.ui/app/reports/index.tsx` ahora acepta `start_date` y `end_date` por params para aterrizar desde otros modulos con filtros precargados
+- se agregaron accesos contextuales al centro de reportes desde `sisa.ui/app/payments/index.tsx`, `sisa.ui/app/receipts/index.tsx` y `sisa.ui/app/cash_boxes/index.tsx` con filtros iniciales alineados al modulo origen
 
 Validacion:
 
@@ -223,6 +224,7 @@ Validacion:
 - `npm run lint` -> pasa despues de conectar los generadores contextuales de cliente al hub de reportes
 - `npm run lint` -> pasa despues de conectar invoices + accesso contable al hub de reportes
 - `npm run lint` -> pasa despues de unificar el modal compartido de cliente y aceptar filtros precargados en `/reports`
+- `npm run lint` -> pasa despues de sumar accesos contextuales al centro de reportes desde pagos/recibos/cajas
 
 Notas:
 
@@ -235,6 +237,7 @@ Notas:
 - los generadores de cliente ya alimentan el flujo comun y pueden derivar al detalle del reporte creado, aunque contabilidad global e invoices siguen sin integracion equivalente
 - invoices ya alimenta la bandeja comun cuando el backend devuelve `report_id`, y contabilidad global ya tiene punto de entrada al hub; sigue faltando profundizar generacion contable contextual desde UI
 - la duplicacion mas visible de UI de reportes en cliente ya quedo reducida a un componente compartido; sigue pendiente una generacion contable verdaderamente global desde UI si el backend expone un contrato mas directo para ese caso
+- la navegacion hacia `/reports` ya esta mejor distribuida en modulos operativos/contables, aunque todavia faltan filtros backend por entidad principal/caja para que esos aterrizajes sean mas precisos
 - siguen pendientes el detalle contable mas profundo por caja/libro, el refinamiento visual, la regeneracion generalizada mas alla de jobs y la cobertura QA de performance/escenarios de alto volumen
 
 ### Limpieza de baseline
