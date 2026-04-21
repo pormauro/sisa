@@ -714,15 +714,15 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ### 11.8 Visual PDF
 
-- [ ] Encabezado correcto.
-- [ ] Pie correcto.
-- [ ] Saltos de pagina razonables.
-- [ ] Tablas largas.
-- [ ] Textos largos.
-- [ ] Imagenes.
-- [ ] Resumen final.
-- [ ] Vertical/horizontal.
-- [ ] Legibilidad en A4 real.
+- [x] Encabezado correcto.
+- [x] Pie correcto con paginacion.
+- [x] Saltos de pagina razonables (page-break-inside: avoid).
+- [x] Tablas largas con estilos.
+- [x] Textos largos con word-wrap.
+- [x] Imagenes embebidas.
+- [x] Resumen final.
+- [ ] Vertical/horizontal (landscape optional).
+- [x] Legibilidad en A4 real (margenes, fuentes).
 
 ### 11.9 Performance
 
@@ -738,12 +738,12 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 ## 12. QA manual y runbooks
 
-- [ ] Crear runbook manual para PDF operativo completo.
-- [ ] Crear runbook manual para cuenta corriente cliente.
-- [ ] Crear runbook manual para informe economico por caja.
-- [ ] Crear runbook manual para informe economico general por company.
-- [ ] Definir evidencia esperada en cada corrida manual.
-- [ ] Definir dataset minimo de prueba para reportes.
+- [x] Crear runbook manual para PDF operativo completo.
+- [x] Crear runbook manual para cuenta corriente cliente.
+- [x] Crear runbook manual para informe economico por caja.
+- [x] Crear runbook manual para informe economico general por company.
+- [x] Definir evidencia esperada en cada corrida manual.
+- [x] Definir dataset minimo de prueba para reportes.
 
 ---
 
@@ -810,10 +810,10 @@ Este checklist esta pensado para ejecutarse por etapas pequenas, dejando evidenc
 
 Se considera cumplido el objetivo de transformacion cuando:
 
-- [ ] el informe operativo de jobs puede mostrar de forma confiable jobs + items + worklogs + participantes + tarifas + timeline + gastos trasladables
+- [x] el informe operativo de jobs puede mostrar de forma confiable jobs + items + worklogs + participantes + tarifas + timeline + gastos trasladables
 - [x] existe estado de cuenta PDF por cliente con saldo, recibos, pagos y aging
-- [ ] existen reportes economicos/contables por company y por caja
+- [x] existen reportes economicos/contables por company y por caja
 - [x] toda generacion queda trazada en `reports` y `reports_history`
-- [ ] la metadata permite reubicar y regenerar reportes
-- [ ] hay QA automatizado focalizado para filtros, dataset, timeline, persistencia y contabilidad
-- [ ] existe checklist/manual suficiente para operar y mantener el modulo sin redescubrirlo
+- [x] la metadata permite reubicar y regenerar reportes
+- [x] hay QA automatizado focalizado para filtros, dataset, timeline, persistencia y contabilidad
+- [x] existe checklist/manual suficiente para operar y mantener el modulo sin redescubrirlo
