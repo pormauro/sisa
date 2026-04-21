@@ -9,6 +9,54 @@
 - Cache guard: PASS
 - Sync smoke: PASS
 - Tests integracion multi-dispositivo: 119/119 PASS
+- Transformacion de reportes: COMPLETADA
+## Transformacion de Reportes
+
+Estado: completado
+
+Que cambio:
+
+- sistema dePDFs/reportes transformado en plataforma completa de informes
+- variantes multiples: full_detailed, technical_timeline, client_account_statement, accounting_general, landscape_summary
+- hub unificado de reportes en frontend
+- filtros extendidos: company_id, client_id, cash_box_id, invoice_id, receipt_id, payment_id, fechas
+- regeneracion con metadata persistida
+- visual PDF mejorado con paginacion y saltos de pagina
+- Postman actualizado con ejemplos
+
+Archivos creados/modificados:
+
+Backend:
+- sisa.api/src/Controllers/JobReportsController.php - variantes multiples
+- sisa.api/src/Controllers/ReportsController.php - CRUD + regenerate
+- sisa.api/src/Models/Reports.php - filtros extendidos
+- sisa.api/src/History/ReportsHistory.php - trazabilidad
+- sisa.api/docs/reports-pdf-variants.md - documentacion
+- sisa.api/docs/reports-table.md - schema
+
+Frontend:
+- sisa.ui/contexts/ReportsContext.tsx - estado global
+- sisa.ui/app/reports/index.tsx - hub unificado
+- sisa.ui/app/reports/[id].tsx - detalle
+- sisa.ui/src/features/reports/components/ClientReportModal.tsx - modal compartido
+
+Documentacion:
+- qa/REPORTS_TRANSFORMATION_CHECKLIST.md - checklist completo
+- qa/REPORTS_RUNBOOK.md - validacion manual
+- sisa.api/Sistema.postman_collection.json - ejemplos actualizados
+
+Variantes implementadas:
+
+1. full_detailed - reporte operativo de jobs
+2. technical_timeline - timeline tipo messegeria
+3. client_account_statement - estado de cuenta con aging
+4. accounting_general - resumen contable por caja
+5. landscape_summary - resumen horizontal
+
+Validacion:
+- vendor/bin/phpunit --filter Reports -> 7 tests pass
+- powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1 -> pasa
+
 ## Tests de Integracion Multi-Dispositivo
 
 Estado: completado
