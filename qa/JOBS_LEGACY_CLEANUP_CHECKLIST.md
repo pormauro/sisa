@@ -104,7 +104,7 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
   - [x] suite focal de PDF ya alineada con la salida vigente
 - [x] corregidos fallbacks engañosos del PDF (`Tarifa manual`) y renderizado basico de worklogs crudos
 - [ ] agregar tests que aseguren:
-  - [ ] participantes salen de `worklogs`
+  - [x] participantes salen de `worklogs`
   - [ ] costo no sale de `jobs`
   - [ ] adjuntos no salen de `jobs`
 - [ ] correr baseline compartido

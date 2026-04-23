@@ -58,6 +58,8 @@ Avance adicional en PDFs:
 - `sisa.api/src/Controllers/JobReportsController.php` ahora renderiza mejor worklogs crudos en HTML de PDF, derivando horario y duracion desde `started_at`/`ended_at`/`duration_minutes`
 - cuando no existe snapshot tarifario, el PDF deja de mostrar `Tarifa manual` como falso fallback y pasa a mostrar `Sin tarifa definida`
 - se agrego cobertura en `sisa.api/tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` para estos casos de salida HTML
+- `normalizeWorkLogForPdfRender()` ahora cae al `user_id` del worklog cuando no hay participantes explicitos y deriva `ended_at_label` desde `duration_minutes` si falta `ended_at`
+- validacion focal actual de PDFs: `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` -> PASS (12 tests, 50 assertions)
 ## Transformacion de Reportes
 
 Estado: completado
