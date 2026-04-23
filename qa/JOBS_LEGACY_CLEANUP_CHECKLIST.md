@@ -75,9 +75,9 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
 
 ### Sync
 
-- [ ] `SyncOperationsController`: sacar esos campos del payload canonical de `jobs`
-- [ ] `SyncEventGenerator`: dejar de emitir esos campos en eventos de jobs
-- [ ] revisar bootstrap/reconcile para no reintroducirlos por compatibilidad
+- [x] `SyncOperationsController`: sacar esos campos del payload canonical de `jobs`
+- [x] `SyncEventGenerator`: dejar de emitir esos campos en eventos de jobs
+- [x] revisar bootstrap/reconcile para no reintroducirlos por compatibilidad
 
 ### Validacion backend
 
@@ -123,4 +123,5 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
 - [x] reportes backend ya dejaron de leer participantes/tarifa/adjuntos legacy del job
 - [x] migracion `phase27` preparada para eliminar metadata legacy restante de `jobs`
 - [x] `JobsController` y `SyncOperationsController` ya descartan metadata legacy al procesar payloads de `jobs`
-- [ ] pendiente limpieza final de `participants/tariff_id/manual_amount/attached_files` en sync/backend/schema
+- [x] capa sync/backend principal alineada para no reemitir metadata legacy en `jobs`
+- [ ] pendiente ejecutar `phase27` en entorno real y cerrar residuos de tests/deuda legacy

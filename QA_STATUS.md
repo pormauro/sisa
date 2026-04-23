@@ -38,6 +38,7 @@ Avance adicional en esta sesion:
 - `sisa.api/src/Controllers/JobReportsController.php` ya no lee `jobs.participants`, `jobs.manual_amount`, `jobs.tariff_id` ni `jobs.attached_files`; ahora usa `worklogs`, tarifa del cliente y `file_attachments`
 - se agrego `sisa.api/scripts/migrations/jobs-remove-legacy-metadata-columns-phase27.php` y se registro en `sisa.api/install.php` + `sisa.api/update_install.php` para eliminar `participants`, `tariff_id`, `manual_amount` y `attached_files` de `jobs`
 - `sisa.api/src/Controllers/JobsController.php` y `sisa.api/src/Controllers/SyncOperationsController.php` ahora descartan esos campos legacy cuando reciben payloads de `jobs`
+- verificado que `sisa.api/src/Services/SyncEventGenerator.php` no los emite en `serializeJob()`, por lo que la capa canonical de eventos de `jobs` ya queda alineada con el modelo limpio
 
 Validacion parcial:
 
