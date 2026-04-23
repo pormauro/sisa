@@ -99,6 +99,9 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
 ## Etapa 4 - tests, compatibilidad y cierre
 
 - [x] actualizar tests que construyen jobs con esos campos legacy
+- [x] agregar/ajustar tests base para sostener la limpieza de jobs legacy
+  - [x] suite focal de controller CRUD de jobs ya aislada del bootstrap real
+  - [x] suite focal de PDF ya alineada con la salida vigente
 - [ ] agregar tests que aseguren:
   - [ ] participantes salen de `worklogs`
   - [ ] costo no sale de `jobs`

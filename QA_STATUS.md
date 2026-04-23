@@ -50,7 +50,8 @@ Actualizacion posterior de tests:
 
 - `sisa.api/tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` fue corregido para validar el titulo real vigente del reporte contable
 - `sisa.api/src/Controllers/JobsController.php` ahora permite inyectar `SyncEventGenerator` y `JobCascadeDeleteService`, de modo que `sisa.api/tests/Controllers/JobsControllerCrudOfflineFirstTest.php` ya no dependa del constructor real de `PaymentTemplates`
-- la corrida focal sigue mostrando la linea de conexion a DB ya documentada en el baseline; tratarla como ruido de setup hasta aislarla por completo de la bootstrap global de PHPUnit
+- se agrego tambien inyeccion de `FolderScopeService` en `JobsController` para terminar de aislar la suite CRUD del acceso real a base
+- validacion focal actual: `vendor/bin/phpunit tests/Controllers/JobsControllerCrudOfflineFirstTest.php tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` -> PASS (12 tests, 56 assertions)
 ## Transformacion de Reportes
 
 Estado: completado
