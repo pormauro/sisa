@@ -35,6 +35,8 @@ Avance adicional en esta sesion:
 - `sisa.ui/app/jobs/viewModal.tsx` ahora toma participantes desde `worklogs` y adjuntos desde `file_attachments`
 - `sisa.ui/hooks/useClientFinalizedJobTotals.ts`, `sisa.ui/app/clients/finalizedJobs.tsx`, `sisa.ui/app/invoices/create.tsx` y `sisa.ui/app/invoices/index.tsx` dejaron de depender de `job.manual_amount` y `job.tariff_id`, usando tarifa del cliente como politica activa
 - `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` ahora limpian `participants`, `tariff_id`, `manual_amount` y `attached_files` antes de hidratar snapshots y jobs locales
+- `sisa.api/src/Controllers/JobReportsController.php` ya no lee `jobs.participants`, `jobs.manual_amount`, `jobs.tariff_id` ni `jobs.attached_files`; ahora usa `worklogs`, tarifa del cliente y `file_attachments`
+- se agrego `sisa.api/scripts/migrations/jobs-remove-legacy-metadata-columns-phase27.php` y se registro en `sisa.api/install.php` + `sisa.api/update_install.php` para eliminar `participants`, `tariff_id`, `manual_amount` y `attached_files` de `jobs`
 
 Validacion parcial:
 

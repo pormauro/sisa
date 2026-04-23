@@ -68,9 +68,9 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
 ### Controladores
 
 - [ ] `JobsController`: ignorar o rechazar `participants`, `tariff_id`, `manual_amount`, `attached_files` en create/update
-- [ ] `JobReportsController`: sacar lectura de `jobs.participants`
-- [ ] `JobReportsController`: sacar fallback de costo desde `jobs.manual_amount` y `jobs.tariff_id`
-- [ ] `JobReportsController`: sacar adjuntos desde `jobs.attached_files`
+- [x] `JobReportsController`: sacar lectura de `jobs.participants`
+- [x] `JobReportsController`: sacar fallback de costo desde `jobs.manual_amount` y `jobs.tariff_id`
+- [x] `JobReportsController`: sacar adjuntos desde `jobs.attached_files`
 - [ ] `InvoicesController`: no depender de metadata legacy del job para adjuntos/costos
 
 ### Sync
@@ -88,13 +88,13 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
 
 ## Etapa 3 - limpieza de schema y migraciones
 
-- [ ] agregar migracion para `DROP COLUMN participants` en `jobs`
-- [ ] agregar migracion para `DROP COLUMN tariff_id` en `jobs`
-- [ ] agregar migracion para `DROP COLUMN manual_amount` en `jobs`
-- [ ] agregar migracion para `DROP COLUMN attached_files` en `jobs`
+- [x] agregar migracion para `DROP COLUMN participants` en `jobs`
+- [x] agregar migracion para `DROP COLUMN tariff_id` en `jobs`
+- [x] agregar migracion para `DROP COLUMN manual_amount` en `jobs`
+- [x] agregar migracion para `DROP COLUMN attached_files` en `jobs`
 - [ ] revisar si `jobs_history` necesita drop fisico o alcanza con snapshot JSON
-- [ ] actualizar `install.php` para que no recree esas columnas
-- [ ] actualizar `update_install.php` para registrar la fase de limpieza
+- [x] actualizar `install.php` para que no recree esas columnas
+- [x] actualizar `update_install.php` para registrar la fase de limpieza
 
 ## Etapa 4 - tests, compatibilidad y cierre
 
@@ -120,4 +120,6 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
 - [x] iniciada migracion de UI de jobs/finalizados/calendario
 - [x] limpieza frontend principal iniciada y `JobsContext` ya no expone esos campos
 - [x] bootstrap y pull sync del frontend ya limpian campos legacy antes de hidratar `jobs`
+- [x] reportes backend ya dejaron de leer participantes/tarifa/adjuntos legacy del job
+- [x] migracion `phase27` preparada para eliminar metadata legacy restante de `jobs`
 - [ ] pendiente limpieza final de `participants/tariff_id/manual_amount/attached_files` en sync/backend/schema
