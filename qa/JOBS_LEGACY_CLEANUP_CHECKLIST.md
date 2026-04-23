@@ -25,7 +25,7 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
 
 - [x] confirmar que `job_date`, `start_time` y `end_time` ya salieron de `jobs`
 - [ ] cerrar decision final de precio:
-  - [ ] costo deriva siempre del cliente/tarifa actual
+  - [x] costo deriva siempre del cliente/tarifa actual
   - [ ] costo deriva de snapshot por `work_log`
   - [ ] costo deriva solo del `invoice_item`
 - [ ] cerrar decision final de participantes visibles en reportes:
@@ -39,24 +39,24 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
 ### Modelo y contextos
 
 - [x] sacar `job_date`, `start_time` y `end_time` del flujo principal de `JobsContext`
-- [ ] sacar `participants`, `tariff_id`, `manual_amount` y `attached_files` del tipo `Job` en `sisa.ui/contexts/JobsContext.tsx`
-- [ ] sacar serializacion de esos campos en `addJob` y `updateJob`
+- [x] sacar `participants`, `tariff_id`, `manual_amount` y `attached_files` del tipo `Job` en `sisa.ui/contexts/JobsContext.tsx`
+- [x] sacar serializacion de esos campos en `addJob` y `updateJob`
 
 ### Pantallas y hooks
 
-- [ ] reemplazar participantes del job por participantes calculados desde `worklogs` en `sisa.ui/app/jobs/viewModal.tsx`
-- [ ] reemplazar adjuntos del job por carga desde `file_attachments` en `sisa.ui/app/jobs/viewModal.tsx`
+- [x] reemplazar participantes del job por participantes calculados desde `worklogs` en `sisa.ui/app/jobs/viewModal.tsx`
+- [x] reemplazar adjuntos del job por carga desde `file_attachments` en `sisa.ui/app/jobs/viewModal.tsx`
 - [ ] quitar fallback de `manual_amount` y `tariff_id` en:
-  - [ ] `sisa.ui/hooks/useClientFinalizedJobTotals.ts`
-  - [ ] `sisa.ui/app/clients/finalizedJobs.tsx`
-  - [ ] `sisa.ui/app/invoices/create.tsx`
-  - [ ] `sisa.ui/app/invoices/index.tsx`
+  - [x] `sisa.ui/hooks/useClientFinalizedJobTotals.ts`
+  - [x] `sisa.ui/app/clients/finalizedJobs.tsx`
+  - [x] `sisa.ui/app/invoices/create.tsx`
+  - [x] `sisa.ui/app/invoices/index.tsx`
   - [ ] `sisa.ui/utils/jobTotals.ts`
 - [ ] revisar bootstrap/sync UI para dejar de hidratar esos campos en jobs locales
 
 ### Validacion UI
 
-- [ ] `npm run lint`
+- [x] `npm run lint`
 - [ ] smoke manual:
   - [ ] listado de jobs
   - [ ] detalle de job
@@ -118,4 +118,5 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
 - [x] eliminado `job_date/start_time/end_time` del flujo principal y schema legacy
 - [x] iniciada migracion de reportes/invoices a `worklogs`
 - [x] iniciada migracion de UI de jobs/finalizados/calendario
-- [ ] pendiente limpieza final de `participants/tariff_id/manual_amount/attached_files`
+- [x] limpieza frontend principal iniciada y `JobsContext` ya no expone esos campos
+- [ ] pendiente limpieza final de `participants/tariff_id/manual_amount/attached_files` en sync/backend/schema
