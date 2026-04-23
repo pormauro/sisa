@@ -52,7 +52,7 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
   - [x] `sisa.ui/app/invoices/create.tsx`
   - [x] `sisa.ui/app/invoices/index.tsx`
   - [ ] `sisa.ui/utils/jobTotals.ts`
-- [ ] revisar bootstrap/sync UI para dejar de hidratar esos campos en jobs locales
+- [x] revisar bootstrap/sync UI para dejar de hidratar esos campos en jobs locales
 
 ### Validacion UI
 
@@ -119,4 +119,5 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
 - [x] iniciada migracion de reportes/invoices a `worklogs`
 - [x] iniciada migracion de UI de jobs/finalizados/calendario
 - [x] limpieza frontend principal iniciada y `JobsContext` ya no expone esos campos
+- [x] bootstrap y pull sync del frontend ya limpian campos legacy antes de hidratar `jobs`
 - [ ] pendiente limpieza final de `participants/tariff_id/manual_amount/attached_files` en sync/backend/schema

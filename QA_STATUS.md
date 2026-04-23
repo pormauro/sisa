@@ -34,6 +34,7 @@ Avance adicional en esta sesion:
 - `sisa.ui/contexts/JobsContext.tsx` ya no expone ni serializa `participants`, `tariff_id`, `manual_amount` ni `attached_files`
 - `sisa.ui/app/jobs/viewModal.tsx` ahora toma participantes desde `worklogs` y adjuntos desde `file_attachments`
 - `sisa.ui/hooks/useClientFinalizedJobTotals.ts`, `sisa.ui/app/clients/finalizedJobs.tsx`, `sisa.ui/app/invoices/create.tsx` y `sisa.ui/app/invoices/index.tsx` dejaron de depender de `job.manual_amount` y `job.tariff_id`, usando tarifa del cliente como politica activa
+- `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` ahora limpian `participants`, `tariff_id`, `manual_amount` y `attached_files` antes de hidratar snapshots y jobs locales
 
 Validacion parcial:
 
