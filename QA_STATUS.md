@@ -45,6 +45,12 @@ Validacion parcial:
 - `npm run lint` en `sisa.ui` -> PASS con warning preexistente en `sisa.ui/app/reports/index.tsx:191`
 - `php -l` en archivos tocados de `sisa.api` -> PASS
 - `vendor/bin/phpunit --filter "testBuildClientJobsPdfHtmlHidesStartTimeWhenDisabled|testBuildAccountingGeneralPdfHtml" tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` -> un test nuevo pasa y queda un fallo previo/no relacionado por expectativa de titulo `Reporte economico general`
+
+Actualizacion posterior de tests:
+
+- `sisa.api/tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` fue corregido para validar el titulo real vigente del reporte contable
+- `sisa.api/src/Controllers/JobsController.php` ahora permite inyectar `SyncEventGenerator` y `JobCascadeDeleteService`, de modo que `sisa.api/tests/Controllers/JobsControllerCrudOfflineFirstTest.php` ya no dependa del constructor real de `PaymentTemplates`
+- la corrida focal sigue mostrando la linea de conexion a DB ya documentada en el baseline; tratarla como ruido de setup hasta aislarla por completo de la bootstrap global de PHPUnit
 ## Transformacion de Reportes
 
 Estado: completado

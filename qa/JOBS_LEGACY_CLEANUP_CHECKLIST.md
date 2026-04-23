@@ -98,7 +98,7 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
 
 ## Etapa 4 - tests, compatibilidad y cierre
 
-- [ ] actualizar tests que construyen jobs con esos campos legacy
+- [x] actualizar tests que construyen jobs con esos campos legacy
 - [ ] agregar tests que aseguren:
   - [ ] participantes salen de `worklogs`
   - [ ] costo no sale de `jobs`
