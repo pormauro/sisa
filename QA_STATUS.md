@@ -52,6 +52,12 @@ Actualizacion posterior de tests:
 - `sisa.api/src/Controllers/JobsController.php` ahora permite inyectar `SyncEventGenerator` y `JobCascadeDeleteService`, de modo que `sisa.api/tests/Controllers/JobsControllerCrudOfflineFirstTest.php` ya no dependa del constructor real de `PaymentTemplates`
 - se agrego tambien inyeccion de `FolderScopeService` en `JobsController` para terminar de aislar la suite CRUD del acceso real a base
 - validacion focal actual: `vendor/bin/phpunit tests/Controllers/JobsControllerCrudOfflineFirstTest.php tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` -> PASS (12 tests, 56 assertions)
+
+Avance adicional en PDFs:
+
+- `sisa.api/src/Controllers/JobReportsController.php` ahora renderiza mejor worklogs crudos en HTML de PDF, derivando horario y duracion desde `started_at`/`ended_at`/`duration_minutes`
+- cuando no existe snapshot tarifario, el PDF deja de mostrar `Tarifa manual` como falso fallback y pasa a mostrar `Sin tarifa definida`
+- se agrego cobertura en `sisa.api/tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` para estos casos de salida HTML
 ## Transformacion de Reportes
 
 Estado: completado
