@@ -64,6 +64,7 @@ Avance adicional en PDFs:
 - validacion focal actual de PDFs: `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` -> PASS (14 tests, 53 assertions)
 - el resumen operativo del PDF ahora cae a los `jobs/worklogs` reales cuando `reportContext.summary` no trae conteos ni horas precalculadas
 - validacion focal actualizada de PDFs: `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` -> PASS (14 tests, 56 assertions)
+- se mejoro la legibilidad visual del PDF detallado y del landscape: header mas consistente, tarjetas de metadatos en grilla, bloque explicito de detalle operativo y resumen resaltado
 ## Transformacion de Reportes
 
 Estado: completado

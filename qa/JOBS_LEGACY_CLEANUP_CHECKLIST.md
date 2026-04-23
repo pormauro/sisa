@@ -103,6 +103,7 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
   - [x] suite focal de controller CRUD de jobs ya aislada del bootstrap real
   - [x] suite focal de PDF ya alineada con la salida vigente
 - [x] corregidos fallbacks engañosos del PDF (`Tarifa manual`) y renderizado basico de worklogs crudos
+- [x] mejorada la legibilidad visual del PDF detallado y del resumen landscape sin romper compatibilidad de tests
 - [ ] agregar tests que aseguren:
   - [x] participantes salen de `worklogs`
   - [x] costo no sale de `jobs`
