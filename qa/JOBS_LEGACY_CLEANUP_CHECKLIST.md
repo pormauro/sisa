@@ -67,7 +67,7 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
 
 ### Controladores
 
-- [ ] `JobsController`: ignorar o rechazar `participants`, `tariff_id`, `manual_amount`, `attached_files` en create/update
+- [x] `JobsController`: ignorar o rechazar `participants`, `tariff_id`, `manual_amount`, `attached_files` en create/update
 - [x] `JobReportsController`: sacar lectura de `jobs.participants`
 - [x] `JobReportsController`: sacar fallback de costo desde `jobs.manual_amount` y `jobs.tariff_id`
 - [x] `JobReportsController`: sacar adjuntos desde `jobs.attached_files`
@@ -122,4 +122,5 @@ La meta es que `jobs` quede como entidad operativa liviana y que los datos deriv
 - [x] bootstrap y pull sync del frontend ya limpian campos legacy antes de hidratar `jobs`
 - [x] reportes backend ya dejaron de leer participantes/tarifa/adjuntos legacy del job
 - [x] migracion `phase27` preparada para eliminar metadata legacy restante de `jobs`
+- [x] `JobsController` y `SyncOperationsController` ya descartan metadata legacy al procesar payloads de `jobs`
 - [ ] pendiente limpieza final de `participants/tariff_id/manual_amount/attached_files` en sync/backend/schema
