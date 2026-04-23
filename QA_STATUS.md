@@ -62,6 +62,8 @@ Avance adicional en PDFs:
 - `buildClientJobsPdfHtml()` y el resumen landscape ahora priorizan `worklog_total_amount` por encima de `final_amount` legacy al mostrar costos
 - se agrego cobertura para asegurar que el PDF ignore `attached_files` legacy si no existen `attached_images` reales
 - validacion focal actual de PDFs: `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` -> PASS (14 tests, 53 assertions)
+- el resumen operativo del PDF ahora cae a los `jobs/worklogs` reales cuando `reportContext.summary` no trae conteos ni horas precalculadas
+- validacion focal actualizada de PDFs: `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` -> PASS (14 tests, 56 assertions)
 ## Transformacion de Reportes
 
 Estado: completado
