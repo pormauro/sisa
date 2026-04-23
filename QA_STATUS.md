@@ -2,7 +2,7 @@
 
 ## Ultima actualizacion
 
-- Fecha: 2026-04-20
+- Fecha: 2026-04-22
 - Corrida baseline: PASS
 - PHPUnit suite: ~60 tests pasan (ruido de conexion filtrado)
 - Lint: PASS
@@ -10,6 +10,30 @@
 - Sync smoke: PASS
 - Tests integracion multi-dispositivo: 119/119 PASS
 - Transformacion de reportes: COMPLETADA
+
+## Avance parcial - limpieza final de jobs legacy
+
+Estado: en progreso
+
+Que cambio:
+
+- se elimino el uso operativo de `job_date`, `start_time` y `end_time` en UI, reportes e instalacion legacy
+- se agrego `qa/JOBS_LEGACY_CLEANUP_CHECKLIST.md` para ordenar la limpieza restante por etapas
+- se preparo la migracion `sisa.api/scripts/migrations/jobs-remove-legacy-schedule-columns-phase26.php`
+- se alineo `sisa.api/install.php` y `sisa.api/update_install.php` para remover las columnas horarias legacy de `jobs`
+- se migro parte del calculo y renderizado de reportes/invoices para usar `worklogs`
+
+Pendiente principal:
+
+- sacar de `jobs` los restos `participants`, `tariff_id`, `manual_amount` y `attached_files`
+- cerrar la fuente de verdad final del precio antes de borrar `tariff_id/manual_amount`
+- limpiar payloads sync/backend/frontend para que no reintroduzcan columnas legacy por compatibilidad
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.ui` -> PASS con warning preexistente en `sisa.ui/app/reports/index.tsx:191`
+- `php -l` en archivos tocados de `sisa.api` -> PASS
+- `vendor/bin/phpunit --filter "testBuildClientJobsPdfHtmlHidesStartTimeWhenDisabled|testBuildAccountingGeneralPdfHtml" tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` -> un test nuevo pasa y queda un fallo previo/no relacionado por expectativa de titulo `Reporte economico general`
 ## Transformacion de Reportes
 
 Estado: completado
