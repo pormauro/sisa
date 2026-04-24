@@ -55,6 +55,13 @@ Avance adicional en esta sesion:
 - `sisa.ui/app/invoices/create.tsx` ahora espera a que la entidad `tariffs` este cargada antes de prefijar los items de factura desde trabajos seleccionados, evitando que se congelen importes en cero por una corrida temprana del calculo
 - `sisa.ui/app/clients/finalizedJobs.tsx` ahora envia a facturacion un prefill explicito con los importes ya calculados por trabajo, y `sisa.ui/app/invoices/create.tsx` lo consume via `PendingSelection`; esto evita desalineaciones entre la pantalla de trabajos finalizados y la factura nueva
 - adicionalmente el prefill de trabajos a factura ahora viaja tambien serializado en params de ruta (`jobPrefill`) para sobrevivir mejor a montajes/reaperturas de pantalla y evitar perder importes al navegar desde `Trabajos finalizados`
+- `sisa.api/src/Controllers/InvoicesController.php` vuelve a marcar en servidor los `jobs` enviados en `job_ids` como `Facturado` al crear una factura, registrando historia y evento de sync para mantener convergencia entre dispositivos
+- `sisa.ui/app/invoices/create.tsx` ahora recarga `jobs` luego de crear la factura y del marcado local para reflejar en la app el estado `Facturado` sin depender de refresh manual
+- `sisa.ui/app/jobs/index.tsx` ahora entra en modo seleccion por `long press`, permite seleccionar multiples trabajos visibles y expone acciones en lote desde el listado para cambiar estado, mover carpeta, cambiar prioridad, eliminar y facturar la seleccion (si pertenece a un unico cliente)
+- `sisa.ui/app/jobs/index.tsx` ahora renderiza la carpeta del trabajo arriba de la descripcion dentro de cada tarjeta del listado
+- `sisa.ui/app/appointments/create.tsx` y `sisa.ui/app/appointments/[id].tsx` ahora excluyen del selector de trabajo los jobs `cancelados` y `finalizados` (manteniendo visible el job ya asociado al editar una cita existente)
+- se agrego `qa/COMPANY_STATUS_ROLE_MAPPING_FUTURE.md` para documentar la deuda futura: mover la semantica especial de estados de trabajo (`facturado`, `finalizado`, `cancelado`, etc.) a una configuracion explicita por empresa en lugar de inferirla por nombre
+- `sisa.ui/app/jobs/index.tsx` ahora permite colapsar/descolapsar la barra de acciones en lote cuando hay seleccion multiple, reduciendo el espacio ocupado en pantalla sin perder el contexto de seleccion
 
 Validacion parcial:
 
