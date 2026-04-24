@@ -80,6 +80,7 @@ Avance adicional en esta sesion:
 - `sisa.ui/contexts/CategoriesContext.tsx` e `sisa.ui/contexts/InvoicesContext.tsx` dejan de auto-fetchear al boot del provider; ahora salen del camino critico de startup y se cargan cuando una pantalla/flujo realmente los necesita
 - `sisa.ui/contexts/ClientsContext.tsx` mejora la hidratacion inicial para priorizar rows locales, luego bootstrap cache por empresa y recien despues el cache legacy, evitando fetches tempranos innecesarios sin perder datos ya persistidos
 - `sisa.ui/utils/startupBootstrap.ts` centraliza la lectura del cache `startup-bootstrap:<companyId>` y las versions del payload; `StatusesContext`, `TariffsContext`, `ClientsContext` y `FoldersContext` ahora usan esas versions para evitar refrescos redundantes cuando el bootstrap ya trajo la misma revision de referencias
+- `sisa.ui/contexts/BootstrapContext.tsx` ahora invalida el cache `startup-bootstrap:<companyId>` cuando cambian referencias base (`statuses`, `tariffs`, `clients`, `folders`), evitando que el snapshot de arranque quede viejo despues de mutaciones o sync posteriores
 
 Validacion parcial:
 
