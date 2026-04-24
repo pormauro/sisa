@@ -76,6 +76,7 @@ Avance adicional en esta sesion:
 - `sisa.ui/contexts/CompaniesContext.tsx` ya no sobrecarga el startup con `company-addresses/contacts/channels`; ahora el listado trae empresas livianas y los detalles se hidratan bajo demanda desde `sisa.ui/app/companies/[id].tsx` y `sisa.ui/app/companies/view.tsx`
 - `sisa.api/src/Controllers/BootstrapController.php` y `sisa.api/src/Routes/api.php` agregan `GET /bootstrap`, un endpoint liviano company-scoped para startup con contexto de usuario, empresa, cursores de sync, tracking y datos iniciales minimos (`statuses`, `tariffs`, `clients`, `folders`)
 - `sisa.ui/contexts/BootstrapContext.tsx` ahora consume ese `/bootstrap` cuando ya existe empresa seleccionada, cachea el payload por empresa y precalienta caches de referencias; ademas deja de tratar `categories` e `invoices` como parte del bootstrap critico
+- `sisa.ui/contexts/StatusesContext.tsx`, `sisa.ui/contexts/TariffsContext.tsx`, `sisa.ui/contexts/ClientsContext.tsx` y `sisa.ui/contexts/FoldersContext.tsx` ahora aprovechan el cache de `startup-bootstrap:<companyId>` para hidratar referencias y aplicar una ventana de frescura inicial, reduciendo fetches redundantes justo despues del bootstrap
 
 Validacion parcial:
 
