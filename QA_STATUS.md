@@ -91,6 +91,7 @@ Avance adicional en esta sesion:
 - `BootstrapContext` ahora pide `/bootstrap` con `include=statuses,tariffs,folders`, dejando `clients/providers/products_services/payment_templates` fuera del payload critico por defecto; el bootstrap queda mas chico y las referencias mas pesadas siguen resolviendose por cache/version/lazy loading
 - `PermissionsContext` ahora reutiliza snapshot con `fetchedAt` y aplica una TTL de 10 minutos antes de volver a pegarle al backend, reduciendo el costo del paso `permissions` en reingresos/foreground sin perder capacidad de forzar refresh cuando se limpia cache
 - `/bootstrap` ahora expone `included_initial_data` y normaliza `device.sync.jobs.company_id` cuando falta; en cliente, `startupBootstrap.ts` solo considera colecciones realmente incluidas, evitando que caches viejos o snapshots previos reinyecten entidades pesadas fuera del bootstrap critico
+- `CompaniesContext` ya no auto-fetchea empresas al montar el provider; ahora reutiliza cache local, aplica una TTL de 15 minutos y solo refresca desde servidor cuando una pantalla/flujo lo necesita realmente, sacando `companies` del startup critico efectivo
 - se corrigio un loop de arranque en `sisa.ui/contexts/AuthContext.tsx`: el fetch global ya no intenta auto-recuperar autenticacion sobre `/token/refresh`, evitando recursion cuando la renovacion del token tambien devuelve un estado auth error
 
 Validacion parcial:
