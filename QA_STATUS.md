@@ -73,6 +73,7 @@ Avance adicional en esta sesion:
 - `sisa.ui/contexts/TrackingContext.tsx` deja de disparar `/tracking/policy` en el startup y usa `/tracking/status` como fuente de verdad para hidratar policy + status, reduciendo una request redundante
 - `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` ahora bloquea el auto sync de jobs si todavia no hay empresa seleccionada, evitando pulls con `company_id = null`
 - `sisa.ui/contexts/AppUpdatesContext.tsx` ya no muestra un alert de usuario si falla la comprobacion de actualizaciones durante startup; conserva cache y baja ruido en el arranque
+- `sisa.ui/contexts/CompaniesContext.tsx` ya no sobrecarga el startup con `company-addresses/contacts/channels`; ahora el listado trae empresas livianas y los detalles se hidratan bajo demanda desde `sisa.ui/app/companies/[id].tsx` y `sisa.ui/app/companies/view.tsx`
 
 Validacion parcial:
 
