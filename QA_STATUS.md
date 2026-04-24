@@ -66,6 +66,8 @@ Avance adicional en esta sesion:
 - `sisa.ui/app/jobs/index.tsx` ahora muestra en cada tarjeta los `job_items` pendientes (no tildados) para exponer el trabajo abierto sin tener que entrar al detalle
 - `sisa.ui/app/jobs/index.tsx` ahora hace que el switch de listado oculte/muestre tanto trabajos `facturados` como `cancelados`, y actualiza su rotulo para reflejar ambas categorias
 - `sisa.ui/app/_layout.tsx` ahora monta un observador global de sync que muestra automaticamente un `Alert` cuando aparecen operaciones en estado `error/failed`, para hacer visibles fallas de sincronizacion sin entrar manualmente a la cola
+- el observador global de sync ahora evita falsos positivos por errores transitorios: solo alerta conflictos, rechazos 4xx persistentes o fallas que sobreviven al menos dos intentos, reduciendo ruido cuando la cola se recupera sola en reintentos posteriores
+- `sisa.ui/src/modules/jobs/data/repositories/SQLiteSyncRepository.ts` ahora reconcilia operaciones fallidas/bloqueadas que quedaron obsoletas despues de que el estado aceptado ya se aplico localmente; esto evita errores fantasma en la cola cuando los cambios terminaron sincronizados por otra via o reintento posterior
 
 Validacion parcial:
 
