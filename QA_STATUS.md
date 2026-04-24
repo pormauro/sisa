@@ -47,6 +47,11 @@ Avance adicional en esta sesion:
 - `sisa.ui/app/jobs/worklogs.tsx` ahora permite mover un worklog desde el editor a otro trabajo del mismo cliente y redirige al nuevo trabajo cuando el movimiento se guarda
 - `sisa.api/src/Controllers/WorkLogsController.php` y `sisa.api/src/Controllers/SyncOperationsController.php` ahora rechazan movimientos de worklogs hacia trabajos de otro cliente y limpian `job_item_id` si se cambia de trabajo sin item destino explicito
 - `sisa.ui/app/jobs/index.tsx` ahora muestra el numero de trabajo (`#id`) en las tarjetas del listado para identificarlo rapidamente
+- `sisa.ui/utils/cache.ts` y `sisa.ui/contexts/NetworkLogContext.tsx` ahora recuperan y purgan silenciosamente caches sobredimensionados de `networkLogs`, ademas de limitar lo persistido para evitar el error de `CursorWindow` al iniciar la app
+- `sisa.ui/app/clients/finalizedJobs.tsx`, `sisa.ui/hooks/useClientFinalizedJobTotals.ts` y `sisa.ui/app/invoices/create.tsx` dejaron de recalcular costos de trabajos finalizados usando la tarifa actual del cliente cuando el worklog ya trae `workType` con tarifa; ahora priorizan la tarifa del worklog y solo caen al cliente como fallback
+- se ajusto nuevamente la resolucion de importes para worklogs legacy migrados: si el worklog conserva el bloque `[legacy_job_fields]` en la descripcion, ahora se prioriza `manual_amount` y luego `tariff_id` antes de caer a `workType` o a la tarifa actual del cliente
+- `sisa.ui/app/clients/finalizedJobs.tsx` ahora muestra debajo de cada trabajo un desglose por worklog con importe calculado, horas, participantes y origen de tarifa para diagnosticar diferencias de costos en campo antes de facturar
+- se corrigio la fuente de tarifa en calculos UI: los importes de worklogs ahora se resuelven solo contra la entidad `tariffs` usando `tariff_id` legacy o `workType`; se elimino el fallback a `manual_amount` y a la tarifa actual del cliente para evitar montos derivados que no respetan la tarifa elegida
 
 Validacion parcial:
 
