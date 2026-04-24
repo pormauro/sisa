@@ -52,6 +52,9 @@ Avance adicional en esta sesion:
 - se ajusto nuevamente la resolucion de importes para worklogs legacy migrados: si el worklog conserva el bloque `[legacy_job_fields]` en la descripcion, ahora se prioriza `manual_amount` y luego `tariff_id` antes de caer a `workType` o a la tarifa actual del cliente
 - `sisa.ui/app/clients/finalizedJobs.tsx` ahora muestra debajo de cada trabajo un desglose por worklog con importe calculado, horas, participantes y origen de tarifa para diagnosticar diferencias de costos en campo antes de facturar
 - se corrigio la fuente de tarifa en calculos UI: los importes de worklogs ahora se resuelven solo contra la entidad `tariffs` usando `tariff_id` legacy o `workType`; se elimino el fallback a `manual_amount` y a la tarifa actual del cliente para evitar montos derivados que no respetan la tarifa elegida
+- `sisa.ui/app/invoices/create.tsx` ahora espera a que la entidad `tariffs` este cargada antes de prefijar los items de factura desde trabajos seleccionados, evitando que se congelen importes en cero por una corrida temprana del calculo
+- `sisa.ui/app/clients/finalizedJobs.tsx` ahora envia a facturacion un prefill explicito con los importes ya calculados por trabajo, y `sisa.ui/app/invoices/create.tsx` lo consume via `PendingSelection`; esto evita desalineaciones entre la pantalla de trabajos finalizados y la factura nueva
+- adicionalmente el prefill de trabajos a factura ahora viaja tambien serializado en params de ruta (`jobPrefill`) para sobrevivir mejor a montajes/reaperturas de pantalla y evitar perder importes al navegar desde `Trabajos finalizados`
 
 Validacion parcial:
 
