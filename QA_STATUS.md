@@ -85,6 +85,9 @@ Avance adicional en esta sesion:
 - la invalidacion de `startup-bootstrap:<companyId>` ahora cubre tambien referencias de soporte como `providers`, `categories`, `products_services` y `payment_templates`, preparando el camino para ampliar el bootstrap sin arrastrar snapshots obsoletos
 - `/bootstrap` ahora tambien incluye `providers`, `products_services` y `payment_templates` dentro de `versions` + `initial_data`; `ProvidersContext`, `ProductsServicesContext` y `PaymentTemplatesContext` ya aprovechan ese snapshot company-scoped para hidratar cache y evitar refreshes redundantes cuando la version no cambio
 - `sisa.ui/contexts/BootstrapContext.tsx` ahora registra diagnostico de arranque por etapas y lo persiste en `startup-bootstrap-diagnostics`, incluyendo duraciones de secciones criticas y del request `/bootstrap`; esto prepara visibilidad de performance tipo startup orchestrator sin agregar ruido a usuario final
+- `sisa.ui/app/network/logs.tsx` ahora expone al superusuario un bloque de diagnostico de arranque y un boton para copiar `startup-bootstrap-diagnostics` como JSON, dejando la telemetria operativa accesible sin abrir tooling externo
+- el diagnostico de startup se movio a `sisa.ui/app/network/startup.tsx` para no tapar el listado de red; el superusuario ahora puede entrar a una pantalla separada, ver los pasos mas lentos y copiar tanto el JSON de startup como un export combinado de startup + logs de red
+- `BootstrapContext` ahora conserva tambien el arranque anterior en `startup-bootstrap-diagnostics-previous`, y `sisa.ui/app/network/startup.tsx` muestra semaforo de performance, comparacion entre ultimo arranque y el previo, mas contexto adicional del payload bootstrap (`features/config/versions`)
 
 Validacion parcial:
 
