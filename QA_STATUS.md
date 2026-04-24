@@ -74,6 +74,8 @@ Avance adicional en esta sesion:
 - `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` ahora bloquea el auto sync de jobs si todavia no hay empresa seleccionada, evitando pulls con `company_id = null`
 - `sisa.ui/contexts/AppUpdatesContext.tsx` ya no muestra un alert de usuario si falla la comprobacion de actualizaciones durante startup; conserva cache y baja ruido en el arranque
 - `sisa.ui/contexts/CompaniesContext.tsx` ya no sobrecarga el startup con `company-addresses/contacts/channels`; ahora el listado trae empresas livianas y los detalles se hidratan bajo demanda desde `sisa.ui/app/companies/[id].tsx` y `sisa.ui/app/companies/view.tsx`
+- `sisa.api/src/Controllers/BootstrapController.php` y `sisa.api/src/Routes/api.php` agregan `GET /bootstrap`, un endpoint liviano company-scoped para startup con contexto de usuario, empresa, cursores de sync, tracking y datos iniciales minimos (`statuses`, `tariffs`, `clients`, `folders`)
+- `sisa.ui/contexts/BootstrapContext.tsx` ahora consume ese `/bootstrap` cuando ya existe empresa seleccionada, cachea el payload por empresa y precalienta caches de referencias; ademas deja de tratar `categories` e `invoices` como parte del bootstrap critico
 
 Validacion parcial:
 
