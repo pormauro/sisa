@@ -68,6 +68,11 @@ Avance adicional en esta sesion:
 - `sisa.ui/app/_layout.tsx` ahora monta un observador global de sync que muestra automaticamente un `Alert` cuando aparecen operaciones en estado `error/failed`, para hacer visibles fallas de sincronizacion sin entrar manualmente a la cola
 - el observador global de sync ahora evita falsos positivos por errores transitorios: solo alerta conflictos, rechazos 4xx persistentes o fallas que sobreviven al menos dos intentos, reduciendo ruido cuando la cola se recupera sola en reintentos posteriores
 - `sisa.ui/src/modules/jobs/data/repositories/SQLiteSyncRepository.ts` ahora reconcilia operaciones fallidas/bloqueadas que quedaron obsoletas despues de que el estado aceptado ya se aplico localmente; esto evita errores fantasma en la cola cuando los cambios terminaron sincronizados por otra via o reintento posterior
+- `sisa.ui/app/network/logs.tsx` ahora permite copiar todo el registro de red como un JSON completo con timestamp de exportacion y todas las entradas disponibles, para diagnostico externo sin perder detalle
+- se agrego `qa/STARTUP_BOOTSTRAP_SYNC_REFACTOR_PLAN.md` con el diagnostico y plan futuro para pasar de un arranque fragmentado a un bootstrap unico, company-scoped y compatible con sync v3 + lazy loading
+- `sisa.ui/contexts/TrackingContext.tsx` deja de disparar `/tracking/policy` en el startup y usa `/tracking/status` como fuente de verdad para hidratar policy + status, reduciendo una request redundante
+- `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` ahora bloquea el auto sync de jobs si todavia no hay empresa seleccionada, evitando pulls con `company_id = null`
+- `sisa.ui/contexts/AppUpdatesContext.tsx` ya no muestra un alert de usuario si falla la comprobacion de actualizaciones durante startup; conserva cache y baja ruido en el arranque
 
 Validacion parcial:
 
