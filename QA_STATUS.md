@@ -81,6 +81,8 @@ Avance adicional en esta sesion:
 - `sisa.ui/contexts/ClientsContext.tsx` mejora la hidratacion inicial para priorizar rows locales, luego bootstrap cache por empresa y recien despues el cache legacy, evitando fetches tempranos innecesarios sin perder datos ya persistidos
 - `sisa.ui/utils/startupBootstrap.ts` centraliza la lectura del cache `startup-bootstrap:<companyId>` y las versions del payload; `StatusesContext`, `TariffsContext`, `ClientsContext` y `FoldersContext` ahora usan esas versions para evitar refrescos redundantes cuando el bootstrap ya trajo la misma revision de referencias
 - `sisa.ui/contexts/BootstrapContext.tsx` ahora invalida el cache `startup-bootstrap:<companyId>` cuando cambian referencias base (`statuses`, `tariffs`, `clients`, `folders`), evitando que el snapshot de arranque quede viejo despues de mutaciones o sync posteriores
+- `sisa.api/src/Controllers/BootstrapController.php` ahora expone tambien `membership`, `config.company` y `features` dentro de `/bootstrap`, dejando un contrato mas listo para feature flags y configuracion company-scoped futura
+- la invalidacion de `startup-bootstrap:<companyId>` ahora cubre tambien referencias de soporte como `providers`, `categories`, `products_services` y `payment_templates`, preparando el camino para ampliar el bootstrap sin arrastrar snapshots obsoletos
 
 Validacion parcial:
 
