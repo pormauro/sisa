@@ -88,6 +88,10 @@ Avance adicional en esta sesion:
 - `sisa.ui/app/network/logs.tsx` ahora expone al superusuario un bloque de diagnostico de arranque y un boton para copiar `startup-bootstrap-diagnostics` como JSON, dejando la telemetria operativa accesible sin abrir tooling externo
 - el diagnostico de startup se movio a `sisa.ui/app/network/startup.tsx` para no tapar el listado de red; el superusuario ahora puede entrar a una pantalla separada, ver los pasos mas lentos y copiar tanto el JSON de startup como un export combinado de startup + logs de red
 - `BootstrapContext` ahora conserva tambien el arranque anterior en `startup-bootstrap-diagnostics-previous`, y `sisa.ui/app/network/startup.tsx` muestra semaforo de performance, comparacion entre ultimo arranque y el previo, mas contexto adicional del payload bootstrap (`features/config/versions`)
+- `BootstrapContext` ahora pide `/bootstrap` con `include=statuses,tariffs,folders`, dejando `clients/providers/products_services/payment_templates` fuera del payload critico por defecto; el bootstrap queda mas chico y las referencias mas pesadas siguen resolviendose por cache/version/lazy loading
+- `PermissionsContext` ahora reutiliza snapshot con `fetchedAt` y aplica una TTL de 10 minutos antes de volver a pegarle al backend, reduciendo el costo del paso `permissions` en reingresos/foreground sin perder capacidad de forzar refresh cuando se limpia cache
+- `/bootstrap` ahora expone `included_initial_data` y normaliza `device.sync.jobs.company_id` cuando falta; en cliente, `startupBootstrap.ts` solo considera colecciones realmente incluidas, evitando que caches viejos o snapshots previos reinyecten entidades pesadas fuera del bootstrap critico
+- se corrigio un loop de arranque en `sisa.ui/contexts/AuthContext.tsx`: el fetch global ya no intenta auto-recuperar autenticacion sobre `/token/refresh`, evitando recursion cuando la renovacion del token tambien devuelve un estado auth error
 
 Validacion parcial:
 
