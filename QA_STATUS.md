@@ -39,6 +39,14 @@ Avance adicional en esta sesion:
 - se agrego `sisa.api/scripts/migrations/jobs-remove-legacy-metadata-columns-phase27.php` y se registro en `sisa.api/install.php` + `sisa.api/update_install.php` para eliminar `participants`, `tariff_id`, `manual_amount` y `attached_files` de `jobs`
 - `sisa.api/src/Controllers/JobsController.php` y `sisa.api/src/Controllers/SyncOperationsController.php` ahora descartan esos campos legacy cuando reciben payloads de `jobs`
 - verificado que `sisa.api/src/Services/SyncEventGenerator.php` no los emite en `serializeJob()`, por lo que la capa canonical de eventos de `jobs` ya queda alineada con el modelo limpio
+- se agrego el script manual `sisa.api/scripts/migrations/jobs-backfill-legacy-finalized-worklogs-oneoff.php` para crear worklogs a partir de jobs finalizados legacy antes de correr la eliminacion de columnas de la fase 27
+- el script solo migra jobs `status_id = 8` con `job_date`, `start_time` y `end_time` validos, copia participantes legacy y preserva `tariff_id/manual_amount` dentro de la descripcion del worklog como bloque trazable
+- se robustecio el bootstrap del script manual para que reporte errores fatales y pueda resolver `load_env.php`/`.env` con mas tolerancia en ejecuciones manuales de servidor
+- se agrego fallback de carga de `.env` sin dependencia de `phpdotenv`, para permitir corridas CLI en hosts donde `vendor/autoload.php` o `Dotenv\Dotenv` no esten disponibles en ese contexto
+- completada la corrida manual del backfill de worklogs legacy; el script one-off ya fue retirado del repo para evitar reutilizacion accidental despues de la migracion efectiva
+- `sisa.ui/app/jobs/worklogs.tsx` ahora permite mover un worklog desde el editor a otro trabajo del mismo cliente y redirige al nuevo trabajo cuando el movimiento se guarda
+- `sisa.api/src/Controllers/WorkLogsController.php` y `sisa.api/src/Controllers/SyncOperationsController.php` ahora rechazan movimientos de worklogs hacia trabajos de otro cliente y limpian `job_item_id` si se cambia de trabajo sin item destino explicito
+- `sisa.ui/app/jobs/index.tsx` ahora muestra el numero de trabajo (`#id`) en las tarjetas del listado para identificarlo rapidamente
 
 Validacion parcial:
 
