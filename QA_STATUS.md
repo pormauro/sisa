@@ -62,6 +62,10 @@ Avance adicional en esta sesion:
 - `sisa.ui/app/appointments/create.tsx` y `sisa.ui/app/appointments/[id].tsx` ahora excluyen del selector de trabajo los jobs `cancelados` y `finalizados` (manteniendo visible el job ya asociado al editar una cita existente)
 - se agrego `qa/COMPANY_STATUS_ROLE_MAPPING_FUTURE.md` para documentar la deuda futura: mover la semantica especial de estados de trabajo (`facturado`, `finalizado`, `cancelado`, etc.) a una configuracion explicita por empresa en lugar de inferirla por nombre
 - `sisa.ui/app/jobs/index.tsx` ahora permite colapsar/descolapsar la barra de acciones en lote cuando hay seleccion multiple, reduciendo el espacio ocupado en pantalla sin perder el contexto de seleccion
+- `sisa.ui/app/clients/finalizedJobs.tsx` ahora agrega referencia de fecha y horario trabajado en cada fila del bloque `Worklogs calculados`, para facilitar auditoria manual de importes antes de facturar
+- `sisa.ui/app/jobs/index.tsx` ahora muestra en cada tarjeta los `job_items` pendientes (no tildados) para exponer el trabajo abierto sin tener que entrar al detalle
+- `sisa.ui/app/jobs/index.tsx` ahora hace que el switch de listado oculte/muestre tanto trabajos `facturados` como `cancelados`, y actualiza su rotulo para reflejar ambas categorias
+- `sisa.ui/app/_layout.tsx` ahora monta un observador global de sync que muestra automaticamente un `Alert` cuando aparecen operaciones en estado `error/failed`, para hacer visibles fallas de sincronizacion sin entrar manualmente a la cola
 
 Validacion parcial:
 
