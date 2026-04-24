@@ -84,6 +84,7 @@ Avance adicional en esta sesion:
 - `sisa.api/src/Controllers/BootstrapController.php` ahora expone tambien `membership`, `config.company` y `features` dentro de `/bootstrap`, dejando un contrato mas listo para feature flags y configuracion company-scoped futura
 - la invalidacion de `startup-bootstrap:<companyId>` ahora cubre tambien referencias de soporte como `providers`, `categories`, `products_services` y `payment_templates`, preparando el camino para ampliar el bootstrap sin arrastrar snapshots obsoletos
 - `/bootstrap` ahora tambien incluye `providers`, `products_services` y `payment_templates` dentro de `versions` + `initial_data`; `ProvidersContext`, `ProductsServicesContext` y `PaymentTemplatesContext` ya aprovechan ese snapshot company-scoped para hidratar cache y evitar refreshes redundantes cuando la version no cambio
+- `sisa.ui/contexts/BootstrapContext.tsx` ahora registra diagnostico de arranque por etapas y lo persiste en `startup-bootstrap-diagnostics`, incluyendo duraciones de secciones criticas y del request `/bootstrap`; esto prepara visibilidad de performance tipo startup orchestrator sin agregar ruido a usuario final
 
 Validacion parcial:
 
