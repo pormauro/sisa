@@ -71,6 +71,12 @@ Avance adicional en facturacion desde trabajos:
 - la descripcion del item paso a ser `#id_del_trabajo - descripcion_del_trabajo`
 - el detalle del item ya no repite fecha ni monto dentro de la descripcion; el monto queda solo en el valor economico del item
 - validacion focal UI: `npm run lint` -> PASS con warning preexistente en `sisa.ui/app/reports/index.tsx:191`
+
+Avance adicional en reportes contables:
+
+- `client_account_statement` ahora filtra enlaces de facturas/recibos para no arrastrar aplicaciones de otros clientes dentro del mismo PDF
+- `accounting_general` ahora cae a los movimientos reales cuando `accounting_summary` llega vacio o en cero, evitando resúmenes completamente vacíos con movimientos existentes
+- validacion focal backend: `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` -> PASS (16 tests, 64 assertions)
 - se mejoro la legibilidad visual del PDF detallado y del landscape: header mas consistente, tarjetas de metadatos en grilla, bloque explicito de detalle operativo y resumen resaltado
 ## Transformacion de Reportes
 
