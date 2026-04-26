@@ -100,6 +100,8 @@ Avance adicional en esta sesion:
 - `sisa.ui/app/jobs/index.tsx` ahora desactiva el `load more` automatico cuando el listado tiene filtros restrictivos (busqueda, cliente, estados o facturados/cancelados) y agrega una ventana minima entre pulls al llegar al final, evitando loops de recarga continua en listados filtrados
 - `sisa.ui/app/jobs/index.tsx` ahora permite expandir/colapsar la lista de `items pendientes` dentro de cada tarjeta, para ver todos los items sin entrar al trabajo cuando el preview inicial de 3 no alcanza
 - `sisa.ui/app/clients/finalizedJobs.tsx` ahora toma como finalizados solo los trabajos con `status_id = 8` y excluye cancelados del listado dentro de clientes, evitando que la pantalla de pre-facturacion mezcle estados no operativos
+- `sisa.api/src/Controllers/JobReportsController.php` ahora simplifica el PDF detallado de trabajos: elimina el timeline operativo, quita la fila de tarifa aplicada y remueve importes/subtotales dentro del bloque de worklogs; tambien deja de mostrar la fila `Creado/Iniciado/Finalizado` que venia vacia en muchos casos
+- `sisa.api/src/Controllers/JobReportsController.php` ahora elimina del encabezado PDF las dos meta-cards vacias bajo el membrete y compacta el salto hacia `Detalle operativo`, recuperando espacio util en la primera pagina
 
 Validacion parcial:
 
