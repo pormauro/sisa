@@ -95,6 +95,10 @@ Avance adicional en esta sesion:
 - se corrigio un loop de arranque en `sisa.ui/contexts/AuthContext.tsx`: el fetch global ya no intenta auto-recuperar autenticacion sobre `/token/refresh`, evitando recursion cuando la renovacion del token tambien devuelve un estado auth error
 - se corrigio una regresion en `PermissionsContext`: si el usuario es superusuario o su membresia company-scoped ya indica `owner/admin`, la app vuelve a expandir permisos automaticamente aunque el snapshot local haya quedado vacio; ademas la TTL ya no evita el refresh cuando todavia no hay permisos efectivos hidratados
 - `sisa.ui/config/Index.ts` vuelve a dejar en `false` los flags de debug runtime (`PUSH_FULL_DEBUG`, `PUSH_DEBUG_REPORTS`, `PUSH_*_LOGS`, `DEVICE_UID_LOGS`, `JOBS_DEBUG_LOGS`, `CACHE_DEBUG_LOGS`) para cortar el spam de consola y de registro durante uso normal
+- `sisa.ui/app/jobs/index.tsx` deja de mostrar el chip/icono de conteo total de items en cada tarjeta de trabajo, porque el bloque textual de items pendientes ya cubre esa referencia y evita redundancia visual
+- `sisa.ui/app/jobs/index.tsx` ahora ubica el texto `Ordenado por ...` en la misma fila de resumen que la cantidad de trabajos y los accesos de sync/refresh, compactando la cabecera del listado
+- `sisa.ui/app/jobs/index.tsx` ahora desactiva el `load more` automatico cuando el listado tiene filtros restrictivos (busqueda, cliente, estados o facturados/cancelados) y agrega una ventana minima entre pulls al llegar al final, evitando loops de recarga continua en listados filtrados
+- `sisa.ui/app/jobs/index.tsx` ahora permite expandir/colapsar la lista de `items pendientes` dentro de cada tarjeta, para ver todos los items sin entrar al trabajo cuando el preview inicial de 3 no alcanza
 
 Validacion parcial:
 
