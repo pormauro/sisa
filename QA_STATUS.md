@@ -102,6 +102,8 @@ Avance adicional en esta sesion:
 - `sisa.ui/app/clients/finalizedJobs.tsx` ahora toma como finalizados solo los trabajos con `status_id = 8` y excluye cancelados del listado dentro de clientes, evitando que la pantalla de pre-facturacion mezcle estados no operativos
 - `sisa.api/src/Controllers/JobReportsController.php` ahora simplifica el PDF detallado de trabajos: elimina el timeline operativo, quita la fila de tarifa aplicada y remueve importes/subtotales dentro del bloque de worklogs; tambien deja de mostrar la fila `Creado/Iniciado/Finalizado` que venia vacia en muchos casos
 - `sisa.api/src/Controllers/JobReportsController.php` ahora elimina del encabezado PDF las dos meta-cards vacias bajo el membrete y compacta el salto hacia `Detalle operativo`, recuperando espacio util en la primera pagina
+- `sisa.api/src/Controllers/JobReportsController.php` ahora elimina por completo la seccion `RESUMEN ECONÓMICO` del PDF detallado de trabajos, dejando solo el detalle operativo y evitando contenido redundante al final del documento
+- `sisa.api/src/Controllers/JobReportsController.php` ahora cambia la leyenda de footer a `Documento generado automáticamente por SISA` y agrega al final del PDF detallado de trabajos una aclaracion de que los costos informados no incluyen IVA
 
 Validacion parcial:
 
