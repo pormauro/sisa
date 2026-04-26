@@ -99,6 +99,7 @@ Avance adicional en esta sesion:
 - `sisa.ui/app/jobs/index.tsx` ahora ubica el texto `Ordenado por ...` en la misma fila de resumen que la cantidad de trabajos y los accesos de sync/refresh, compactando la cabecera del listado
 - `sisa.ui/app/jobs/index.tsx` ahora desactiva el `load more` automatico cuando el listado tiene filtros restrictivos (busqueda, cliente, estados o facturados/cancelados) y agrega una ventana minima entre pulls al llegar al final, evitando loops de recarga continua en listados filtrados
 - `sisa.ui/app/jobs/index.tsx` ahora permite expandir/colapsar la lista de `items pendientes` dentro de cada tarjeta, para ver todos los items sin entrar al trabajo cuando el preview inicial de 3 no alcanza
+- `sisa.ui/app/clients/finalizedJobs.tsx` ahora toma como finalizados solo los trabajos con `status_id = 8` y excluye cancelados del listado dentro de clientes, evitando que la pantalla de pre-facturacion mezcle estados no operativos
 
 Validacion parcial:
 
