@@ -15,6 +15,25 @@
 
 Estado: en progreso
 
+## Avance parcial - categorias contables por empresa y visibilidad individual
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/src/Controllers/CategoriesController.php` ahora deja la administracion de categorias contables solo a owners/admins de la empresa y expone a miembros un arbol filtrado por asignacion, conservando ancestros para no romper la navegacion del arbol principal
+- `sisa.api/src/Models/Categories.php`, `sisa.api/src/Services/SyncEventGenerator.php`, `sisa.api/src/Controllers/SyncOperationsController.php` y la migracion `sisa.api/scripts/migrations/categories-assigned-users-phase28.php` agregan `assigned_users` a categorias para sync/bootstrap/offline-first
+- `sisa.api/src/Controllers/PaymentsController.php`, `sisa.api/src/Controllers/ReceiptsController.php` y `sisa.api/src/Services/AccountingSummaryService.php` ahora respetan visibilidad contable individual: miembros solo ven/usan sus propios movimientos salvo categorias compartidas/asignadas; owners/admins mantienen visibilidad company-scoped
+- `sisa.ui/contexts/CategoriesContext.tsx`, `sisa.ui/app/categories/index.tsx`, `sisa.ui/app/categories/create.tsx` y `sisa.ui/app/categories/[id].tsx` ahora manejan asignacion de usuarios y restringen la edicion de categorias a admins/owners, manteniendo visible el arbol para usuarios alcanzados
+- la cache/sync local de categorias en `sisa.ui/src/modules/jobs/data/db/schema.ts`, `sisa.ui/src/modules/jobs/data/db/jobsMigrations.ts`, `sisa.ui/src/modules/jobs/data/repositories/SQLiteCategoriesRepository.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` ya persiste `assigned_users`
+
+Validacion parcial:
+
+- `vendor/bin/phpunit tests/Controllers/CategoriesControllerOfflineFirstTest.php --testdox` -> PASS (4 tests, 12 assertions)
+- `vendor/bin/phpunit tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php --testdox` -> PASS (6 tests, 33 assertions)
+- `php -l` sobre controladores/modelos/servicios tocados en `sisa.api` -> PASS
+- `npm run lint` en `sisa.ui` -> PASS con warning preexistente en `sisa.ui/app/reports/index.tsx:191`
+
 Que cambio:
 
 - se elimino el uso operativo de `job_date`, `start_time` y `end_time` en UI, reportes e instalacion legacy
