@@ -28,6 +28,7 @@ Que cambio:
 - `sisa.ui/app/jobs/[id].tsx` ya no vuelve a hidratar el formulario local mientras hay cambios sin guardar; los pulls/reloads al recuperar foco se pausan durante la edicion para evitar que descripcion, cliente, estado, carpeta o prioridad salten al valor anterior
 - `sisa.ui/app/jobs/worklogs.tsx` pausa los auto-refresh de `worklogs` y del selector de trabajos relacionados mientras el modal de alta/edicion esta abierto, reduciendo refrescos que interrumpian la edicion en campo
 - `sisa.ui/src/modules/jobs/presentation/hooks/useJobDetail.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/useJobsList.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/useWorkLogs.ts` ahora permiten desactivar la suscripcion de auto-refresh por pantalla cuando el flujo necesita preservar un draft local
+- seguimiento: el refresh repetido no venia solo del autosync sino tambien de hooks derivados (`worklogs`, `job_items`, `appointments`, `groups`, `root causes`, `history`) que recreaban `reload()` cuando cambiaba el largo de sus colecciones; se estabilizaron con banderas `hasLoaded*` para cortar la cascada de recargas durante la hidratacion inicial
 
 Validacion parcial:
 
