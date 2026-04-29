@@ -38,6 +38,12 @@ Que cambio:
 - `sisa.ui/contexts/BootstrapContext.tsx` ahora agrupa invalidaciones de `startup-bootstrap` por referencias con debounce y flush batch; en vez de invalidar por cada `status/tariff/client/folder/provider/category/payment_template`, junta eventos cercanos y difiere el refresh si el usuario esta en una operacion activa
 - cuarta pasada sobre ruido de push/runtime: `sisa.ui/src/device/deviceRegistration.ts` agrega cache TTL + dedupe en vuelo para `registerCurrentDevice`, evitando re-registrar el dispositivo en cada refresh de token o reintento cercano con el mismo payload
 - `sisa.ui/app/_layout.tsx` estabiliza `ExpoPushTokenLogger` usando refs para `token`, `handleSyncHint` y logging de push, evitando que el efecto de runtime de notificaciones se reinstale por cambios de callback durante la sesion
+- quinta pasada orientada a bajar renders fuera de foco: `sisa.ui/app/_layout.tsx` vuelve `AppointmentsProvider`, `TrackingProvider` y `AppUpdatesProvider` route-aware, habilitandolos solo en superficies que realmente los consumen (`/Home`, `/appointments`, `/clients/calendar`, `/jobs/worklog*`, `/tracking*`)
+- `sisa.ui/app/jobs/index.tsx` ahora evita cargar soporte/bootstraps cuando la ruta `/jobs` no esta activa y desactiva `useSyncStatus` fuera de foco; ademas `JobParticipantsPreview` usa `useWorkLogs` solo cuando la tarjeta esta realmente activa
+- `sisa.ui/src/modules/jobs/presentation/hooks/useJobsList.ts` incorpora equality guard para no reemplazar listas identicas, recortando renders tontos despues de reloads/syncs sin cambios visibles
+- `sisa.ui/src/modules/jobs/presentation/hooks/useSyncStatus.ts` acepta `enabled` para no mantenerse vivo en pantallas no activas
+- sexta pasada focalizada en worklogs: `sisa.ui/app/jobs/worklogs.tsx` elimina una suscripcion inutil a `AppointmentsContext`, memoiza `availableJobs` y `defaultTariffId` del modal, estabiliza `onAttachmentsChanged`, y reduce churn de props hacia `WorkLogFormModal`/`WorkLogCard`
+- esto apunta a bajar los rerenders que seguias viendo con el modal de worklog abierto aun sin cambios de draft, especialmente cuando el parent se repintaba por contexto o por refreshes externos ya mitigados
 - `sisa.ui/contexts/AuthContext.tsx`, `sisa.ui/contexts/PermissionsContext.tsx`, `sisa.ui/contexts/BootstrapContext.tsx`, `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` y `sisa.ui/contexts/TrackingContext.tsx` ahora dejan en cola los refresh de foreground, bootstrap post-hint, autosync de jobs y autosync de tracking cuando hay una operacion activa, evitando que esos rebotes globales pisen pantallas vivas
 - `sisa.ui/app/jobs/[id].tsx`, `sisa.ui/app/jobs/worklog-form.tsx`, `sisa.ui/app/invoices/create.tsx`, `sisa.ui/app/invoices/[id].tsx` y `sisa.ui/app/receipts/create.tsx` marcan edicion activa mientras hay draft/saving, de modo que los refresh globales se postergan hasta terminar la operacion
 - `sisa.ui/contexts/ProfilesListContext.tsx` deja de auto-fetchear `/profiles` en el startup global; `sisa.ui/app/tracking/daily-route.tsx` lo pide on-demand cuando esa pantalla realmente se usa, recortando IO del arranque
@@ -66,6 +72,8 @@ Validacion parcial:
 - nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras endurecer modal legacy + tracking/app updates -> PASS
 - nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras throttle auth + batch invalidation de bootstrap -> PASS
 - nueva pasada `npm run lint` + `npm run check:startup-stability` tras dedupe de `registerCurrentDevice` + estabilizacion de `ExpoPushTokenLogger` -> PASS
+- nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras route-gating de providers + guards en jobs list -> PASS
+- nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras memoizacion de props del modal worklogs -> PASS
 - `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> FAIL por mismatch de firma en PHPUnit backend (`TestableSyncOperationsControllerForReferences::listCategoriesForSync`), tratado como bloqueo/deuda de baseline no introducida por este cambio frontend
 
 Que cambio:
