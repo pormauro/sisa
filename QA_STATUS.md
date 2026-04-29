@@ -30,6 +30,8 @@ Que cambio:
 - `sisa.ui/src/modules/jobs/presentation/hooks/useJobDetail.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/useJobsList.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/useWorkLogs.ts` ahora permiten desactivar la suscripcion de auto-refresh por pantalla cuando el flujo necesita preservar un draft local
 - seguimiento: el refresh repetido no venia solo del autosync sino tambien de hooks derivados (`worklogs`, `job_items`, `appointments`, `groups`, `root causes`, `history`) que recreaban `reload()` cuando cambiaba el largo de sus colecciones; se estabilizaron con banderas `hasLoaded*` para cortar la cascada de recargas durante la hidratacion inicial
 - seguimiento 2: el detalle de job todavia seguia suscripto a refresh aun con draft activo porque `useJobDetail()` habia quedado invocado sin la bandera `autoRefreshEnabled`; ahora se vuelve a cortar esa suscripcion cuando el snapshot local del formulario diverge del ultimo hydrate conocido
+- seguimiento 3: el modal de `worklogs` seguia reseteando fecha/hora si se abria y se editaba demasiado rapido, porque se montaba oculto y la inicializacion real corria en un `useEffect` posterior a `visible=true`; ahora el formulario se crea solo al abrirse y nace ya hidratado con su estado inicial, evitando que un efecto tardio pise cambios de fecha/hora hechos apenas entra el usuario
+- seguimiento 4: el listado `jobs` quedaba montado debajo de `/jobs/[id]` y `/jobs/worklogs`, manteniendo hooks por tarjeta (`useWorkLogs` y `useJobItems`) activos aun fuera de foco; se agrego una bandera `enabled` en hooks y el listado ahora apaga esas cargas/auto-refresh cuando la ruta activa ya no es `/jobs`, reduciendo el bucle de renders en background mientras se edita un worklog
 
 Validacion parcial:
 
