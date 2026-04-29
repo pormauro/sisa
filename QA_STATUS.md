@@ -64,6 +64,8 @@ Que cambio:
 - esto evita que `JobsScreen` y `JobWorkLogsScreen` mantengan todos sus hooks vivos cuando quedan en stack fuera de foco, que era justamente el patron dominante en los logs (`JobsScreen render` y `useJobsList` fuera de ruta)
 - quinceava pasada guiada por los ultimos logs: `sisa.ui/app/Home.tsx` y `sisa.ui/app/appointments/index.tsx` dejan su `useJobsList()` global route-aware, para no mantener el dataset completo (`companyId: null`, 181 rows) vivo mientras el usuario esta en jobs/worklogs
 - esto ataca exactamente el patron que seguia apareciendo en tus trazas: un `useJobsList` sin filtros, con `companyId: null`, que seguia recargando en background y contaminando los renders del detalle aunque la experiencia ya estaba mejor
+- dieciseisava pasada: extendi el mismo criterio a `sisa.ui/app/appointments/create.tsx`, `sisa.ui/app/appointments/[id].tsx`, `sisa.ui/app/appointments/viewModal.tsx`, `sisa.ui/app/jobs/groups.tsx` y `sisa.ui/app/jobs/root-causes.tsx`, para que cualquier `useJobsList` auxiliar quede apagado fuera de su ruta activa
+- con esto se corta otra familia de montajes invisibles que podian seguir metiendo `useJobsList` con `companyId: null` o listas por cliente mientras el usuario ya estaba operando dentro de jobs/worklogs
 - `sisa.ui/contexts/AuthContext.tsx`, `sisa.ui/contexts/PermissionsContext.tsx`, `sisa.ui/contexts/BootstrapContext.tsx`, `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` y `sisa.ui/contexts/TrackingContext.tsx` ahora dejan en cola los refresh de foreground, bootstrap post-hint, autosync de jobs y autosync de tracking cuando hay una operacion activa, evitando que esos rebotes globales pisen pantallas vivas
 - `sisa.ui/app/jobs/[id].tsx`, `sisa.ui/app/jobs/worklog-form.tsx`, `sisa.ui/app/invoices/create.tsx`, `sisa.ui/app/invoices/[id].tsx` y `sisa.ui/app/receipts/create.tsx` marcan edicion activa mientras hay draft/saving, de modo que los refresh globales se postergan hasta terminar la operacion
 - `sisa.ui/contexts/ProfilesListContext.tsx` deja de auto-fetchear `/profiles` en el startup global; `sisa.ui/app/tracking/daily-route.tsx` lo pide on-demand cuando esa pantalla realmente se usa, recortando IO del arranque
@@ -104,6 +106,7 @@ Validacion parcial:
 - nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras memoizar `SearchableSelect`/`ParticipantAvatarStrip` y estabilizar `useCompanyUsers` -> PASS
 - nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras montar `JobsScreen`/`JobWorkLogsScreen` solo en ruta activa -> PASS
 - nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras volver route-aware el `useJobsList` de `Home` y `appointments` -> PASS
+- nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras extender route-gating a pantallas auxiliares de appointments/groups/root-causes -> PASS
 - `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> FAIL por mismatch de firma en PHPUnit backend (`TestableSyncOperationsControllerForReferences::listCategoriesForSync`), tratado como bloqueo/deuda de baseline no introducida por este cambio frontend
 
 Que cambio:
