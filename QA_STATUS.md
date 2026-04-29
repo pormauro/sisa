@@ -58,6 +58,8 @@ Que cambio:
 - esto ataca el patron visto en logs donde `useJobsList` del modal seguia pasando de `0 -> 6` y empujaba renders de `WorkLogFormModal`/`WorkLogCard` aun sin cambios de draft
 - doceava y media sobre ruido residual: `sisa.ui/src/modules/jobs/presentation/hooks/useCompanyUsers.ts` deja de republicar usuarios identicos, `sisa.ui/app/jobs/index.tsx` y `sisa.ui/app/jobs/worklogs.tsx` exportan pantallas memoizadas, y eso ayuda a que re-renders del arbol root no se propaguen tan facil a pantallas ya montadas en stack pero fuera de foco
 - esto no elimina por completo los renders fuera de foco, pero recorta una parte del costo estructural y prepara el terreno para seguir aislando `JobsScreen`/`JobWorkLogsScreen` de cambios globales
+- treceava pasada sobre el modal mismo: `sisa.ui/components/SearchableSelect.tsx` y `sisa.ui/src/modules/jobs/presentation/components/ParticipantAvatarStrip.tsx` quedan memoizados, y `sisa.ui/src/modules/jobs/presentation/hooks/useCompanyUsers.ts` evita recargar/republicar usuarios de la misma empresa una y otra vez al abrir worklogs
+- esto apunta directo al patron de `WorkLogFormModal render` repetido aun sin cambios de draft, reduciendo churn interno por listas de participantes, selects y soporte de usuarios
 - `sisa.ui/contexts/AuthContext.tsx`, `sisa.ui/contexts/PermissionsContext.tsx`, `sisa.ui/contexts/BootstrapContext.tsx`, `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` y `sisa.ui/contexts/TrackingContext.tsx` ahora dejan en cola los refresh de foreground, bootstrap post-hint, autosync de jobs y autosync de tracking cuando hay una operacion activa, evitando que esos rebotes globales pisen pantallas vivas
 - `sisa.ui/app/jobs/[id].tsx`, `sisa.ui/app/jobs/worklog-form.tsx`, `sisa.ui/app/invoices/create.tsx`, `sisa.ui/app/invoices/[id].tsx` y `sisa.ui/app/receipts/create.tsx` marcan edicion activa mientras hay draft/saving, de modo que los refresh globales se postergan hasta terminar la operacion
 - `sisa.ui/contexts/ProfilesListContext.tsx` deja de auto-fetchear `/profiles` en el startup global; `sisa.ui/app/tracking/daily-route.tsx` lo pide on-demand cuando esa pantalla realmente se usa, recortando IO del arranque
@@ -95,6 +97,7 @@ Validacion parcial:
 - nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras reactivar debug y cortar cola duplicada de autosync -> PASS
 - nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras memoizar `WorkLogCard` y cortar `useJobsList` en alta nueva -> PASS
 - nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras memoizar pantallas y guardar `companyUsers` contra publishes redundantes -> PASS
+- nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras memoizar `SearchableSelect`/`ParticipantAvatarStrip` y estabilizar `useCompanyUsers` -> PASS
 - `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> FAIL por mismatch de firma en PHPUnit backend (`TestableSyncOperationsControllerForReferences::listCategoriesForSync`), tratado como bloqueo/deuda de baseline no introducida por este cambio frontend
 
 Que cambio:
