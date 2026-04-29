@@ -2,7 +2,7 @@
 
 ## Ultima actualizacion
 
-- Fecha: 2026-04-22
+- Fecha: 2026-04-29
 - Corrida baseline: PASS
 - PHPUnit suite: ~60 tests pasan (ruido de conexion filtrado)
 - Lint: PASS
@@ -22,6 +22,38 @@ Estado: en progreso
 ## Avance parcial - estabilidad de refresh en jobs/worklogs
 
 Estado: en progreso
+
+## Avance parcial - startup protegido y operacion estable
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/contexts/OperationGuardContext.tsx`, `sisa.ui/hooks/useOperationBlock.ts` y `sisa.ui/app/_layout.tsx` agregan una guarda global de operacion que detecta formularios/ediciones activas y difiere tareas de refresh hasta que el usuario salga del flujo critico
+- `sisa.ui/contexts/AuthContext.tsx`, `sisa.ui/contexts/PermissionsContext.tsx`, `sisa.ui/contexts/BootstrapContext.tsx`, `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` y `sisa.ui/contexts/TrackingContext.tsx` ahora dejan en cola los refresh de foreground, bootstrap post-hint, autosync de jobs y autosync de tracking cuando hay una operacion activa, evitando que esos rebotes globales pisen pantallas vivas
+- `sisa.ui/app/jobs/[id].tsx`, `sisa.ui/app/jobs/worklog-form.tsx`, `sisa.ui/app/invoices/create.tsx`, `sisa.ui/app/invoices/[id].tsx` y `sisa.ui/app/receipts/create.tsx` marcan edicion activa mientras hay draft/saving, de modo que los refresh globales se postergan hasta terminar la operacion
+- `sisa.ui/contexts/ProfilesListContext.tsx` deja de auto-fetchear `/profiles` en el startup global; `sisa.ui/app/tracking/daily-route.tsx` lo pide on-demand cuando esa pantalla realmente se usa, recortando IO del arranque
+- `sisa.ui/contexts/ConfigContext.tsx` y `sisa.ui/contexts/MemberCompaniesContext.tsx` ahora deduplican requests en vuelo para bajar requests paralelos redundantes durante bootstrap
+- `sisa.ui/config/Index.ts` vuelve a dejar apagados los flags de debug runtime de push/device/jobs/cache para reducir ruido y costo del arranque normal
+- `sisa.ui/scripts/startup-stability-smoke.js`, `sisa.ui/package.json`, `qa/run-baseline.ps1` y `qa/REGRESSION_CHECKLIST.md` agregan una smoke automatizada + checklist manual especificos para startup protegido y no perdida de drafts
+
+Riesgo cubierto:
+
+- que el usuario pierda cambios locales por refresh de auth/permisos/bootstrap/sync mientras ya esta editando en campo
+- que el startup siga inyectando IO global no esencial y provoque rerenders perceptibles despues de mostrar la shell
+
+Puntos ciegos conocidos:
+
+- la validacion automatica nueva es estructural (smoke por codigo) y no reemplaza la prueba manual en dispositivo real con background/foreground, reconexion y `sync_hint`
+- el baseline compartido quedo bloqueado por una deuda preexistente de backend en `sisa.api/tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php:1033`, fuera de los archivos tocados en esta sesion
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.ui` -> PASS
+- `npm run check:cache` en `sisa.ui` -> PASS
+- `npm run check:sync-smoke` en `sisa.ui` -> PASS
+- `npm run check:startup-stability` en `sisa.ui` -> PASS
+- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> FAIL por mismatch de firma en PHPUnit backend (`TestableSyncOperationsControllerForReferences::listCategoriesForSync`), tratado como bloqueo/deuda de baseline no introducida por este cambio frontend
 
 Que cambio:
 

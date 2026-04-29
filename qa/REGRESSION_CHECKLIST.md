@@ -41,6 +41,14 @@
   - limitacion conocida aceptada,
   - regresion nueva que bloquea el avance
 
+### 6. Startup y proteccion de operacion
+
+- el primer arranque no dispara refreshes globales destructivos mientras un formulario con cambios locales sigue abierto
+- al volver la app a foreground durante una edicion, auth/permisos/bootstrap no pisan el draft visible; cualquier refresh diferido corre recien al salir de la operacion
+- `jobs` auto sync y tracking reaccionan a hints solo cuando no hay una operacion critica activa
+- `profiles` deja de auto-fetchear en el startup global y se hidrata on-demand desde las pantallas que realmente lo necesitan
+- los flags de debug runtime de startup/push/jobs quedan apagados en uso normal para no sumar ruido ni costo extra
+
 ## Escenarios manuales multi-dispositivo
 
 - Runbook fuente: `qa/MULTI_DEVICE_RUNBOOK.md`
@@ -70,6 +78,13 @@
 1. Partir de un dispositivo nuevo o de un store local limpio.
 2. Ejecutar bootstrap de referencias y datos operativos.
 3. Confirmar que el dataset Tier A alcanza para operar en sitio.
+
+### Escenario E - edicion protegida durante refresh diferido
+
+1. Abrir una pantalla operativa de alta o edicion (`job`, `worklog`, `invoice`, `receipt`).
+2. Modificar campos sin guardar para generar un draft visible.
+3. Mandar la app a background y volver, o disparar un `sync_hint`/reconexion durante la edicion.
+4. Confirmar que el formulario conserva todos los cambios locales y que los refreshes diferidos corren solo despues de salir o guardar.
 
 ## Evidencia a capturar
 

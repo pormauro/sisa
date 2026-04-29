@@ -49,6 +49,7 @@ Invoke-QAStep -Name 'Backend PHPUnit' -WorkingDirectory (Join-Path $workspace 's
 Invoke-QAStep -Name 'Frontend lint' -WorkingDirectory (Join-Path $workspace 'sisa.ui') -Command 'npm run lint'
 Invoke-QAStep -Name 'Frontend cache guard' -WorkingDirectory (Join-Path $workspace 'sisa.ui') -Command 'npm run check:cache'
 Invoke-QAStep -Name 'Frontend sync smoke' -WorkingDirectory (Join-Path $workspace 'sisa.ui') -Command 'npm run check:sync-smoke'
+Invoke-QAStep -Name 'Frontend startup guard' -WorkingDirectory (Join-Path $workspace 'sisa.ui') -Command 'npm run check:startup-stability'
 
 Write-Host "`n==> Summary"
 $script:results | ForEach-Object {
