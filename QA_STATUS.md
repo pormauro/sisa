@@ -50,6 +50,8 @@ Que cambio:
 - `sisa.ui/contexts/StatusesContext.tsx` tambien estabiliza `reorderStatuses` con `useCallback`, recortando cambios de referencia innecesarios en consumidores que solo necesitan leer estados
 - novena pasada sobre hooks calientes de detalle: `sisa.ui/src/modules/jobs/presentation/hooks/useWorkLogs.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/useJobDetail.ts` ahora comparan el payload nuevo contra el actual antes de hacer `setState`, evitando publicaciones redundantes despues de refreshes/syncs sin cambios reales
 - en `useWorkLogs` tambien se evita deduplicar dos veces el mismo dataset por recarga, bajando trabajo inutil en un hook que aparecia constantemente en los logs de `worklogs` y `job detail`
+- decima pasada sobre el resto del detalle de trabajo: `useJobItems`, `useJobGroups`, `useRootCauses`, `useJobStatusHistory` y `useJobAppointments` ahora agregan equality guards antes de publicar estado nuevo, evitando repaints laterales de tabs/secciones cuando un refresh no cambia realmente los datos
+- con esto el stack principal del detalle (`job`, `items`, `groups`, `root causes`, `history`, `appointments`, `worklogs`) queda cubierto contra republicaciones triviales tras sync, reload o reentrada de foco
 - `sisa.ui/contexts/AuthContext.tsx`, `sisa.ui/contexts/PermissionsContext.tsx`, `sisa.ui/contexts/BootstrapContext.tsx`, `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` y `sisa.ui/contexts/TrackingContext.tsx` ahora dejan en cola los refresh de foreground, bootstrap post-hint, autosync de jobs y autosync de tracking cuando hay una operacion activa, evitando que esos rebotes globales pisen pantallas vivas
 - `sisa.ui/app/jobs/[id].tsx`, `sisa.ui/app/jobs/worklog-form.tsx`, `sisa.ui/app/invoices/create.tsx`, `sisa.ui/app/invoices/[id].tsx` y `sisa.ui/app/receipts/create.tsx` marcan edicion activa mientras hay draft/saving, de modo que los refresh globales se postergan hasta terminar la operacion
 - `sisa.ui/contexts/ProfilesListContext.tsx` deja de auto-fetchear `/profiles` en el startup global; `sisa.ui/app/tracking/daily-route.tsx` lo pide on-demand cuando esa pantalla realmente se usa, recortando IO del arranque
@@ -83,6 +85,7 @@ Validacion parcial:
 - nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras memoizar `AttachmentList` + `JobsContext` -> PASS
 - nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras guards de publicacion en `ClientsContext` y `StatusesContext` -> PASS
 - nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras guards en `useWorkLogs` y `useJobDetail` -> PASS
+- nueva pasada `npm run lint` + `npm run check:startup-stability` + `npm run check:sync-smoke` tras guards en hooks vecinos del detalle de trabajo -> PASS
 - `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> FAIL por mismatch de firma en PHPUnit backend (`TestableSyncOperationsControllerForReferences::listCategoriesForSync`), tratado como bloqueo/deuda de baseline no introducida por este cambio frontend
 
 Que cambio:
