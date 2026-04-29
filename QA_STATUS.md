@@ -29,6 +29,7 @@ Que cambio:
 - `sisa.ui/app/jobs/worklogs.tsx` pausa los auto-refresh de `worklogs` y del selector de trabajos relacionados mientras el modal de alta/edicion esta abierto, reduciendo refrescos que interrumpian la edicion en campo
 - `sisa.ui/src/modules/jobs/presentation/hooks/useJobDetail.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/useJobsList.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/useWorkLogs.ts` ahora permiten desactivar la suscripcion de auto-refresh por pantalla cuando el flujo necesita preservar un draft local
 - seguimiento: el refresh repetido no venia solo del autosync sino tambien de hooks derivados (`worklogs`, `job_items`, `appointments`, `groups`, `root causes`, `history`) que recreaban `reload()` cuando cambiaba el largo de sus colecciones; se estabilizaron con banderas `hasLoaded*` para cortar la cascada de recargas durante la hidratacion inicial
+- seguimiento 2: el detalle de job todavia seguia suscripto a refresh aun con draft activo porque `useJobDetail()` habia quedado invocado sin la bandera `autoRefreshEnabled`; ahora se vuelve a cortar esa suscripcion cuando el snapshot local del formulario diverge del ultimo hydrate conocido
 
 Validacion parcial:
 
