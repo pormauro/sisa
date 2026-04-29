@@ -19,6 +19,20 @@ Estado: en progreso
 
 Estado: en progreso
 
+## Avance parcial - estabilidad de refresh en jobs/worklogs
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/app/jobs/[id].tsx` ya no vuelve a hidratar el formulario local mientras hay cambios sin guardar; los pulls/reloads al recuperar foco se pausan durante la edicion para evitar que descripcion, cliente, estado, carpeta o prioridad salten al valor anterior
+- `sisa.ui/app/jobs/worklogs.tsx` pausa los auto-refresh de `worklogs` y del selector de trabajos relacionados mientras el modal de alta/edicion esta abierto, reduciendo refrescos que interrumpian la edicion en campo
+- `sisa.ui/src/modules/jobs/presentation/hooks/useJobDetail.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/useJobsList.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/useWorkLogs.ts` ahora permiten desactivar la suscripcion de auto-refresh por pantalla cuando el flujo necesita preservar un draft local
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.ui` -> PASS con warning preexistente en `sisa.ui/app/reports/index.tsx:191`
+
 Que cambio:
 
 - `sisa.api/src/Controllers/CategoriesController.php` ahora deja la administracion de categorias contables solo a owners/admins de la empresa y expone a miembros un arbol filtrado por asignacion, conservando ancestros para no romper la navegacion del arbol principal
