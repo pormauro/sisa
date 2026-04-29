@@ -63,6 +63,7 @@ Validar en dispositivo real que el arranque no vuelva a disparar refreshes destr
 - `isReady` no vuelve a `false` una vez visible la shell
 - los refreshes diferidos se ejecutan al terminar la operacion, no en el medio
 - el arranque no dispara fetches innecesarios de perfiles ni debug runtime ruidoso
+- cuando existe una operacion activa y entra un refresh diferido, aparece una banda superior con spinner indicando que hay actualizaciones en espera
 
 ## Evidencia minima
 
