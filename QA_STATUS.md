@@ -29,6 +29,12 @@ Estado: en progreso
 
 Que cambio:
 
+- `sisa.ui/contexts/OperationGuardContext.tsx` ahora registra metadata de operaciones y tareas diferidas (`form`, `form-load`, `form-save`, `external`), permitiendo distinguir edicion activa, cargas internas permitidas y refreshes globales retenidos sin perder el comportamiento de cola existente
+- `sisa.ui/components/OperationGuardModal.tsx` agrega un modal global bloqueante montado desde `sisa.ui/app/_layout.tsx` que aparece automaticamente al guardar o cargar datos criticos del formulario, y tambien cuando hay actualizaciones externas retenidas para no romper la UI del flujo actual
+- `sisa.ui/components/OperationGuardStatusIndicator.tsx` queda como señalizacion secundaria: mantiene el banner para tareas en espera no bloqueantes y se oculta cuando el modal ya esta tomando el foco visual
+- `sisa.ui/app/jobs/worklog-form.tsx` pasa a declarar explicitamente el contexto del formulario, el guardado y las cargas soporte permitidas (device id, usuarios y datasets auxiliares de edicion) para que el bloqueo sea preciso: se congela lo externo, pero no los datos que el propio formulario necesita para operar
+- `sisa.ui/contexts/AuthContext.tsx`, `sisa.ui/contexts/BootstrapContext.tsx`, `sisa.ui/contexts/PermissionsContext.tsx`, `sisa.ui/contexts/TrackingContext.tsx` y `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` ahora etiquetan los `runWhenIdle` con labels legibles, de modo que la nueva señalizacion pueda explicar que carga quedo en espera en lugar de mostrar solo keys tecnicas
+- `sisa.ui/scripts/startup-stability-smoke.js` se endurecio para exigir el nuevo modal de guardia y tolerar las variantes con metadata en `runWhenIdle`, manteniendo automatizada la proteccion del arranque/operacion estable
 - `sisa.ui/contexts/OperationGuardContext.tsx`, `sisa.ui/hooks/useOperationBlock.ts` y `sisa.ui/app/_layout.tsx` agregan una guarda global de operacion que detecta formularios/ediciones activas y difiere tareas de refresh hasta que el usuario salga del flujo critico
 - `sisa.ui/components/OperationGuardStatusIndicator.tsx` muestra una banda superior con spinner cuando auth/permisos/bootstrap/sync quedaron en espera por una operacion activa, para que el usuario vea que la app esta reteniendo actualizaciones y no quedo congelada
 - segunda pasada sobre los logs reales de Android: `sisa.ui/app/jobs/worklogs.tsx` ahora marca tambien el modal legacy de worklogs como operacion activa, bloquea refresh destructivo aun antes de guardar, y deja de pedir `clientJobs` cuando el modal no esta abierto
@@ -90,6 +96,9 @@ Puntos ciegos conocidos:
 
 Validacion parcial:
 
+- `npm run lint` en `sisa.ui` -> PASS
+- `npm run check:startup-stability` en `sisa.ui` -> PASS
+- `npm run check:sync-smoke` en `sisa.ui` -> PASS
 - `npm run lint` en `sisa.ui` -> PASS
 - `npm run check:cache` en `sisa.ui` -> PASS
 - `npm run check:sync-smoke` en `sisa.ui` -> PASS
