@@ -48,6 +48,7 @@
 - `jobs` auto sync y tracking reaccionan a hints solo cuando no hay una operacion critica activa
 - `profiles` deja de auto-fetchear en el startup global y se hidrata on-demand desde las pantallas que realmente lo necesitan
 - los flags de debug runtime de startup/push/jobs quedan apagados en uso normal para no sumar ruido ni costo extra
+- runbooks fuente: `qa/STARTUP_OPERATION_STABILITY_RUNBOOK.md` y `qa/WORKLOG_ANDROID_DATETIME_REGRESSION_RUNBOOK.md`
 
 ## Escenarios manuales multi-dispositivo
 
@@ -85,6 +86,12 @@
 2. Modificar campos sin guardar para generar un draft visible.
 3. Mandar la app a background y volver, o disparar un `sync_hint`/reconexion durante la edicion.
 4. Confirmar que el formulario conserva todos los cambios locales y que los refreshes diferidos corren solo despues de salir o guardar.
+
+### Escenario F - worklog Android no pisa fecha/hora
+
+1. Ejecutar `qa/WORKLOG_ANDROID_DATETIME_REGRESSION_RUNBOOK.md`.
+2. Cubrir al menos alta nueva y edicion rapida con picker abierto 2-5 segundos.
+3. Confirmar que fecha/hora visible y persistida coinciden con la seleccion del usuario.
 
 ## Evidencia a capturar
 
