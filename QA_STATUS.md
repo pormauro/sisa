@@ -27,6 +27,7 @@ Que cambio:
 - `sisa.api/src/Models/InvoiceItems.php`, `sisa.api/src/History/InvoiceItemsHistory.php`, `sisa.api/install.php`, `sisa.api/update_install.php` y `sisa.api/scripts/migrations/invoice-items-entity-type-phase29.php` agregan/backfillean `code` y `entity_type` de forma segura para produccion, normalizando filas legacy ligadas a jobs y productos/servicios
 - `sisa.ui/app/invoices/create.tsx`, `sisa.ui/app/invoices/[id].tsx`, `sisa.ui/contexts/InvoicesContext.tsx` y `sisa.ui/utils/invoiceItems.ts` dejan de embutir `#job_id` dentro de la descripcion y envian la referencia estructurada del item al backend
 - seguimiento UI: `sisa.ui/app/invoices/create.tsx` ahora permite agregar pagos marcados como cobrables del mismo cliente/empresa directamente al armado de la factura, y `sisa.ui/app/invoices/[id].tsx` expone `entity_type`, `code` y `job_id` en edicion avanzada para auditoria/correccion manual
+- ajuste UX/estabilidad: `sisa.ui/app/invoices/create.tsx` normaliza importes de `payments` aunque vengan como string, autoagrega todos los pagos cobrables del cliente/empresa al abrir una factura y los mantiene al final de la lista de items
 - `qa/INVOICE_CHARGEABLE_PAYMENTS_RUNBOOK.md` deja un runbook manual corto para validar inclusion de pagos cobrables en factura, PDF, resumen de cuenta y rechazos por cliente/empresa cruzados
 
 Riesgo cubierto:
@@ -45,6 +46,7 @@ Validacion parcial:
 - `npm run lint` en `sisa.ui` -> PASS
 - rerun `npm run lint` en `sisa.ui` luego del selector de pagos cobrables en factura -> PASS
 - rerun `vendor/bin/phpunit tests/Services/InvoiceLineNormalizerTest.php tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php` tras endurecer rechazos por payment/company/client -> PASS
+- rerun `npm run lint` en `sisa.ui` tras corregir crash `value.toFixed is not a function` y autoagregado de pagos cobrables -> PASS
 
 ## Avance parcial - categorias contables por empresa y visibilidad individual
 
