@@ -34,6 +34,7 @@ Que cambio:
 - endurecimiento UX: `sisa.ui/contexts/PaymentsContext.tsx` ahora propaga mejor los errores de delete, y `sisa.ui/app/payments/index.tsx` + `sisa.ui/app/payments/[id].tsx` frenan el intento de borrado desde UI con un mensaje explicito cuando el pago ya esta facturado
 - robustez backend: `sisa.api/src/Services/AccountingFlowService.php` ya no rompe la eliminacion de pagos si falta baseline contable o si limpiar asientos legacy falla; la eliminacion del payment sigue y la limpieza contable se degrada en silencio
 - cascada obligatoria: `sisa.api/src/Controllers/InvoicesController.php` y `sisa.api/src/Models/InvoiceItems.php` fuerzan el borrado logico por factura completa para que ningun `invoice_item` quede vigente despues de eliminar la factura, incluso si algun item no entro en la hidratacion normal del documento
+- observabilidad de borrado: `sisa.api/src/Controllers/PaymentsController.php` ahora captura excepciones del delete y devuelve JSON con el mensaje real en vez de caer en `Slim Application Error`, para poder identificar baseline roto o schema faltante en servidor
 - `qa/INVOICE_CHARGEABLE_PAYMENTS_RUNBOOK.md` deja un runbook manual corto para validar inclusion de pagos cobrables en factura, PDF, resumen de cuenta y rechazos por cliente/empresa cruzados
 - `qa/INVOICE_CHARGEABLE_PAYMENTS_RUNBOOK.md` ahora cubre tambien desaparicion del pago una vez facturado y reaparicion tras eliminar la factura
 - `qa/INVOICE_CHARGEABLE_PAYMENTS_RUNBOOK.md` tambien cubre el rechazo explicito al intentar borrar un pago ya facturado
