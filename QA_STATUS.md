@@ -29,8 +29,10 @@ Que cambio:
 - seguimiento UI: `sisa.ui/app/invoices/create.tsx` ahora permite agregar pagos marcados como cobrables del mismo cliente/empresa directamente al armado de la factura, y `sisa.ui/app/invoices/[id].tsx` expone `entity_type`, `code` y `job_id` en edicion avanzada para auditoria/correccion manual
 - ajuste UX/estabilidad: `sisa.ui/app/invoices/create.tsx` normaliza importes de `payments` aunque vengan como string, autoagrega todos los pagos cobrables del cliente/empresa al abrir una factura y los mantiene al final de la lista de items
 - ciclo de disponibilidad: `sisa.ui/app/invoices/create.tsx` ahora excluye pagos ya facturados en facturas activas usando `InvoicesContext`, mientras `sisa.api/src/Services/InvoiceLineNormalizer.php` rechaza en backend reusar un `payment` ya facturado; al borrar la factura, el pago vuelve a quedar disponible
+- integridad de borrado: `sisa.api/src/Controllers/PaymentsController.php` bloquea borrar un `payment` que ya esta referenciado por una factura activa, y `sisa.ui/contexts/PaymentsContext.tsx` + `sisa.ui/app/payments/[id].tsx` muestran el motivo real en pantalla
 - `qa/INVOICE_CHARGEABLE_PAYMENTS_RUNBOOK.md` deja un runbook manual corto para validar inclusion de pagos cobrables en factura, PDF, resumen de cuenta y rechazos por cliente/empresa cruzados
 - `qa/INVOICE_CHARGEABLE_PAYMENTS_RUNBOOK.md` ahora cubre tambien desaparicion del pago una vez facturado y reaparicion tras eliminar la factura
+- `qa/INVOICE_CHARGEABLE_PAYMENTS_RUNBOOK.md` tambien cubre el rechazo explicito al intentar borrar un pago ya facturado
 
 Riesgo cubierto:
 

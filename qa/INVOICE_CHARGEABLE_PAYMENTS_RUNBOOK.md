@@ -90,3 +90,14 @@ Resultado esperado:
 
 - el pago vuelve a aparecer como disponible para facturar
 - si existen pagos cobrables vigentes, se autoagregan otra vez al final de la lista de items
+
+## Escenario G - intento de borrar payment ya facturado
+
+1. Con la factura activa todavia existente, ir al detalle del `payment` original.
+2. Intentar eliminar el pago.
+
+Resultado esperado:
+
+- el sistema rechaza la eliminacion
+- el mensaje indica que primero hay que eliminar la factura activa
+- no queda una factura con item apuntando a un pago borrado
