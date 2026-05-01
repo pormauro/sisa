@@ -26,6 +26,8 @@ Que cambio:
 - `sisa.api/src/Controllers/JobReportsController.php` incorpora los pagos cobrables al cliente con columnas estructuradas (`entity_type`, `code`, `description`, `amount`) en resumen de cuenta e informes PDF visibles al cliente
 - `sisa.api/src/Models/InvoiceItems.php`, `sisa.api/src/History/InvoiceItemsHistory.php`, `sisa.api/install.php`, `sisa.api/update_install.php` y `sisa.api/scripts/migrations/invoice-items-entity-type-phase29.php` agregan/backfillean `code` y `entity_type` de forma segura para produccion, normalizando filas legacy ligadas a jobs y productos/servicios
 - `sisa.ui/app/invoices/create.tsx`, `sisa.ui/app/invoices/[id].tsx`, `sisa.ui/contexts/InvoicesContext.tsx` y `sisa.ui/utils/invoiceItems.ts` dejan de embutir `#job_id` dentro de la descripcion y envian la referencia estructurada del item al backend
+- seguimiento UI: `sisa.ui/app/invoices/create.tsx` ahora permite agregar pagos marcados como cobrables del mismo cliente/empresa directamente al armado de la factura, y `sisa.ui/app/invoices/[id].tsx` expone `entity_type`, `code` y `job_id` en edicion avanzada para auditoria/correccion manual
+- `qa/INVOICE_CHARGEABLE_PAYMENTS_RUNBOOK.md` deja un runbook manual corto para validar inclusion de pagos cobrables en factura, PDF, resumen de cuenta y rechazos por cliente/empresa cruzados
 
 Riesgo cubierto:
 
@@ -41,6 +43,8 @@ Validacion parcial:
 - `vendor/bin/phpunit tests/Services/InvoiceLineNormalizerTest.php tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php` en `sisa.api` -> PASS (26 tests, 114 assertions)
 - `php -l` sobre controladores/modelos/servicios/migracion tocados en `sisa.api` -> PASS
 - `npm run lint` en `sisa.ui` -> PASS
+- rerun `npm run lint` en `sisa.ui` luego del selector de pagos cobrables en factura -> PASS
+- rerun `vendor/bin/phpunit tests/Services/InvoiceLineNormalizerTest.php tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php` tras endurecer rechazos por payment/company/client -> PASS
 
 ## Avance parcial - categorias contables por empresa y visibilidad individual
 
