@@ -31,6 +31,8 @@ Que cambio:
 - ciclo de disponibilidad: `sisa.ui/app/invoices/create.tsx` ahora excluye pagos ya facturados en facturas activas usando `InvoicesContext`, mientras `sisa.api/src/Services/InvoiceLineNormalizer.php` rechaza en backend reusar un `payment` ya facturado; al borrar la factura, el pago vuelve a quedar disponible
 - integridad de borrado: `sisa.api/src/Controllers/PaymentsController.php` bloquea borrar un `payment` que ya esta referenciado por una factura activa, y `sisa.ui/contexts/PaymentsContext.tsx` + `sisa.ui/app/payments/[id].tsx` muestran el motivo real en pantalla
 - visibilidad operativa: `sisa.ui/app/payments/index.tsx` y `sisa.ui/app/payments/[id].tsx` muestran una marca visual cuando un pago ya esta facturado en una factura activa
+- endurecimiento UX: `sisa.ui/contexts/PaymentsContext.tsx` ahora propaga mejor los errores de delete, y `sisa.ui/app/payments/index.tsx` + `sisa.ui/app/payments/[id].tsx` frenan el intento de borrado desde UI con un mensaje explicito cuando el pago ya esta facturado
+- robustez backend: `sisa.api/src/Services/AccountingFlowService.php` ya no rompe la eliminacion de pagos si falta baseline contable o si limpiar asientos legacy falla; la eliminacion del payment sigue y la limpieza contable se degrada en silencio
 - `qa/INVOICE_CHARGEABLE_PAYMENTS_RUNBOOK.md` deja un runbook manual corto para validar inclusion de pagos cobrables en factura, PDF, resumen de cuenta y rechazos por cliente/empresa cruzados
 - `qa/INVOICE_CHARGEABLE_PAYMENTS_RUNBOOK.md` ahora cubre tambien desaparicion del pago una vez facturado y reaparicion tras eliminar la factura
 - `qa/INVOICE_CHARGEABLE_PAYMENTS_RUNBOOK.md` tambien cubre el rechazo explicito al intentar borrar un pago ya facturado
