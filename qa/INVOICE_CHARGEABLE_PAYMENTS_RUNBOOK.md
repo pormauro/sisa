@@ -37,6 +37,7 @@ Resultado esperado:
 - la factura se crea sin error
 - el item queda persistido con `entity_type = payments`
 - el `code` visible corresponde al `id` del pago
+- al volver a `Nueva factura` para el mismo cliente/empresa, ese pago ya no aparece disponible ni se autoagrega porque quedo facturado en una factura activa
 
 ## Escenario B - PDF / informe visible al cliente
 
@@ -79,3 +80,13 @@ Resultado esperado:
 
 - el backend rechaza la operacion
 - no se mezclan datos entre empresas
+
+## Escenario F - reapertura al eliminar factura
+
+1. Eliminar la factura que contenia el pago cobrable facturado.
+2. Volver a abrir `Nueva factura` para la misma empresa y el mismo cliente.
+
+Resultado esperado:
+
+- el pago vuelve a aparecer como disponible para facturar
+- si existen pagos cobrables vigentes, se autoagregan otra vez al final de la lista de items
