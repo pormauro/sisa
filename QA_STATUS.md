@@ -15,6 +15,33 @@
 
 Estado: en progreso
 
+## Avance parcial - items de factura estructurados por entidad
+
+Estado: completado
+
+Que cambio:
+
+- `sisa.api/src/Services/InvoiceLineNormalizer.php` centraliza la normalizacion y validacion de lineas facturables para `jobs`, `products_services`, `payments` y `manual`, evitando volver a parsear IDs desde la descripcion
+- `sisa.api/src/Controllers/InvoicesController.php`, `sisa.api/src/Controllers/InvoiceItemsController.php`, `sisa.api/src/Services/InvoicesService.php` y `sisa.api/src/Controllers/SyncOperationsController.php` ahora persisten `code` + `entity_type`, limpian descripciones embebidas y validan company/client al facturar jobs, productos/servicios y pagos cobrables
+- `sisa.api/src/Controllers/JobReportsController.php` incorpora los pagos cobrables al cliente con columnas estructuradas (`entity_type`, `code`, `description`, `amount`) en resumen de cuenta e informes PDF visibles al cliente
+- `sisa.api/src/Models/InvoiceItems.php`, `sisa.api/src/History/InvoiceItemsHistory.php`, `sisa.api/install.php`, `sisa.api/update_install.php` y `sisa.api/scripts/migrations/invoice-items-entity-type-phase29.php` agregan/backfillean `code` y `entity_type` de forma segura para produccion, normalizando filas legacy ligadas a jobs y productos/servicios
+- `sisa.ui/app/invoices/create.tsx`, `sisa.ui/app/invoices/[id].tsx`, `sisa.ui/contexts/InvoicesContext.tsx` y `sisa.ui/utils/invoiceItems.ts` dejan de embutir `#job_id` dentro de la descripcion y envian la referencia estructurada del item al backend
+
+Riesgo cubierto:
+
+- que la factura, el PDF o el resumen del cliente reconstruyan referencias parseando texto libre y terminen mezclando IDs, entidades o clientes equivocados
+- que un pago cobrable quede visible solo en contabilidad interna y no llegue a factura/resumen/PDF comercial
+
+Puntos ciegos conocidos:
+
+- no se agrego en esta sesion una UI nueva dedicada para seleccionar pagos cobrables al crear factura; la inclusion queda soportada y validada desde el backend/API y la estructura de items
+
+Validacion parcial:
+
+- `vendor/bin/phpunit tests/Services/InvoiceLineNormalizerTest.php tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php` en `sisa.api` -> PASS (26 tests, 114 assertions)
+- `php -l` sobre controladores/modelos/servicios/migracion tocados en `sisa.api` -> PASS
+- `npm run lint` en `sisa.ui` -> PASS
+
 ## Avance parcial - categorias contables por empresa y visibilidad individual
 
 Estado: en progreso
