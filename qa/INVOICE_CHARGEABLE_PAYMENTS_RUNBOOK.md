@@ -88,6 +88,7 @@ Resultado esperado:
 
 Resultado esperado:
 
+- los `invoice_items` de esa factura quedan sin vigencia (`deleted_at`/borrado logico en cascada)
 - el pago vuelve a aparecer como disponible para facturar
 - si existen pagos cobrables vigentes, se autoagregan otra vez al final de la lista de items
 
