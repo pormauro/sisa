@@ -29,6 +29,9 @@ Que cambio:
 - tercera pasada: `sisa.api/src/Controllers/SyncOperationsController.php` ahora adjunta `reference_refreshes` en `pull` y `events` cuando cambia el hash de `memberships` o `member_companies` para ese dispositivo/scope, persistiendo un cursor liviano en `device_sync_state` y evitando mandar siempre el mismo bloque
 - `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` ya consume esos `reference_refreshes` y los aplica sobre cache persistente, con lo cual una sesion abierta puede converger memberships/empresas operativas sin esperar a reiniciar la app ni depender solo del startup bootstrap
 - cuarta pasada: `sisa.ui/contexts/BootstrapContext.tsx` y `sisa.ui/components/BottomNavigationBar.tsx` ahora endurecen `selected-company-id`; si la empresa activa deja de pertenecer al set operativo del usuario, la app la limpia o la reasigna automaticamente a una empresa valida (default si sigue aprobada, sino la primera disponible)
+- quinta pasada: `sisa.api/src/Services/SyncEventGenerator.php` ya soporta operaciones canonicas para `memberships` y `member_companies`; esas entidades viajan con UUID deterministico de referencia, payload canonico y `company_id = null` en `sync_operations` para que el delta llegue aunque la sesion este posicionada en otra empresa seleccionada
+- `sisa.api/src/Controllers/CompanyUsersController.php` ahora publica operaciones canonicas al crear, invitar, aprobar, rechazar, suspender, remover, salir o cancelar memberships, y tambien reemite el snapshot de `member_companies` para mantener alineada la empresa operativa vinculada
+- `sisa.api/src/Controllers/CompaniesController.php` ahora publica operaciones canonicas de `member_companies` cuando se crea o actualiza una empresa, y al crear empresa tambien emite la membership owner inicial como operacion canonica
 
 Riesgo cubierto:
 
@@ -36,7 +39,7 @@ Riesgo cubierto:
 
 Puntos ciegos conocidos:
 
-- memberships y empresas operativas ya llegan tambien por `pull/events`, pero hoy lo hacen como sideband `reference_refreshes` basado en hash por dispositivo/scope, no como operaciones canonicas propias dentro de `sync_operations`; converge en una sesion abierta, aunque sigue siendo un delta sintetico y no un event sourcing completo de memberships/companies
+- memberships y empresas operativas ya tienen operaciones canonicas reales en `sync_operations`; por ahora se mantiene ademas el sideband `reference_refreshes` por hash como red de seguridad y compatibilidad durante la transicion
 
 Validacion parcial:
 
@@ -44,6 +47,10 @@ Validacion parcial:
 - `php -l src/Controllers/SyncOperationsController.php` en `sisa.api` -> PASS
 - `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` en `sisa.api` -> PASS con ruido preexistente de conexion DB al final de la corrida
 - rerun `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php --testdox` en `sisa.api` tras agregar `reference_refreshes` en pull/events -> PASS con el mismo ruido preexistente de conexion DB al final
+- `php -l src/Services/SyncEventGenerator.php` en `sisa.api` -> PASS
+- `php -l src/Controllers/CompanyUsersController.php` en `sisa.api` -> PASS
+- `php -l src/Controllers/CompaniesController.php` en `sisa.api` -> PASS
+- rerun `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php --testdox` en `sisa.api` tras agregar operaciones canonicas para memberships/member_companies -> PASS con el mismo ruido preexistente de conexion DB al final
 - `npm run lint` en `sisa.ui` -> PASS
 - `npm run check:startup-stability` en `sisa.ui` -> PASS
 - `npm run check:cache` en `sisa.ui` -> PASS
