@@ -28,6 +28,7 @@ Que cambio:
 - `sisa.ui/contexts/MemberCompaniesContext.tsx` y `sisa.ui/contexts/CompaniesContext.tsx` ahora reaccionan a updates del reference cache, de modo que un bootstrap/sync posterior pueda refrescar la capa operativa sin requerir remount completo de la app
 - tercera pasada: `sisa.api/src/Controllers/SyncOperationsController.php` ahora adjunta `reference_refreshes` en `pull` y `events` cuando cambia el hash de `memberships` o `member_companies` para ese dispositivo/scope, persistiendo un cursor liviano en `device_sync_state` y evitando mandar siempre el mismo bloque
 - `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` ya consume esos `reference_refreshes` y los aplica sobre cache persistente, con lo cual una sesion abierta puede converger memberships/empresas operativas sin esperar a reiniciar la app ni depender solo del startup bootstrap
+- cuarta pasada: `sisa.ui/contexts/BootstrapContext.tsx` y `sisa.ui/components/BottomNavigationBar.tsx` ahora endurecen `selected-company-id`; si la empresa activa deja de pertenecer al set operativo del usuario, la app la limpia o la reasigna automaticamente a una empresa valida (default si sigue aprobada, sino la primera disponible)
 
 Riesgo cubierto:
 
