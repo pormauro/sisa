@@ -32,6 +32,7 @@ Que cambio:
 - quinta pasada: `sisa.api/src/Services/SyncEventGenerator.php` ya soporta operaciones canonicas para `memberships` y `member_companies`; esas entidades viajan con UUID deterministico de referencia, payload canonico y `company_id = null` en `sync_operations` para que el delta llegue aunque la sesion este posicionada en otra empresa seleccionada
 - `sisa.api/src/Controllers/CompanyUsersController.php` ahora publica operaciones canonicas al crear, invitar, aprobar, rechazar, suspender, remover, salir o cancelar memberships, y tambien reemite el snapshot de `member_companies` para mantener alineada la empresa operativa vinculada
 - `sisa.api/src/Controllers/CompaniesController.php` ahora publica operaciones canonicas de `member_companies` cuando se crea o actualiza una empresa, y al crear empresa tambien emite la membership owner inicial como operacion canonica
+- sexta pasada: agregados hooks/factories de test en `sisa.api/src/Controllers/CompanyUsersController.php` y `sisa.api/src/Controllers/CompaniesController.php`, mas la suite `sisa.api/tests/Controllers/CompanyOperationalSyncPublishingTest.php`, para verificar explicitamente que ambos controllers emiten snapshots canonicos de `memberships` y `member_companies`
 
 Riesgo cubierto:
 
@@ -51,6 +52,7 @@ Validacion parcial:
 - `php -l src/Controllers/CompanyUsersController.php` en `sisa.api` -> PASS
 - `php -l src/Controllers/CompaniesController.php` en `sisa.api` -> PASS
 - rerun `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php --testdox` en `sisa.api` tras agregar operaciones canonicas para memberships/member_companies -> PASS con el mismo ruido preexistente de conexion DB al final
+- `vendor/bin/phpunit tests/Controllers/CompanyOperationalSyncPublishingTest.php` en `sisa.api` -> PASS
 - `npm run lint` en `sisa.ui` -> PASS
 - `npm run check:startup-stability` en `sisa.ui` -> PASS
 - `npm run check:cache` en `sisa.ui` -> PASS
