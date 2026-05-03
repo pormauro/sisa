@@ -33,6 +33,8 @@ Que cambio:
 - `sisa.api/src/Controllers/CompanyUsersController.php` ahora publica operaciones canonicas al crear, invitar, aprobar, rechazar, suspender, remover, salir o cancelar memberships, y tambien reemite el snapshot de `member_companies` para mantener alineada la empresa operativa vinculada
 - `sisa.api/src/Controllers/CompaniesController.php` ahora publica operaciones canonicas de `member_companies` cuando se crea o actualiza una empresa, y al crear empresa tambien emite la membership owner inicial como operacion canonica
 - sexta pasada: agregados hooks/factories de test en `sisa.api/src/Controllers/CompanyUsersController.php` y `sisa.api/src/Controllers/CompaniesController.php`, mas la suite `sisa.api/tests/Controllers/CompanyOperationalSyncPublishingTest.php`, para verificar explicitamente que ambos controllers emiten snapshots canonicos de `memberships` y `member_companies`
+- septima pasada: `sisa.api/src/Controllers/SyncOperationsController.php` ahora degrada `reference_refreshes` a fallback real; si en el mismo `pull/events` ya viaja una operacion canonica de `memberships` o `member_companies`, ese entity type deja de reenviarse por sideband y solo se conserva el faltante
+- `sisa.api/tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` suma cobertura para ese comportamiento de fallback durante `pull`, verificando que el sideband no duplique `memberships` cuando ya llegaron como operacion canonica
 
 Riesgo cubierto:
 
@@ -40,7 +42,7 @@ Riesgo cubierto:
 
 Puntos ciegos conocidos:
 
-- memberships y empresas operativas ya tienen operaciones canonicas reales en `sync_operations`; por ahora se mantiene ademas el sideband `reference_refreshes` por hash como red de seguridad y compatibilidad durante la transicion
+- memberships y empresas operativas ya tienen operaciones canonicas reales en `sync_operations`; `reference_refreshes` queda solo como fallback parcial para el entity type que no haya llegado por operaciones en ese poll
 
 Validacion parcial:
 
@@ -53,6 +55,7 @@ Validacion parcial:
 - `php -l src/Controllers/CompaniesController.php` en `sisa.api` -> PASS
 - rerun `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php --testdox` en `sisa.api` tras agregar operaciones canonicas para memberships/member_companies -> PASS con el mismo ruido preexistente de conexion DB al final
 - `vendor/bin/phpunit tests/Controllers/CompanyOperationalSyncPublishingTest.php` en `sisa.api` -> PASS
+- rerun `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php --testdox` en `sisa.api` tras degradar `reference_refreshes` a fallback parcial -> PASS con el mismo ruido preexistente de conexion DB al final
 - `npm run lint` en `sisa.ui` -> PASS
 - `npm run check:startup-stability` en `sisa.ui` -> PASS
 - `npm run check:cache` en `sisa.ui` -> PASS
