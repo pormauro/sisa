@@ -60,6 +60,33 @@ Validacion parcial:
 - `npm run check:startup-stability` en `sisa.ui` -> PASS
 - `npm run check:cache` en `sisa.ui` -> PASS
 
+## Avance parcial - prioridades de jobs offline-first y permisos propios
+
+Estado: completado
+
+Que cambio:
+
+- `sisa.api/install.php`, `sisa.api/update_install.php` y `sisa.api/scripts/migrations/job-priorities-offline-first-phase30.php` agregan la entidad `job_priorities` con historial, seed inicial y migracion incremental segura para ambientes existentes
+- `sisa.api/src/Controllers/JobPrioritiesController.php`, `sisa.api/src/Models/JobPriorities.php`, `sisa.api/src/Routes/api.php` y `sisa.api/src/Models/Permission.php` incorporan CRUD dedicado, permisos propios (`list/get/add/update/delete/list history`) y publicacion de eventos canonicos para convergencia multi-dispositivo
+- `sisa.api/src/Controllers/BootstrapController.php`, `sisa.api/src/Controllers/SyncOperationsController.php` y `sisa.api/src/Services/SyncEventGenerator.php` meten `job_priorities` en startup bootstrap, bootstrap/references v3, verify/reconcile, pull de eventos y resolucion de payload/company para que la referencia viaje y persista offline como el resto del baseline operativo
+- `sisa.ui/contexts/JobPrioritiesContext.tsx`, `sisa.ui/utils/jobPriorities.ts`, `sisa.ui/src/modules/jobs/presentation/sync/referenceCache.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` hidratan/cachean/sincronizan prioridades en cliente aun sin red, reaccionando tambien a updates del reference cache
+- `sisa.ui/src/constants/permissionCatalog.ts` y `sisa.ui/app/permission/PermissionScreen.tsx` ya exponen los permisos nuevos en el administrador; la UI operativa queda en `sisa.ui/app/job-priorities/index.tsx`, `sisa.ui/app/job-priorities/create.tsx`, `sisa.ui/app/job-priorities/[id].tsx` y el acceso desde jobs respeta permisos reales
+- `sisa.ui/utils/jobTotals.ts`, `sisa.api/src/Controllers/JobReportsController.php`, `sisa.ui/app/jobs/index.tsx`, `sisa.ui/app/jobs/create.tsx`, `sisa.ui/app/jobs/[id].tsx`, `sisa.ui/app/invoices/create.tsx` y `sisa.ui/app/invoices/index.tsx` consumen la configuracion de prioridad para impactar costo horario de worklogs/reportes/facturacion sin volver a hardcodear chips o labels
+
+Riesgo cubierto:
+
+- que la prioridad del job quede como metadata cosmetica local, sin converger entre dispositivos ni sobrevivir arranque offline, y termine generando costos distintos entre UI, reportes y facturacion
+- que la administracion de prioridades reutilice permisos de estados y deje huecos de gobierno/visibilidad en el administrador de permisos
+
+Puntos ciegos conocidos:
+
+- la UI de prioridades ya persiste y converge offline por bootstrap/cache/eventos, pero no se implemento en esta sesion una cola local dedicada para altas/ediciones offline desconectadas como flujo separado del POST/PUT directo
+
+Validacion parcial:
+
+- `php -l src/Models/Permission.php src/Models/JobPriorities.php src/Controllers/JobPrioritiesController.php src/Controllers/BootstrapController.php src/Controllers/SyncOperationsController.php src/Services/SyncEventGenerator.php update_install.php scripts/migrations/job-priorities-offline-first-phase30.php` en `sisa.api` -> PASS
+- `npm run lint` en `sisa.ui` -> PASS
+
 ## Avance parcial - limpieza final de jobs legacy
 
 Estado: en progreso
