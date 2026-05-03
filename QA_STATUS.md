@@ -2,7 +2,7 @@
 
 ## Ultima actualizacion
 
-- Fecha: 2026-04-29
+- Fecha: 2026-05-02
 - Corrida baseline: PASS
 - PHPUnit suite: ~60 tests pasan (ruido de conexion filtrado)
 - Lint: PASS
@@ -10,6 +10,34 @@
 - Sync smoke: PASS
 - Tests integracion multi-dispositivo: 119/119 PASS
 - Transformacion de reportes: COMPLETADA
+
+## Avance parcial - bootstrap offline de memberships y empresas operativas
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/src/Controllers/BootstrapController.php` ahora permite incluir `memberships` y `member_companies` dentro del bootstrap inicial, junto con `clients` y `providers`, para que la sesion operativa no dependa de pegarle de nuevo a `/companies/member` o `/companies` antes de quedar utilizable offline
+- el payload backend agrega versiones de frescura para `memberships` y `member_companies`, usando `version` cuando existe y cayendo a `updated_at`/`created_at`/`id` cuando esas entidades todavia no tienen version canonica
+- `sisa.ui/contexts/BootstrapContext.tsx` amplia el `include` del startup bootstrap a `statuses`, `tariffs`, `folders`, `clients`, `providers`, `memberships` y `member_companies`, y persiste las memberships operativas en cache critica apenas llega la respuesta
+- `sisa.ui/contexts/MemberCompaniesContext.tsx` ahora intenta hidratar memberships desde el startup bootstrap del `selected-company-id` antes del fetch remoto, para que el selector/logica de empresa sobrevivan a un arranque sin conexion
+- `sisa.ui/contexts/CompaniesContext.tsx` ahora injerta en cache las `member_companies` del startup bootstrap cuando faltan localmente, evitando que una membresia aprobada quede sin su empresa operativa disponible durante el arranque offline
+- `sisa.ui/components/OperationGuardStatusIndicator.tsx` recupera el label esperado por el smoke de startup, manteniendo la verificacion automatica del flujo protegido despues de tocar el bootstrap
+
+Riesgo cubierto:
+
+- que la app recupere token/cache local pero no pueda reconstruir a tiempo las memberships y empresas operativas del usuario, dejando roto el arranque offline-first aunque el resto de referencias criticas exista
+
+Puntos ciegos conocidos:
+
+- memberships y empresas operativas ya entran al bootstrap critico, pero todavia no quedaron integradas al contrato generico de `sync/v3/bootstrap/references` + `pull`; por ahora la convergencia sigue apoyandose en bootstrap de arranque + refresh HTTP especifico
+
+Validacion parcial:
+
+- `php -l src/Controllers/BootstrapController.php` en `sisa.api` -> PASS
+- `npm run lint` en `sisa.ui` -> PASS
+- `npm run check:startup-stability` en `sisa.ui` -> PASS
+- `npm run check:cache` en `sisa.ui` -> PASS
 
 ## Avance parcial - limpieza final de jobs legacy
 
