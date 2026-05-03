@@ -23,6 +23,9 @@ Que cambio:
 - `sisa.ui/contexts/MemberCompaniesContext.tsx` ahora intenta hidratar memberships desde el startup bootstrap del `selected-company-id` antes del fetch remoto, para que el selector/logica de empresa sobrevivan a un arranque sin conexion
 - `sisa.ui/contexts/CompaniesContext.tsx` ahora injerta en cache las `member_companies` del startup bootstrap cuando faltan localmente, evitando que una membresia aprobada quede sin su empresa operativa disponible durante el arranque offline
 - `sisa.ui/components/OperationGuardStatusIndicator.tsx` recupera el label esperado por el smoke de startup, manteniendo la verificacion automatica del flujo protegido despues de tocar el bootstrap
+- segunda pasada: `sisa.api/src/Controllers/SyncOperationsController.php` ahora incorpora `memberships` y `member_companies` al contrato de `sync/v3/bootstrap/references`, `verify` y `reconcile`, manteniendolos fuera del filtro por empresa seleccionada para preservar el set completo de empresas operativas del usuario
+- `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` y `sisa.ui/src/modules/jobs/presentation/sync/referenceCache.ts` ya entienden esas nuevas referencias, las cachean y las vuelcan sobre `member-companies-memberships` / `companies` para que el shell pueda rehidratar memberships y empresas tambien desde el sync generico de referencias
+- `sisa.ui/contexts/MemberCompaniesContext.tsx` y `sisa.ui/contexts/CompaniesContext.tsx` ahora reaccionan a updates del reference cache, de modo que un bootstrap/sync posterior pueda refrescar la capa operativa sin requerir remount completo de la app
 
 Riesgo cubierto:
 
@@ -30,11 +33,13 @@ Riesgo cubierto:
 
 Puntos ciegos conocidos:
 
-- memberships y empresas operativas ya entran al bootstrap critico, pero todavia no quedaron integradas al contrato generico de `sync/v3/bootstrap/references` + `pull`; por ahora la convergencia sigue apoyandose en bootstrap de arranque + refresh HTTP especifico
+- memberships y empresas operativas ya entran al bootstrap critico y al bootstrap/verify/reconcile de referencias, pero todavia no emiten operaciones propias dentro de `sync/v3/events`/`pull`; si cambian en servidor durante una sesion abierta, hoy la convergencia sigue dependiendo de re-bootstrap de referencias o refresh HTTP especifico en vez de delta puro por eventos
 
 Validacion parcial:
 
 - `php -l src/Controllers/BootstrapController.php` en `sisa.api` -> PASS
+- `php -l src/Controllers/SyncOperationsController.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` en `sisa.api` -> PASS con ruido preexistente de conexion DB al final de la corrida
 - `npm run lint` en `sisa.ui` -> PASS
 - `npm run check:startup-stability` en `sisa.ui` -> PASS
 - `npm run check:cache` en `sisa.ui` -> PASS
