@@ -1,5 +1,27 @@
 # Estado QA
 
+## Avance parcial - reversión de factura anulada/eliminada
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/src/Services/InvoiceCancellationService.php` centraliza la anulación/eliminación transaccional de facturas, revierte `jobs` a estado terminado, libera `payments`, soft-deletea `invoice_items` y devuelve un resumen operativo de la reversión
+- `sisa.api/src/Services/JobStatusResolver.php` resuelve de forma centralizada los `status_id` de jobs para estados facturado/terminado usando `scope = job` y matching por `code`/`label`, evitando volver a hardcodear IDs mágicos
+- `sisa.api/src/Controllers/InvoicesController.php` deja de tener la lógica pesada de delete/void y delega en el servicio nuevo, manteniendo respuestas API con `invoice_id`, contadores de liberación y `status`
+- `sisa.api/src/Models/Invoices.php`, `sisa.api/src/Models/Jobs.php`, `sisa.api/src/Models/Payments.php` y `sisa.api/src/Models/ActivityLog.php` suman helpers puntuales para actualizar estados/versiones/source device sin hard delete y para tocar disponibilidad facturable de pagos
+- `sisa.api/tests/Services/InvoiceCancellationServiceTest.php` cubre liberación de jobs+payments, rollback por `company_id` cruzado y protección cuando el mismo job/payment sigue referenciado por otra factura activa
+- `sisa.api/tests/Services/InvoiceLineNormalizerTest.php` ahora verifica también que un payment vuelva a ser reincluible cuando el `invoice_item` previo quedó anulado por soft delete
+
+Riesgo cubierto:
+
+- que al anular o eliminar una factura queden trabajos o pagos trabados como facturados y no reaparezcan para una nueva factura
+- que la reversión libere entidades de otra empresa o pise incorrectamente un job/payment todavía referenciado por otra factura activa
+
+Puntos ciegos conocidos:
+
+- falta correr la validación focalizada en entorno local para confirmar que la nueva reversión no rompe hooks secundarios de sync/history fuera del camino cubierto por tests unitarios
+
 ## Ultima actualizacion
 
 - Fecha: 2026-05-02
