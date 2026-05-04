@@ -10,6 +10,10 @@ Que cambio:
 - `sisa.api/src/Services/JobStatusResolver.php` resuelve de forma centralizada los `status_id` de jobs para estados facturado/terminado usando `scope = job` y matching por `code`/`label`, evitando volver a hardcodear IDs mágicos
 - `sisa.api/src/Controllers/InvoicesController.php` deja de tener la lógica pesada de delete/void y delega en el servicio nuevo, manteniendo respuestas API con `invoice_id`, contadores de liberación y `status`
 - `sisa.api/src/Models/Invoices.php`, `sisa.api/src/Models/Jobs.php`, `sisa.api/src/Models/Payments.php` y `sisa.api/src/Models/ActivityLog.php` suman helpers puntuales para actualizar estados/versiones/source device sin hard delete y para tocar disponibilidad facturable de pagos
+- `sisa.ui/contexts/InvoicesContext.tsx` ahora refresca también `jobs` y `payments` inmediatamente después de crear, editar, anular o eliminar una factura, evitando que la UI espere solo el reload de facturas o el autosync para reflejar la liberación
+- `sisa.ui/app/invoices/create.tsx` deja de disparar updates secuenciales extra de jobs uno por uno después de facturar; el cambio de estado queda a cargo del backend transaccional y la pantalla solo muestra el resultado mientras fuerza recarga inmediata de caches afectadas
+- ajuste de fuente real de datos: `sisa.ui/contexts/JobsContext.tsx` ahora no solo recarga la lista legacy desde API sino que también vuelca esos jobs al repositorio SQLite local (`jobsRepository.upsertRemote`) y dispara `notifyJobsAutoSync()`, para que pantallas basadas en `useJobsList()` vean el cambio de estado en el acto
+- robustez UI: `sisa.ui/contexts/InvoicesContext.tsx` ya no marca error al usuario si la eliminación/anulación HTTP fue exitosa pero falla una recarga secundaria o la limpieza de cache local; esos refreshes quedan en modo best-effort con warning en consola
 - `sisa.api/tests/Services/InvoiceCancellationServiceTest.php` cubre liberación de jobs+payments, rollback por `company_id` cruzado y protección cuando el mismo job/payment sigue referenciado por otra factura activa
 - `sisa.api/tests/Services/InvoiceLineNormalizerTest.php` ahora verifica también que un payment vuelva a ser reincluible cuando el `invoice_item` previo quedó anulado por soft delete
 
@@ -20,7 +24,12 @@ Riesgo cubierto:
 
 Puntos ciegos conocidos:
 
-- falta correr la validación focalizada en entorno local para confirmar que la nueva reversión no rompe hooks secundarios de sync/history fuera del camino cubierto por tests unitarios
+- no se corrió en esta pasada una prueba manual end-to-end en dispositivo para medir el tiempo percibido exacto entre facturar/anular y ver el cambio en todas las pantallas abiertas al mismo tiempo
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.ui` -> PASS
+- `vendor/bin/phpunit tests/Services/InvoiceCancellationServiceTest.php tests/Services/InvoiceLineNormalizerTest.php` en `sisa.api` -> PASS (11 tests, 52 assertions)
 
 ## Ultima actualizacion
 
