@@ -14,6 +14,7 @@ Que cambio:
 - `sisa.ui/app/invoices/create.tsx` deja de disparar updates secuenciales extra de jobs uno por uno después de facturar; el cambio de estado queda a cargo del backend transaccional y la pantalla solo muestra el resultado mientras fuerza recarga inmediata de caches afectadas
 - ajuste de fuente real de datos: `sisa.ui/contexts/JobsContext.tsx` ahora no solo recarga la lista legacy desde API sino que también vuelca esos jobs al repositorio SQLite local (`jobsRepository.upsertRemote`) y dispara `notifyJobsAutoSync()`, para que pantallas basadas en `useJobsList()` vean el cambio de estado en el acto
 - robustez UI: `sisa.ui/contexts/InvoicesContext.tsx` ya no marca error al usuario si la eliminación/anulación HTTP fue exitosa pero falla una recarga secundaria o la limpieza de cache local; esos refreshes quedan en modo best-effort con warning en consola
+- flujo de borrado desde editar factura: `sisa.ui/contexts/InvoicesContext.tsx` trata `200`, `204` y `404` post-delete como éxito funcional, y `sisa.ui/app/invoices/[id].tsx` bloquea doble ejecución, evita refetch de la factura eliminada y navega al listado apenas confirma éxito
 - `sisa.api/tests/Services/InvoiceCancellationServiceTest.php` cubre liberación de jobs+payments, rollback por `company_id` cruzado y protección cuando el mismo job/payment sigue referenciado por otra factura activa
 - `sisa.api/tests/Services/InvoiceLineNormalizerTest.php` ahora verifica también que un payment vuelva a ser reincluible cuando el `invoice_item` previo quedó anulado por soft delete
 
