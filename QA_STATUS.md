@@ -15,6 +15,8 @@ Que cambio:
 - ajuste de fuente real de datos: `sisa.ui/contexts/JobsContext.tsx` ahora no solo recarga la lista legacy desde API sino que también vuelca esos jobs al repositorio SQLite local (`jobsRepository.upsertRemote`) y dispara `notifyJobsAutoSync()`, para que pantallas basadas en `useJobsList()` vean el cambio de estado en el acto
 - robustez UI: `sisa.ui/contexts/InvoicesContext.tsx` ya no marca error al usuario si la eliminación/anulación HTTP fue exitosa pero falla una recarga secundaria o la limpieza de cache local; esos refreshes quedan en modo best-effort con warning en consola
 - flujo de borrado desde editar factura: `sisa.ui/contexts/InvoicesContext.tsx` trata `200`, `204` y `404` post-delete como éxito funcional, y `sisa.ui/app/invoices/[id].tsx` bloquea doble ejecución, evita refetch de la factura eliminada y navega al listado apenas confirma éxito
+- confirmación funcional extra: si el `DELETE` devuelve respuesta anómala pero el backend ya borró la factura, `sisa.ui/contexts/InvoicesContext.tsx` ahora hace una verificación `GET /invoices/{id}` y toma `404`/"not found" como éxito definitivo antes de mostrar error
+- ajuste adicional: como `GET /invoices/{id}` puede seguir devolviendo facturas soft-deleted, la confirmación post-delete ahora valida contra `GET /invoices` y considera éxito si la factura ya no figura en el listado operativo
 - `sisa.api/tests/Services/InvoiceCancellationServiceTest.php` cubre liberación de jobs+payments, rollback por `company_id` cruzado y protección cuando el mismo job/payment sigue referenciado por otra factura activa
 - `sisa.api/tests/Services/InvoiceLineNormalizerTest.php` ahora verifica también que un payment vuelva a ser reincluible cuando el `invoice_item` previo quedó anulado por soft delete
 
