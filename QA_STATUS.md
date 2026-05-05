@@ -16,6 +16,8 @@ Que cambio:
 - `sisa.ui/components/StartupLoadingScreen.tsx` agrega una pantalla inicial de carga con etapas visibles, progreso del bootstrap y estado del checkpoint/importados para que la espera del primer arranque no parezca un freeze
 - `sisa.ui/components/BottomNavigationBar.tsx` y `sisa.ui/contexts/BootstrapContext.tsx` dejan de limpiar la empresa activa cuando todavia existen memberships validas pero la coleccion `memberCompanies` aun no termino de rehidratarse
 - `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` recupera la forma esperada por el smoke de startup para la guarda de autosync durante operaciones activas
+- tercera pasada: la causa de que `Home`/autosync siguieran viendo `selectedCompanyId = null` aunque bootstrap ya hubiese elegido la default era estructural; `sisa.ui/hooks/useCachedState.ts` no propagaba cambios entre consumers vivos del mismo `cacheKey`, asi que cada hook quedaba con una copia local vieja hasta remount
+- `sisa.ui/hooks/useCachedState.ts` ahora publica updates por clave a todos los subscribers activos; cuando bootstrap fija `selected-company-id` desde `config.company_default_id`, el resto de providers/hooks lo ve en caliente sin requerir cerrar/reabrir ni navegar para forzar remount
 
 Riesgo cubierto:
 
