@@ -11,6 +11,11 @@ Que cambio:
 - `sisa.ui/contexts/ProfileContext.tsx` y `sisa.ui/contexts/ConfigContext.tsx` ahora devuelven estado de bootstrap (`server`/`cache`/`failed`) en vez de ocultar silenciosamente si el fetch critico realmente quedo incompleto
 - `sisa.ui/contexts/bootstrapTypes.ts` incorpora la etapa `profile` para dejar trazabilidad real del arranque critico en diagnostico y status persistido
 - `sisa.ui/app/_layout.tsx` y `sisa.ui/app/login/Login.tsx` ya no dejan entrar/redirigir a `Home` apenas existe username; mantienen spinner de sesion hasta que el bootstrap critico termina, evitando la sensacion de app rota en el primer login
+- segunda pasada: `sisa.ui/contexts/BootstrapContext.tsx` ahora bloquea tambien la entrada hasta hidratar datos operativos por empresa; si no existe checkpoint local corre bootstrap completo de jobs/referencias y si ya existe aplica pull incremental antes de habilitar la shell
+- `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` deja de guardar el checkpoint solo en scope global y ahora lo persiste por `company_id`, alineando la primera carga completa con el pull incremental posterior
+- `sisa.ui/components/StartupLoadingScreen.tsx` agrega una pantalla inicial de carga con etapas visibles, progreso del bootstrap y estado del checkpoint/importados para que la espera del primer arranque no parezca un freeze
+- `sisa.ui/components/BottomNavigationBar.tsx` y `sisa.ui/contexts/BootstrapContext.tsx` dejan de limpiar la empresa activa cuando todavia existen memberships validas pero la coleccion `memberCompanies` aun no termino de rehidratarse
+- `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` recupera la forma esperada por el smoke de startup para la guarda de autosync durante operaciones activas
 
 Riesgo cubierto:
 
@@ -19,13 +24,13 @@ Riesgo cubierto:
 
 Puntos ciegos conocidos:
 
-- `npm run check:startup-stability` sigue fallando por una expectativa preexistente del smoke sobre `JobsSyncAutoRunner` (`Missing jobs autosync operation guard`), ajena a este fix puntual de login/bootstrap; no se corrigio en esta pasada para no mezclar hitos
+- el flujo ahora bloquea hasta terminar bootstrap critico + carga/pull inicial de datos operativos; si la base de una empresa es muy grande, conviene medir en dispositivo real si hace falta partir la etapa visual en sub-bloques adicionales por dominio
 
 Validacion parcial:
 
 - `npm run lint` en `sisa.ui` -> PASS
 - `npm run check:cache` en `sisa.ui` -> PASS
-- `npm run check:startup-stability` en `sisa.ui` -> BLOQUEADO por smoke baseline preexistente (`Missing jobs autosync operation guard`)
+- `npm run check:startup-stability` en `sisa.ui` -> PASS
 
 ## Avance parcial - duplicados de participantes en worklogs sync/offline
 
