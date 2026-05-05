@@ -1,5 +1,32 @@
 # Estado QA
 
+## Avance parcial - login y bootstrap inicial bloqueantes
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/contexts/BootstrapContext.tsx` ahora orquesta el arranque autenticado en orden util para primera sesion: perfil, configuracion, empresas/memberships, resolucion de empresa activa y permisos antes de marcar la shell como lista
+- `sisa.ui/contexts/PermissionsContext.tsx` acepta un `companyId` explicito para refrescar permisos del scope que acaba de seleccionarse durante bootstrap, sin depender de un reinicio/remount para que el provider vea primero el `selected-company-id`
+- `sisa.ui/contexts/ProfileContext.tsx` y `sisa.ui/contexts/ConfigContext.tsx` ahora devuelven estado de bootstrap (`server`/`cache`/`failed`) en vez de ocultar silenciosamente si el fetch critico realmente quedo incompleto
+- `sisa.ui/contexts/bootstrapTypes.ts` incorpora la etapa `profile` para dejar trazabilidad real del arranque critico en diagnostico y status persistido
+- `sisa.ui/app/_layout.tsx` y `sisa.ui/app/login/Login.tsx` ya no dejan entrar/redirigir a `Home` apenas existe username; mantienen spinner de sesion hasta que el bootstrap critico termina, evitando la sensacion de app rota en el primer login
+
+Riesgo cubierto:
+
+- que un usuario nuevo entre a una shell medio vacia, sin empresa activa o sin permisos, y necesite cerrar/abrir varias veces para terminar de hidratar la sesion
+- que el primer render autenticado quede corriendo con permisos `skipped` porque el `selected-company-id` todavia no existia al momento del fetch inicial
+
+Puntos ciegos conocidos:
+
+- `npm run check:startup-stability` sigue fallando por una expectativa preexistente del smoke sobre `JobsSyncAutoRunner` (`Missing jobs autosync operation guard`), ajena a este fix puntual de login/bootstrap; no se corrigio en esta pasada para no mezclar hitos
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.ui` -> PASS
+- `npm run check:cache` en `sisa.ui` -> PASS
+- `npm run check:startup-stability` en `sisa.ui` -> BLOQUEADO por smoke baseline preexistente (`Missing jobs autosync operation guard`)
+
 ## Avance parcial - duplicados de participantes en worklogs sync/offline
 
 Estado: en progreso
