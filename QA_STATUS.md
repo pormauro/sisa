@@ -1,5 +1,30 @@
 # Estado QA
 
+## Avance parcial - duplicados de participantes en worklogs sync/offline
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/src/Models/WorkLogParticipants.php` ahora deduplica la lectura activa por `user_id`, hace `softDelete` fila por fila con timestamps distintos para no chocar con el indice `(work_log_id, user_id, deleted_at)` y restaura filas soft-deleted existentes en vez de insertar otra copia del mismo participante
+- `sisa.api/src/Controllers/WorkLogsController.php` y `sisa.api/src/Controllers/SyncOperationsController.php` pasan a usar `createOrRestoreActive()` al reemplazar participantes, frenando la acumulacion de filas repetidas del mismo tecnico sobre un mismo worklog cuando el registro se vuelve a sincronizar o regrabar
+- `sisa.api/tests/Models/WorkLogParticipantsTest.php` cubre el caso de duplicates activos legacy y verifica tanto el borrado seguro como la restauracion de filas previas para no volver a crear otra activa del mismo usuario
+
+Riesgo cubierto:
+
+- que un worklog muestre/calcule dos veces al mismo participante por acumulacion de filas activas duplicadas en `work_log_participants`
+- que un reemplazo de participantes falle o deje basura historica adicional cuando ya existe baseline roto con duplicados activos del mismo `work_log_id` + `user_id`
+
+Puntos ciegos conocidos:
+
+- este cambio evita nuevas duplicaciones y deja de exponer duplicados activos existentes en lecturas API, pero no corre todavia una limpieza masiva sobre la base host para compactar historico ya generado
+- `tests/Controllers/WorkLogsControllerTest.php` no quedo util como validacion adicional en esta pasada porque sigue levantando una falla preexistente de baseline SQLite en `PaymentTemplates`/`SyncEventGenerator` ajena al fix de participantes
+
+Validacion parcial:
+
+- `vendor/bin/phpunit tests/Models/WorkLogParticipantsTest.php tests/Models/AppointmentParticipantsTest.php` en `sisa.api` -> PASS (3 tests, 27 assertions)
+- intento de `vendor/bin/phpunit tests/Controllers/WorkLogsControllerTest.php` en `sisa.api` -> bloqueado por falla baseline preexistente de SQLite en `PaymentTemplates`/`SyncEventGenerator`, no por el cambio de `work_log_participants`
+
 ## Avance parcial - reversión de factura anulada/eliminada
 
 Estado: en progreso
