@@ -18,6 +18,10 @@ Que cambio:
 - `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` recupera la forma esperada por el smoke de startup para la guarda de autosync durante operaciones activas
 - tercera pasada: la causa de que `Home`/autosync siguieran viendo `selectedCompanyId = null` aunque bootstrap ya hubiese elegido la default era estructural; `sisa.ui/hooks/useCachedState.ts` no propagaba cambios entre consumers vivos del mismo `cacheKey`, asi que cada hook quedaba con una copia local vieja hasta remount
 - `sisa.ui/hooks/useCachedState.ts` ahora publica updates por clave a todos los subscribers activos; cuando bootstrap fija `selected-company-id` desde `config.company_default_id`, el resto de providers/hooks lo ve en caliente sin requerir cerrar/reabrir ni navegar para forzar remount
+- cuarta pasada: `sisa.ui/app/user/CompanyPreferenceScreen.tsx` agrega una pantalla dedicada para elegir empresa activa y, opcionalmente, guardarla tambien como predeterminada del usuario dentro de Configuración
+- `sisa.ui/app/user/ConfigScreen.tsx` ahora expone un acceso explicito a esa pantalla, dejando la empresa por defecto administrable desde ajustes y no implícitamente desde otros flujos
+- `sisa.ui/components/BottomNavigationBar.tsx` deja de cambiar la default por detrás; seleccionar una empresa desde la barra inferior ahora abre la pantalla nueva con la empresa preseleccionada para confirmar el cambio y recargar la sesión sobre ese scope
+- `sisa.ui/contexts/BootstrapContext.tsx` acepta refresh dirigido por `companyId`, permitiendo que el cambio de empresa dispare un bootstrap bloqueante de la nueva empresa antes de volver a `Home`
 
 Riesgo cubierto:
 
