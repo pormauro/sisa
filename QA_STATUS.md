@@ -8,7 +8,9 @@ Que cambio:
 
 - `sisa.api/src/Models/WorkLogParticipants.php` ahora deduplica la lectura activa por `user_id`, hace `softDelete` fila por fila con timestamps distintos para no chocar con el indice `(work_log_id, user_id, deleted_at)` y restaura filas soft-deleted existentes en vez de insertar otra copia del mismo participante
 - `sisa.api/src/Controllers/WorkLogsController.php` y `sisa.api/src/Controllers/SyncOperationsController.php` pasan a usar `createOrRestoreActive()` al reemplazar participantes, frenando la acumulacion de filas repetidas del mismo tecnico sobre un mismo worklog cuando el registro se vuelve a sincronizar o regrabar
-- `sisa.api/tests/Models/WorkLogParticipantsTest.php` cubre el caso de duplicates activos legacy y verifica tanto el borrado seguro como la restauracion de filas previas para no volver a crear otra activa del mismo usuario
+- segunda pasada preventiva: `sisa.api/src/Models/AppointmentParticipants.php` aplica la misma estrategia de dedupe en lecturas activas y restauracion de filas soft-deleted, y `sisa.api/src/Controllers/AppointmentsController.php` deja de insertar otra fila activa del mismo tecnico al regrabar participantes de una cita
+- `sisa.api/tests/Models/WorkLogParticipantsTest.php` y `sisa.api/tests/Models/AppointmentParticipantsTest.php` cubren duplicates activos legacy y verifican tanto el borrado seguro como la restauracion de filas previas para no volver a crear otra activa del mismo usuario
+- `qa/WORKLOG_PARTICIPANTS_DEDUPE_RUNBOOK.md` deja el SQL de preview + limpieza para compactar los duplicados activos ya existentes en host tanto para worklogs como para appointments
 
 Riesgo cubierto:
 
@@ -19,11 +21,13 @@ Puntos ciegos conocidos:
 
 - este cambio evita nuevas duplicaciones y deja de exponer duplicados activos existentes en lecturas API, pero no corre todavia una limpieza masiva sobre la base host para compactar historico ya generado
 - `tests/Controllers/WorkLogsControllerTest.php` no quedo util como validacion adicional en esta pasada porque sigue levantando una falla preexistente de baseline SQLite en `PaymentTemplates`/`SyncEventGenerator` ajena al fix de participantes
+- el runbook SQL de limpieza usa `ROW_NUMBER()`, asi que asume MySQL 8+ en el host; si el server estuviera en una version anterior, hay que bajar a una variante sin window functions
 
 Validacion parcial:
 
-- `vendor/bin/phpunit tests/Models/WorkLogParticipantsTest.php tests/Models/AppointmentParticipantsTest.php` en `sisa.api` -> PASS (3 tests, 27 assertions)
+- `vendor/bin/phpunit tests/Models/WorkLogParticipantsTest.php tests/Models/AppointmentParticipantsTest.php` en `sisa.api` -> PASS (4 tests, 36 assertions)
 - intento de `vendor/bin/phpunit tests/Controllers/WorkLogsControllerTest.php` en `sisa.api` -> bloqueado por falla baseline preexistente de SQLite en `PaymentTemplates`/`SyncEventGenerator`, no por el cambio de `work_log_participants`
+- `php -l src/Models/AppointmentParticipants.php src/Controllers/AppointmentsController.php src/Models/WorkLogParticipants.php tests/Models/AppointmentParticipantsTest.php tests/Models/WorkLogParticipantsTest.php` en `sisa.api` -> PASS
 
 ## Avance parcial - reversión de factura anulada/eliminada
 
