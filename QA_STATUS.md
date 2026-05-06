@@ -22,6 +22,7 @@ Que cambio:
 - `sisa.ui/app/user/ConfigScreen.tsx` ahora expone un acceso explicito a esa pantalla, dejando la empresa por defecto administrable desde ajustes y no implícitamente desde otros flujos
 - `sisa.ui/components/BottomNavigationBar.tsx` deja de cambiar la default por detrás; seleccionar una empresa desde la barra inferior ahora abre la pantalla nueva con la empresa preseleccionada para confirmar el cambio y recargar la sesión sobre ese scope
 - `sisa.ui/contexts/BootstrapContext.tsx` acepta refresh dirigido por `companyId`, permitiendo que el cambio de empresa dispare un bootstrap bloqueante de la nueva empresa antes de volver a `Home`
+- quinta pasada: ante evidencia de que el switch de empresa sigue dejando rutas colgadas y datos de la empresa anterior, se creó `qa/COMPANY_SWITCH_HARDENING_CHECKLIST.md` como plan/checklist ejecutable para cerrar el problema por etapas: ruteo, bootstrap bloqueante, auditoría de `company_id`, queries SQLite, contexts, limpieza de estado y smokes de regresión
 
 Riesgo cubierto:
 
@@ -31,6 +32,7 @@ Riesgo cubierto:
 Puntos ciegos conocidos:
 
 - el flujo ahora bloquea hasta terminar bootstrap critico + carga/pull inicial de datos operativos; si la base de una empresa es muy grande, conviene medir en dispositivo real si hace falta partir la etapa visual en sub-bloques adicionales por dominio
+- el cambio de empresa todavía no puede darse por cerrado: ya existe pantalla intermedia y bootstrap dirigido, pero falta auditar aislamientos por `company_id` en tablas/queries/contextos para eliminar por completo mezcla de datos entre empresas
 
 Validacion parcial:
 
