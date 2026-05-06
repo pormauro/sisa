@@ -48,6 +48,8 @@ Que cambio:
 - además `sisa.ui/app/user/CompanyPreferenceScreen.tsx` deja de preescribir `selected-company-id` antes del bootstrap bloqueante; ahora deja que `BootstrapContext` consolide el cambio al final, reduciendo carreras y dobles recargas visuales durante el switch
 - warning residual de infraestructura: `sisa.ui/hooks/useCachedState.ts` todavía ejecutaba efectos secundarios (`memoryCache`, listeners y persistencia) dentro del updater funcional de `setState`, lo que seguía siendo candidato fuerte a `Cannot update a component while rendering a different component`
 - fix aplicado: `sisa.ui/hooks/useCachedState.ts` ahora mantiene el updater puro, resuelve `nextValue` desde un `stateRef` y mueve escritura a memoria/persistencia/notificación a una función auxiliar fuera del updater; se mantiene la API pública `[state, setCachedState, hydrated]`
+- resolución de conflicto post-`git pull origin main`: se repararon conflictos en `sisa.ui/config/Index.ts`, `sisa.ui/contexts/ClientsContext.tsx`, `sisa.ui/contexts/ProvidersContext.tsx`, `sisa.ui/src/modules/jobs/data/db/schema.ts`, `sisa.ui/src/modules/jobs/data/db/jobsMigrations.ts`, `sisa.ui/src/modules/jobs/data/repositories/SQLiteClientsRepository.ts` y `sisa.ui/src/modules/jobs/data/repositories/SQLiteProvidersRepository.ts`
+- criterio usado en la resolución: preservar el rumbo semántico nuevo (`client_company_id`, `provider_company_id`, `company_id`), mantener el aislamiento por empresa activa y evitar volver a `replaceAll()` global/columnas legacy invertidas en clientes y proveedores
 
 Riesgo cubierto:
 
