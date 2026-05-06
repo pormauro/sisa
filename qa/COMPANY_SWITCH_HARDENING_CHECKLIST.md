@@ -208,4 +208,5 @@ empresa A activa
 - [x] `referenceCache.mergeFoldersCache` estaba persistiendo `company_id: null` en carpetas bootstrap/sync; se corrigió para preservar el scope real de la empresa.
 - [x] `JobsContext` ya no reutiliza un cache global único; ahora separa cache por empresa y fetch remoto por `company_id`, reduciendo mezcla de jobs legacy entre empresas.
 - [x] `CategoriesContext` y `JobPrioritiesContext` ahora filtran hidratación/publicación/cache por empresa activa en vez de republicar colecciones globales sin scope.
-- [!] Sigue pendiente auditar otros contextos con riesgo parecido: `Payments`, `Receipts`, `Invoices`, `CashBoxes`, `ProductsServices`, `Tariffs`, `Statuses`, `Appointments` y cualquier consumer que aún publique rows cross-company desde SQLite/cache compartido.
+- [~] `Statuses`, `Appointments`, `Payments`, `CashBoxes`, `ProductsServices`, `Tariffs`, `Receipts` e `Invoices` ya recibieron un primer recorte por empresa activa; quedan pendientes validaciones finas en navegación real y lectura cruzada de consumers secundarios.
+- [!] Sigue pendiente auditar cualquier consumer/pantalla secundaria que todavía derive datos combinando caches legacy o rows no filtradas después del switch, aunque el provider principal ya esté scopeado.
