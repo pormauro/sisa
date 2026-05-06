@@ -36,6 +36,10 @@ Que cambio:
 - `sisa.ui/src/modules/jobs/data/repositories/SQLiteClientsRepository.ts`, `sisa.ui/src/modules/jobs/data/repositories/SQLiteProvidersRepository.ts` y `sisa.ui/src/modules/jobs/presentation/sync/referenceCache.ts` mantienen compatibilidad con columnas/keys legacy, pero exponen el modelo corregido hacia el resto de la UI
 - `sisa.ui/app/clients/create.tsx`, `sisa.ui/app/clients/[id].tsx` y `sisa.ui/app/providers/create.tsx` ya envían/consumen los nombres corregidos a nivel de pantalla
 - undécima pasada: se empuja la limpieza semántica a hooks internos de sync/bootstrap. `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` ya generan `client_company_id` / `provider_company_id` como nombres canónicos al poblar caches locales, manteniendo fallback a `empresa_id` y `emitter_company_id` solo como compatibilidad de payload
+- duodécima pasada: se agrega migración dedicada de storage en `sisa.ui/src/modules/jobs/data/db/jobsMigrations.ts` y `sisa.ui/src/modules/jobs/data/db/schema.ts` para alinear SQLite al modelo canónico. `clients` pasa a usar `client_company_id` + `company_id` y `providers` pasa a usar `provider_company_id` + `company_id`, con copia de datos legacy y recreación de índices
+- `sisa.ui/src/modules/jobs/data/repositories/SQLiteClientsRepository.ts` y `sisa.ui/src/modules/jobs/data/repositories/SQLiteProvidersRepository.ts` ya escriben/leen contra las nuevas columnas del esquema local
+- incidente detectado en dispositivo: la migración v24 asumía que toda base previa todavía tenía `emitter_company_id` / `empresa_id`; en instalaciones frescas o bases ya recreadas con esquema nuevo, ese supuesto rompía el arranque con `no such column: emitter_company_id`
+- corrección aplicada: `sisa.ui/src/modules/jobs/data/db/jobsMigrations.ts` ahora inspecciona columnas existentes antes de recrear `clients` y `providers`; solo referencia columnas legacy si realmente existen y, si la tabla ya está en forma canónica, se limita a asegurar índices
 
 Riesgo cubierto:
 
@@ -51,6 +55,7 @@ Puntos ciegos conocidos:
 - con este cuarto slice ya no queda un context financiero principal pendiente de scopeo inicial; lo que resta es validación fina en dispositivo real y consumers/pantallas secundarias que todavía puedan recombinar datos legacy fuera del provider principal
 - todavía quedan nombres legacy en capas internas de compatibilidad (`empresa_id`, `emitter_company_id`, columnas SQLite existentes) para no mezclar este fix semántico con una migración destructiva de storage; si más adelante se quiere limpieza total, conviene hacer una migración dedicada y separada
 - después de esta pasada, los nombres legacy quedan más acotados a compatibilidad de storage/esquema y payloads viejos; la UI y los hooks principales ya hablan mayormente en términos de `client_company_id`, `company_id` y `provider_company_id`
+- tras esta migración, los nombres legacy quedan principalmente como compatibilidad de payload/sync remoto; el storage SQLite nuevo ya queda alineado con el modelo canónico
 
 Validacion parcial:
 
