@@ -35,6 +35,7 @@ Que cambio:
 - décima pasada: se corrige el modelo semántico en frontend para clientes y proveedores. En `sisa.ui/contexts/ClientsContext.tsx` el campo canónico pasa a ser `client_company_id` para la empresa del cliente y `company_id` queda reservado para la empresa emisora/activa; en `sisa.ui/contexts/ProvidersContext.tsx` `provider_company_id` reemplaza a `empresa_id` como nombre canónico para la empresa del proveedor
 - `sisa.ui/src/modules/jobs/data/repositories/SQLiteClientsRepository.ts`, `sisa.ui/src/modules/jobs/data/repositories/SQLiteProvidersRepository.ts` y `sisa.ui/src/modules/jobs/presentation/sync/referenceCache.ts` mantienen compatibilidad con columnas/keys legacy, pero exponen el modelo corregido hacia el resto de la UI
 - `sisa.ui/app/clients/create.tsx`, `sisa.ui/app/clients/[id].tsx` y `sisa.ui/app/providers/create.tsx` ya envían/consumen los nombres corregidos a nivel de pantalla
+- undécima pasada: se empuja la limpieza semántica a hooks internos de sync/bootstrap. `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` ya generan `client_company_id` / `provider_company_id` como nombres canónicos al poblar caches locales, manteniendo fallback a `empresa_id` y `emitter_company_id` solo como compatibilidad de payload
 
 Riesgo cubierto:
 
@@ -49,6 +50,7 @@ Puntos ciegos conocidos:
 - luego de este tercer slice, el mayor bloque pendiente queda concentrado en `Receipts`, `Invoices` y validación fina en dispositivo real de que los contexts recién scopeados no conservan flashes/stale rows en navegación larga
 - con este cuarto slice ya no queda un context financiero principal pendiente de scopeo inicial; lo que resta es validación fina en dispositivo real y consumers/pantallas secundarias que todavía puedan recombinar datos legacy fuera del provider principal
 - todavía quedan nombres legacy en capas internas de compatibilidad (`empresa_id`, `emitter_company_id`, columnas SQLite existentes) para no mezclar este fix semántico con una migración destructiva de storage; si más adelante se quiere limpieza total, conviene hacer una migración dedicada y separada
+- después de esta pasada, los nombres legacy quedan más acotados a compatibilidad de storage/esquema y payloads viejos; la UI y los hooks principales ya hablan mayormente en términos de `client_company_id`, `company_id` y `provider_company_id`
 
 Validacion parcial:
 
