@@ -50,6 +50,8 @@ Que cambio:
 - fix aplicado: `sisa.ui/hooks/useCachedState.ts` ahora mantiene el updater puro, resuelve `nextValue` desde un `stateRef` y mueve escritura a memoria/persistencia/notificación a una función auxiliar fuera del updater; se mantiene la API pública `[state, setCachedState, hydrated]`
 - resolución de conflicto post-`git pull origin main`: se repararon conflictos en `sisa.ui/config/Index.ts`, `sisa.ui/contexts/ClientsContext.tsx`, `sisa.ui/contexts/ProvidersContext.tsx`, `sisa.ui/src/modules/jobs/data/db/schema.ts`, `sisa.ui/src/modules/jobs/data/db/jobsMigrations.ts`, `sisa.ui/src/modules/jobs/data/repositories/SQLiteClientsRepository.ts` y `sisa.ui/src/modules/jobs/data/repositories/SQLiteProvidersRepository.ts`
 - criterio usado en la resolución: preservar el rumbo semántico nuevo (`client_company_id`, `provider_company_id`, `company_id`), mantener el aislamiento por empresa activa y evitar volver a `replaceAll()` global/columnas legacy invertidas en clientes y proveedores
+- resolución equivalente en API: se cerraron los conflictos de `sisa.api` y se tomó el mismo rumbo semántico. `src/Controllers/ClientsController.php`, `src/Controllers/ProvidersController.php`, `src/Models/Clients.php` y `src/Models/Providers.php` ahora aceptan aliases legacy pero priorizan `client_company_id` / `provider_company_id` como nombres canónicos, dejando `company_id` para la empresa operativa/emisora
+- los conflictos no relacionados (`JobsController`, `JobItemsController`, `SyncController`, `FileAttachments`) se resolvieron preservando la versión de la rama de trabajo para no mezclar esta alineación semántica con cambios laterales durante el merge
 
 Riesgo cubierto:
 
