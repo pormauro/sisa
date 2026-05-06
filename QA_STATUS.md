@@ -40,6 +40,9 @@ Que cambio:
 - `sisa.ui/src/modules/jobs/data/repositories/SQLiteClientsRepository.ts` y `sisa.ui/src/modules/jobs/data/repositories/SQLiteProvidersRepository.ts` ya escriben/leen contra las nuevas columnas del esquema local
 - incidente detectado en dispositivo: la migración v24 asumía que toda base previa todavía tenía `emitter_company_id` / `empresa_id`; en instalaciones frescas o bases ya recreadas con esquema nuevo, ese supuesto rompía el arranque con `no such column: emitter_company_id`
 - corrección aplicada: `sisa.ui/src/modules/jobs/data/db/jobsMigrations.ts` ahora inspecciona columnas existentes antes de recrear `clients` y `providers`; solo referencia columnas legacy si realmente existen y, si la tabla ya está en forma canónica, se limita a asegurar índices
+- incidente adicional detectado en arranque: warning React `Cannot update a component (PermissionsProvider) while rendering a different component (MemberCompaniesProvider)` por dependencia cruzada sobre la key compartida `member-companies-memberships`
+- corrección estructural aplicada: `sisa.ui/app/_layout.tsx` reordena providers para cargar `CompaniesProvider` + `MemberCompaniesProvider` antes de `PermissionsProvider`; además `sisa.ui/contexts/PermissionsContext.tsx` deja de leer membresías con `useCachedState` compartido y pasa a consumir `MemberCompaniesContext`, esperando `membershipsHydrated` antes de refrescar permisos
+- `sisa.ui/contexts/MemberCompaniesContext.tsx` ahora expone `membershipsHydrated` para que permisos/bootstrap puedan sincronizarse sin setState cruzado durante render
 
 Riesgo cubierto:
 
