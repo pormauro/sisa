@@ -51,14 +51,14 @@ empresa A activa
 
 ### 1.1 Rutas colgadas durante el switch
 
-- [ ] Corregir warning `Route '/[id]' with param 'id' was specified both in the path and as a param`.
-- [ ] Identificar todos los `router.push` / `navigation.pushUnique` que mandan `id` duplicado en path + params.
-- [ ] Garantizar que el switch de empresa siempre termine en `router.replace('/Home')` o en una ruta neutra.
-- [ ] Limpiar modal/detalle abierto de empresa anterior antes de habilitar la nueva shell.
+- [~] Corregir warning `Route '/[id]' with param 'id' was specified both in the path and as a param`.
+- [~] Identificar todos los `router.push` / `navigation.pushUnique` que mandan `id` duplicado en path + params.
+- [x] Garantizar que el switch de empresa siempre termine en `router.replace('/Home')` o en una ruta neutra.
+- [~] Limpiar modal/detalle abierto de empresa anterior antes de habilitar la nueva shell.
 
 ### 1.2 Datos mezclados de empresa anterior
 
-- [ ] Confirmar por evidencia que hoy algunas vistas quedan mostrando rows de la empresa previa aunque el bootstrap de la nueva termine bien.
+- [x] Confirmar por evidencia que hoy algunas vistas quedan mostrando rows de la empresa previa aunque el bootstrap de la nueva termine bien.
 - [ ] Identificar modulos donde se observó el síntoma primero: jobs, clientes, catálogos comerciales, pagos, permisos, citas.
 - [ ] Dejar evidencia reproducible paso a paso en runbook manual corto.
 
@@ -69,7 +69,7 @@ empresa A activa
 ### 2.1 Estado global
 
 - [x] `selected-company-id` ya se propaga entre consumers vivos.
-- [ ] Auditar que no existan otros estados paralelos de empresa activa en providers o screens.
+- [~] Auditar que no existan otros estados paralelos de empresa activa en providers o screens.
 - [ ] Eliminar cualquier fallback que derive empresa desde route params cuando el dato operativo debe venir del estado global.
 - [ ] Asegurar que toda pantalla company-scoped se comporte bien si `selected-company-id` cambia en caliente.
 
@@ -152,8 +152,8 @@ empresa A activa
 
 ### 6.2 Contextos React
 
-- [ ] Auditar `StatusesContext`, `ClientsContext`, `FoldersContext`, `ProvidersContext`, `CategoriesContext`, `ProductsServicesContext`, `TariffsContext`, `PaymentTemplatesContext`.
-- [ ] Auditar `Jobs`, `Appointments`, `Payments`, `Receipts`, `Invoices`, `CashBoxes`, `JobPriorities`.
+- [~] Auditar `StatusesContext`, `ClientsContext`, `FoldersContext`, `ProvidersContext`, `CategoriesContext`, `ProductsServicesContext`, `TariffsContext`, `PaymentTemplatesContext`.
+- [~] Auditar `Jobs`, `Appointments`, `Payments`, `Receipts`, `Invoices`, `CashBoxes`, `JobPriorities`.
 - [ ] Confirmar que al cambiar `selected-company-id` resetean estado derivado y recargan desde la empresa nueva.
 
 ### 6.3 Escrituras y validaciones
@@ -197,3 +197,13 @@ empresa A activa
 - [ ] Toda lectura/escritura local relevante queda aislada por `company_id` o clasificada explícitamente como global.
 - [ ] Bootstrap, pull incremental y checkpoints quedan confirmados por empresa.
 - [ ] Existe smoke/checklist suficiente para no reabrir este problema a ciegas.
+
+---
+
+## Hallazgos del primer slice
+
+- [x] `companies/view` y `companies/memberships` usaban `?id=` genérico sobre rutas estáticas dentro del mismo árbol que `companies/[id]`; se migró a `companyId` para reducir ambigüedad de params.
+- [x] `companies/[id]` reaccionaba con alerta visible si la empresa ya no existía en el contexto actual; se cambió a salida silenciosa hacia `/companies` para no tratar un switch válido como error del usuario.
+- [x] `ClientsContext`, `ProvidersContext` y `FoldersContext` estaban rehidratando desde SQLite/cache global sin filtrar por empresa activa; se corrigió publicación/fetch inicial para recortar por `selected-company-id`.
+- [x] `referenceCache.mergeFoldersCache` estaba persistiendo `company_id: null` en carpetas bootstrap/sync; se corrigió para preservar el scope real de la empresa.
+- [!] Sigue pendiente auditar `JobsContext`, `CategoriesContext`, `JobPrioritiesContext` y otros contextos con caches globales que aún podrían dejar flashes o mezclas cross-company.
