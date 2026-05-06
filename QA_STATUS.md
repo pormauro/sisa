@@ -27,6 +27,8 @@ Que cambio:
 - `sisa.ui/app/companies/[id].tsx` ya no muestra alerta de “empresa no encontrada” cuando el detalle queda stale tras un switch válido; ahora sale silenciosamente a `/companies`
 - `sisa.ui/contexts/ClientsContext.tsx`, `sisa.ui/contexts/ProvidersContext.tsx` y `sisa.ui/contexts/FoldersContext.tsx` ahora recortan hidratación/publicación/fetch remoto por `selected-company-id`, evitando que el provider publique rows de otra empresa como si fueran de la activa
 - `sisa.ui/src/modules/jobs/presentation/sync/referenceCache.ts` deja de destruir `company_id` en folders al aplicar bootstrap/sync local, que era un bug concreto de scope
+- séptima pasada: segundo slice del checklist de company switch. `sisa.ui/contexts/JobsContext.tsx` deja de usar un cache único global de jobs y pasa a separar por empresa activa + fetch remoto con `company_id`, evitando que los jobs legacy del contexto arrastren filas de otra empresa
+- `sisa.ui/contexts/CategoriesContext.tsx` y `sisa.ui/contexts/JobPrioritiesContext.tsx` ya no publican/hidratan ciegamente colecciones globales: ahora recortan cache/SQLite/publicación por `selected-company-id`, reduciendo flashes y mezcla de catálogos entre empresas
 
 Riesgo cubierto:
 
@@ -37,7 +39,7 @@ Puntos ciegos conocidos:
 
 - el flujo ahora bloquea hasta terminar bootstrap critico + carga/pull inicial de datos operativos; si la base de una empresa es muy grande, conviene medir en dispositivo real si hace falta partir la etapa visual en sub-bloques adicionales por dominio
 - el cambio de empresa todavía no puede darse por cerrado: ya existe pantalla intermedia y bootstrap dirigido, pero falta auditar aislamientos por `company_id` en tablas/queries/contextos para eliminar por completo mezcla de datos entre empresas
-- siguen pendientes auditorías equivalentes en `JobsContext`, `CategoriesContext`, `JobPrioritiesContext` y otros consumers con caches globales; este slice solo cubre las fugas más evidentes de rutas/clients/providers/folders
+- siguen pendientes auditorías equivalentes en `Payments`, `Receipts`, `Invoices`, `CashBoxes`, `ProductsServices`, `Tariffs`, `Statuses`, `Appointments` y otros consumers con caches/SQLite compartidos; este segundo slice cierra jobs/categorías/prioridades pero no todo el mapa company-scoped
 
 Validacion parcial:
 

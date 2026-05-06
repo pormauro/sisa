@@ -206,4 +206,6 @@ empresa A activa
 - [x] `companies/[id]` reaccionaba con alerta visible si la empresa ya no existía en el contexto actual; se cambió a salida silenciosa hacia `/companies` para no tratar un switch válido como error del usuario.
 - [x] `ClientsContext`, `ProvidersContext` y `FoldersContext` estaban rehidratando desde SQLite/cache global sin filtrar por empresa activa; se corrigió publicación/fetch inicial para recortar por `selected-company-id`.
 - [x] `referenceCache.mergeFoldersCache` estaba persistiendo `company_id: null` en carpetas bootstrap/sync; se corrigió para preservar el scope real de la empresa.
-- [!] Sigue pendiente auditar `JobsContext`, `CategoriesContext`, `JobPrioritiesContext` y otros contextos con caches globales que aún podrían dejar flashes o mezclas cross-company.
+- [x] `JobsContext` ya no reutiliza un cache global único; ahora separa cache por empresa y fetch remoto por `company_id`, reduciendo mezcla de jobs legacy entre empresas.
+- [x] `CategoriesContext` y `JobPrioritiesContext` ahora filtran hidratación/publicación/cache por empresa activa en vez de republicar colecciones globales sin scope.
+- [!] Sigue pendiente auditar otros contextos con riesgo parecido: `Payments`, `Receipts`, `Invoices`, `CashBoxes`, `ProductsServices`, `Tariffs`, `Statuses`, `Appointments` y cualquier consumer que aún publique rows cross-company desde SQLite/cache compartido.
