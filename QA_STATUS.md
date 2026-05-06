@@ -46,6 +46,8 @@ Que cambio:
 - ajuste adicional de UX/estado: `sisa.ui/app/user/CompanyPreferenceScreen.tsx` ahora trata la empresa elegida como activa también cuando se guarda como nueva predeterminada desde Configuración; antes, si cambiaba la default pero la sesión no había cambiado explícitamente, otro fallback podía terminar dejando activa otra empresa (por ejemplo la última creada)
 - corrección posterior sobre cambio de empresa: `sisa.ui/contexts/BootstrapContext.tsx` estaba comparando `requestedCompanyId` contra `nextSelectedCompanyId` al momento de persistir la empresa activa; eso impedía grabar la empresa nueva cuando la resolución coincidía con la solicitada, dejando viva la empresa anterior en `selected-company-id`
 - además `sisa.ui/app/user/CompanyPreferenceScreen.tsx` deja de preescribir `selected-company-id` antes del bootstrap bloqueante; ahora deja que `BootstrapContext` consolide el cambio al final, reduciendo carreras y dobles recargas visuales durante el switch
+- warning residual de infraestructura: `sisa.ui/hooks/useCachedState.ts` todavía ejecutaba efectos secundarios (`memoryCache`, listeners y persistencia) dentro del updater funcional de `setState`, lo que seguía siendo candidato fuerte a `Cannot update a component while rendering a different component`
+- fix aplicado: `sisa.ui/hooks/useCachedState.ts` ahora mantiene el updater puro, resuelve `nextValue` desde un `stateRef` y mueve escritura a memoria/persistencia/notificación a una función auxiliar fuera del updater; se mantiene la API pública `[state, setCachedState, hydrated]`
 
 Riesgo cubierto:
 
