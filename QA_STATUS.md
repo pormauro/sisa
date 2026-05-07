@@ -10,6 +10,7 @@ Que cambio:
 - la ruta de login deja de reflejar el token en el header de respuesta `Authorization`; el token sigue saliendo en el body JSON, evitando un punto sospechoso de incompatibilidad con hosting/proxy mientras se conserva compatibilidad con clientes que ya leen `token` del payload
 - `sisa.api/src/Routes/api.php` tambien unifica `POST /token/refresh` sobre la misma salida JSON robusta, sin depender del header `Authorization` en la respuesta
 - `sisa.api/index.php` agrega logging seguro solo para excepciones de `/login`: ahora escribe en `sisa.api/uploads/logs/auth-login.log` (creando la carpeta si falta) con clase, mensaje sanitizado, archivo, linea, IP, content-type, user-agent y un trace resumido, sin password ni token completo; si no puede escribir, recien ahi cae al `error_log` tradicional
+- ajuste posterior: como el archivo solo nacia cuando habia excepcion, `sisa.api/index.php` ahora asegura `uploads/logs/auth-login.log` y `sisa.api/src/Routes/api.php` escribe eventos minimos de entrada/salida de `POST /login` aun sin exception, para confirmar rapido desde host que la ruta realmente esta pasando por Slim
 
 Riesgo cubierto:
 
