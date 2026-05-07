@@ -1,5 +1,31 @@
 # Estado QA
 
+## Avance parcial - hardening HTTP de /login en API
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/src/Routes/api.php` ahora trata `POST /login` como contrato HTTP explicito: lee el body de forma segura sin depender de streams ya consumidos, rechaza JSON invalido con `400`, serializa la respuesta siempre como JSON UTF-8 y mapea errores funcionales de login a status controlados (`400/401/403`) en vez de dejar `200` o escalar a `500`
+- la ruta de login deja de reflejar el token en el header de respuesta `Authorization`; el token sigue saliendo en el body JSON, evitando un punto sospechoso de incompatibilidad con hosting/proxy mientras se conserva compatibilidad con clientes que ya leen `token` del payload
+- `sisa.api/src/Routes/api.php` tambien unifica `POST /token/refresh` sobre la misma salida JSON robusta, sin depender del header `Authorization` en la respuesta
+- `sisa.api/index.php` agrega logging seguro solo para excepciones de `/login`: clase, mensaje sanitizado, archivo, linea, IP, content-type, user-agent y un trace resumido, sin password ni token completo
+
+Riesgo cubierto:
+
+- que el login HTTP falle por diferencias entre el camino CLI y la capa Slim/hosting, ya sea por body parsing fragil, serializacion de respuesta o uso del header `Authorization` en la respuesta
+- que un fallo real de middleware/ruta siga entrando como `500` opaco sin contexto operativo suficiente para diagnosticarlo en host
+
+Puntos ciegos conocidos:
+
+- en este workspace no pude confirmar el happy path HTTP con credenciales reales porque el entorno local no levanta la API completa: al boot aparece una falla preexistente de conexion DB antes de poder emular el endpoint extremo a extremo
+- sigue pendiente validar en el host objetivo que el `500` confirmado desaparece efectivamente y capturar el nuevo log sanitizado si todavia sobrevive otra excepcion aguas arriba
+
+Validacion parcial:
+
+- `php -l index.php` en `sisa.api` -> PASS
+- `php -l src/Routes/api.php` en `sisa.api` -> PASS
+
 ## Avance parcial - login y bootstrap inicial bloqueantes
 
 Estado: en progreso
