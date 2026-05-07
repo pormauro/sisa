@@ -9,7 +9,7 @@ Que cambio:
 - `sisa.api/src/Routes/api.php` ahora trata `POST /login` como contrato HTTP explicito: lee el body de forma segura sin depender de streams ya consumidos, rechaza JSON invalido con `400`, serializa la respuesta siempre como JSON UTF-8 y mapea errores funcionales de login a status controlados (`400/401/403`) en vez de dejar `200` o escalar a `500`
 - la ruta de login deja de reflejar el token en el header de respuesta `Authorization`; el token sigue saliendo en el body JSON, evitando un punto sospechoso de incompatibilidad con hosting/proxy mientras se conserva compatibilidad con clientes que ya leen `token` del payload
 - `sisa.api/src/Routes/api.php` tambien unifica `POST /token/refresh` sobre la misma salida JSON robusta, sin depender del header `Authorization` en la respuesta
-- `sisa.api/index.php` agrega logging seguro solo para excepciones de `/login`: clase, mensaje sanitizado, archivo, linea, IP, content-type, user-agent y un trace resumido, sin password ni token completo
+- `sisa.api/index.php` agrega logging seguro solo para excepciones de `/login`: ahora escribe en `sisa.api/uploads/logs/auth-login.log` (creando la carpeta si falta) con clase, mensaje sanitizado, archivo, linea, IP, content-type, user-agent y un trace resumido, sin password ni token completo; si no puede escribir, recien ahi cae al `error_log` tradicional
 
 Riesgo cubierto:
 
