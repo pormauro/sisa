@@ -9,7 +9,9 @@ Que cambio:
 - `sisa.ui/contexts/BootstrapContext.tsx` ahora conserva detalle incremental del arranque para las dos etapas mas pesadas (`jobsBootstrap` y `jobsCheckpoint`): texto de estado, registros procesados, pagina/lote actual y si todavia quedan bloques pendientes
 - `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` ya no espera al final para reportar avance; publica progreso mientras descarga paginas del bootstrap de jobs, mientras aplica trabajos a SQLite y cuando entra en las fases finales de grupos/causas raiz/checkpoint
 - `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` ahora emite progreso por lote de eventos/checkpoint, dejando visible que la app sigue aplicando bloques aunque todavia no pueda estimar un porcentaje perfecto
-- `sisa.ui/components/StartupLoadingScreen.tsx` agrega barra de progreso y subtitulos dinamicos para que `Base inicial` y `Actualizacion incremental` dejen de verse congeladas durante la primera carga pesada
+- `sisa.ui/components/StartupLoadingScreen.tsx` agrega barra de progreso y subtitulos dinamicos dentro del item activo para que `Base inicial` y `Actualizacion incremental` dejen de verse congeladas durante la primera carga pesada
+- ajuste posterior: `sisa.ui/contexts/CompaniesContext.tsx` ahora mezcla siempre los `member_companies` del startup bootstrap sobre las empresas ya cargadas, en vez de solo anexar faltantes; con eso no se pierde `profile_file_id` cuando la empresa ya existia en cache/listado y vuelven a aparecer los avatares/logos de empresa durante el arranque
+- ajuste posterior 2: el error intermitente de SQLite al hidratar permisos (`NativeStatement.runAsync ... received class java.lang.Integer`) venia del wrapper `sisa.ui/src/modules/jobs/data/db/jobsDatabase.ts`, que estaba expandiendo binds como varargs; ahora pasa siempre el arreglo de parametros en el formato esperado por `expo-sqlite`, evitando el rechazo del statement compartido que hacia mas lento o inestable el paso `Empresas del usuario`
 
 Riesgo cubierto:
 
