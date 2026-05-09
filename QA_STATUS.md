@@ -1,5 +1,32 @@
 # Estado QA
 
+## Avance parcial - bootstrap SQLite de clientes/proveedores tras rename canonico
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/src/modules/jobs/data/repositories/SQLiteClientsRepository.ts` tenia el `INSERT INTO clients` con 16 columnas declaradas pero 17 placeholders en `VALUES`, lo que explicaba el crash de arranque `Error code: 17 values for 16 columns` al hidratar referencias durante bootstrap/pull
+- `sisa.ui/src/modules/jobs/data/repositories/SQLiteProvidersRepository.ts` tambien habia quedado desalineado despues del rename semantico: el `INSERT INTO providers` mandaba un valor extra y corria los binds al intentar persistir `provider_company_id` + `company_id`
+- `sisa.ui/src/modules/jobs/presentation/sync/referenceCache.ts` todavia reinyectaba aliases invertidos al volcar caches locales (`clients` usando `row.company_id` en lugar de `client_company_id`, y `providers` priorizando `empresa_id` sobre `provider_company_id`); ahora respeta primero los nombres canonicos y deja los legacy solo como fallback
+
+Riesgo cubierto:
+
+- evitar que el bootstrap inicial o la actualizacion incremental rompan SQLite al persistir clientes/proveedores despues del rename a `company_id`, `client_company_id` y `provider_company_id`
+- reducir el riesgo de rehidratar cache local con semantica invertida y volver a mezclar empresa operativa con empresa real del cliente/proveedor
+
+Puntos ciegos conocidos:
+
+- `npm run check:sync-smoke` sigue bloqueado por un smoke preexistente/no relacionado que espera el literal `Aceptar versión del servidor` y hoy falla por el texto mojibake `Aceptar versiÃ³n del servidor`; no aparece ligado a este fix de `company_id`
+- falta validacion manual en dispositivo real del camino exacto que venia fallando en la captura (`Base inicial` + `Actualizacion incremental`) para confirmar que ya no reaparece el rechazo de SQLite durante el startup
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.ui` -> PASS
+- `npm run check:cache` en `sisa.ui` -> PASS
+- `npm run check:startup-stability` en `sisa.ui` -> PASS
+- `npm run check:sync-smoke` en `sisa.ui` -> BLOQUEADO por smoke/literal preexistente `Aceptar versiÃ³n del servidor`
+
 ## Avance parcial - fix de ruta duplicada en sync/push
 
 Estado: en progreso
