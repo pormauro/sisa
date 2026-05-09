@@ -12,6 +12,7 @@ Que cambio:
 - `sisa.ui/components/StartupLoadingScreen.tsx` agrega barra de progreso y subtitulos dinamicos dentro del item activo para que `Base inicial` y `Actualizacion incremental` dejen de verse congeladas durante la primera carga pesada
 - ajuste posterior: `sisa.ui/contexts/CompaniesContext.tsx` ahora mezcla siempre los `member_companies` del startup bootstrap sobre las empresas ya cargadas, en vez de solo anexar faltantes; con eso no se pierde `profile_file_id` cuando la empresa ya existia en cache/listado y vuelven a aparecer los avatares/logos de empresa durante el arranque
 - ajuste posterior 2: el error intermitente de SQLite al hidratar permisos (`NativeStatement.runAsync ... received class java.lang.Integer`) venia del wrapper `sisa.ui/src/modules/jobs/data/db/jobsDatabase.ts`, que estaba expandiendo binds como varargs; ahora pasa siempre el arreglo de parametros en el formato esperado por `expo-sqlite`, evitando el rechazo del statement compartido que hacia mas lento o inestable el paso `Empresas del usuario`
+- ajuste posterior 3: la duplicacion de empresas en el selector ya no se corrige solo en la UI; `sisa.ui/contexts/CompaniesContext.tsx` deduplica por `company.id` cada hidratacion/merge/cache y `sisa.ui/contexts/MemberCompaniesContext.tsx` consolida la lista final por empresa aprobada conservando la version mas completa, para que el warning de React por keys repetidas no reaparezca en otros puntos del flujo
 
 Riesgo cubierto:
 
