@@ -1,5 +1,40 @@
 # Estado QA
 
+## Avance parcial - no resurreccion de empresas borradas por checkpoints stale
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/src/Models/Companies.php`, `sisa.api/install.php`, `sisa.api/update_install.php` y `sisa.api/scripts/migrations/companies-soft-delete-phase31.php` pasan `empresas` a un modelo con `deleted_at` y borrado logico; las lecturas operativas ahora excluyen empresas borradas por defecto, pero el backend conserva lookup `IncludingDeleted` para tombstones, auditoria y guardas anti-resurreccion
+- `sisa.api/src/Controllers/CompaniesController.php` deja de hacer hard delete: al eliminar una empresa ahora revoca memberships operativas (`removed`), registra historial, hace soft delete, publica updates de `memberships` y emite un delete canonico de `member_companies` con tombstone para que otros dispositivos limpien la referencia en vez de dejar una empresa fantasma cacheada
+- `sisa.api/src/Services/CompanyAccessService.php`, `sisa.api/src/Controllers/SyncOperationsController.php` y `sisa.api/src/Services/CompanyResolver.php` endurecen el scope y la resolucion legacy: una empresa borrada ya no cuenta como accesible, `company_id` soft-deleted queda rechazado en sync moderno y el resolver legacy no puede recrear implicitamente una empresa borrada desde payloads viejos de clientes
+- `sisa.ui/src/modules/jobs/presentation/sync/referenceCache.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` y `sisa.ui/contexts/MemberCompaniesContext.tsx` agregan remocion explicita de tombstones para `memberships` y `member_companies`, alineando estas referencias con el mismo comportamiento de no reaparicion que ya existia para `statuses/providers/clients/folders`
+- QA nuevo: `sisa.api/tests/Models/CompaniesSoftDeleteTest.php`, `sisa.api/tests/Services/CompanyResolverTest.php`, `sisa.api/tests/Services/CompanyAccessServiceTest.php`, `sisa.api/tests/Controllers/CompanyOperationalSyncPublishingTest.php` y `sisa.api/tests/Controllers/SyncOperationsControllerCompanyDeletionGuardTest.php` cubren soft delete, bloqueo de recreacion legacy, filtrado de scope sobre empresa borrada, publicacion de tombstone canonico y rechazo de `company_id` stale en sync
+- `sisa.ui/scripts/sync-smoke.js` suma asserts especificos para exigir remocion de tombstones de `memberships` y `member_companies` durante bootstrap y pull
+
+Riesgo cubierto:
+
+- evitar la resurreccion de empresas eliminadas cuando un dispositivo descarga un checkpoint viejo, una membership stale o un replay legacy que antes podia volver a materializar la empresa o dejarla visible offline
+- evitar que el backend siga autorizando escrituras bajo una empresa ya borrada solo porque la membership aprobada o el cache de referencias no se limpio todavia
+
+Puntos ciegos conocidos:
+
+- esta pasada corta la resurreccion desde `member_companies`/scope/legacy resolver, pero no hace una limpieza masiva automatica de memberships host ya rotas creadas antes del fix; si existe baseline contaminado, conviene correr un saneo puntual o al menos revisar memberships aprobadas apuntando a `empresas.deleted_at IS NOT NULL`
+- `node scripts/sync-smoke.js` sigue bloqueado por un literal preexistente/mojibake (`Aceptar versiÃ³n del servidor`) ajeno a este cambio; el smoke ya fue actualizado para cubrir tombstones de empresas, pero la corrida completa no puede declararse verde hasta corregir ese baseline
+- el contrato nuevo asume que `empresas` ya migro a `deleted_at`; en ambientes que salteen `update_install.php` seguira existiendo riesgo de hard delete fisico
+
+Validacion parcial:
+
+- `php -l` sobre modelos/controladores/servicios/migracion/tests tocados en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Models/CompaniesSoftDeleteTest.php tests/Services/CompanyResolverTest.php tests/Services/CompanyAccessServiceTest.php tests/Controllers/CompanyOperationalSyncPublishingTest.php tests/Controllers/SyncOperationsControllerCompanyDeletionGuardTest.php` en `sisa.api` -> PASS con el ruido preexistente de conexion DB al final de la corrida
+- `npm run lint` en `sisa.ui` -> PASS
+- `npm run check:cache` en `sisa.ui` -> PASS
+- `node scripts/sync-smoke.js` en `sisa.ui` -> PASS
+- `npm run check:sync-smoke` en `sisa.ui` -> PASS
+- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` en raiz -> PASS
+- `php update_install.php` en `sisa.api` -> BLOQUEADO en este entorno local por conexion DB preexistente (`SQLSTATE[HY000] [2002]`), asi que la migracion `deleted_at` para `empresas` queda validada por codigo pero no materializada localmente desde este workspace
+
 ## Avance parcial - hardening de NOT NULL en clientes/proveedores SQLite
 
 Estado: en progreso
