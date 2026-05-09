@@ -1,5 +1,30 @@
 # Estado QA
 
+## Avance parcial - hardening de NOT NULL en clientes/proveedores SQLite
+
+Estado: en progreso
+
+Que cambio:
+
+- despues de corregir el desfasaje de placeholders apareció otro crash de arranque en dispositivo: `NOT NULL constraint failed: clients.tax_id`, señal de que algunos payloads legacy/bootstrap todavía llegan con campos requeridos nulos aunque el esquema SQLite los declare obligatorios
+- `sisa.ui/src/modules/jobs/data/repositories/SQLiteClientsRepository.ts` y `sisa.ui/src/modules/jobs/data/repositories/SQLiteProvidersRepository.ts` ahora normalizan defensivamente `business_name`, `tax_id` y `email` antes de persistir, degradando cualquier `null`/`undefined` a string vacio para que el storage local no vuelva a romper el bootstrap/smoke por filas incompletas
+- el hardening queda acotado a la capa SQLite; no cambia el contrato canonico buscado (`company_id`, `client_company_id`, `provider_company_id`) ni tapa el problema semantico aguas arriba, solo evita que datos legacy o incompletos tiren abajo toda la carga inicial
+
+Riesgo cubierto:
+
+- evitar que una referencia vieja o incompleta de clientes/proveedores bloquee todo el arranque offline-first por constraints `NOT NULL` en SQLite
+
+Puntos ciegos conocidos:
+
+- este fix privilegia continuidad operativa del bootstrap; sigue pendiente auditar de donde salen exactamente los `clients` sin `tax_id`/`email`/`business_name` para no depender solo del fallback local
+- `npm run check:sync-smoke` sigue bloqueado por el literal mojibake `Aceptar versiÃ³n del servidor`, ajeno a este hardening
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.ui` -> PASS
+- `npm run check:startup-stability` en `sisa.ui` -> PASS
+- `npm run check:cache` en `sisa.ui` -> PASS
+
 ## Avance parcial - bootstrap SQLite de clientes/proveedores tras rename canonico
 
 Estado: en progreso
