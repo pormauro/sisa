@@ -27,6 +27,7 @@
 - `verify/reconcile` no muestran drift inexplicable para entidades tocadas
 - un segundo dispositivo recibe el cambio y el dispositivo origen no recibe ecos incorrectos
 - se sigue forzando la semantica `delete + create` o `detach + attach` donde corresponda
+- checklist fuente por entidad: `qa/SYNC_ENTITY_CHECKLIST.md`
 
 ### 4. Referencias de soporte
 

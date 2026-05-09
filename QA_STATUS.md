@@ -1,5 +1,24 @@
 # Estado QA
 
+## Avance parcial - checklist transversal para tablas sync
+
+Estado: completado
+
+Que cambio:
+
+- se agrego `qa/SYNC_ENTITY_CHECKLIST.md` como checklist canonica para todas las tablas sync actuales y futuras, cubriendo borrado logico/tombstones, metadata de version/origen, bootstrap/pull/events, guardas de integridad/scope, cliente offline-first y QA minimo
+- la checklist lista explicitamente el set actual de entidades sync operativas, de referencias, financieras y de adjuntos para evitar que nuevas tablas entren al motor sin revisar no resurreccion y dependencia de deletes
+- se documento la regla de onboarding para tablas nuevas: toda nueva entidad sync debe agregarse a la checklist, a la guia tecnica correspondiente, al smoke/test mas cercano y a `QA_STATUS.md` si entra con deuda o excepcion
+- se vinculo la checklist desde `QA_ROADMAP.md`, `qa/REGRESSION_CHECKLIST.md`, `sisa.api/docs/sync-references-qa-guide.md` y `sisa.ui/docs/architecture/devices-sync-and-offline-first-standard.md`
+
+Riesgo cubierto:
+
+- evitar que futuras tablas sync repitan bugs de resurreccion, tombstones incompletos, scope stale o caches fantasma por falta de una definicion transversal minima
+
+Validacion:
+
+- revision manual de enlaces y contenido cruzado -> PASS
+
 ## Avance parcial - no resurreccion de empresas borradas por checkpoints stale
 
 Estado: en progreso

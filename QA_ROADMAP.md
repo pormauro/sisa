@@ -73,6 +73,7 @@ Entregables:
 - `QA_STATUS.md`
 - `qa/FIELD_DATASET_MAP.md`
 - `qa/REGRESSION_CHECKLIST.md`
+- `qa/SYNC_ENTITY_CHECKLIST.md`
 - `qa/run-baseline.ps1`
 
 Validacion:
@@ -103,6 +104,7 @@ Cobertura:
 Implementacion:
 
 - documentar el contrato de regresion y el checklist manual,
+- mantener una checklist transversal por tabla sync para deletes, tombstones, scope y no resurreccion,
 - documentar el dataset minimo operable en campo,
 - vincular cada riesgo con su automatizacion actual o su fallback manual.
 
