@@ -1,5 +1,29 @@
 # Estado QA
 
+## Avance parcial - progreso visible durante bootstrap bloqueante
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/contexts/BootstrapContext.tsx` ahora conserva detalle incremental del arranque para las dos etapas mas pesadas (`jobsBootstrap` y `jobsCheckpoint`): texto de estado, registros procesados, pagina/lote actual y si todavia quedan bloques pendientes
+- `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` ya no espera al final para reportar avance; publica progreso mientras descarga paginas del bootstrap de jobs, mientras aplica trabajos a SQLite y cuando entra en las fases finales de grupos/causas raiz/checkpoint
+- `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` ahora emite progreso por lote de eventos/checkpoint, dejando visible que la app sigue aplicando bloques aunque todavia no pueda estimar un porcentaje perfecto
+- `sisa.ui/components/StartupLoadingScreen.tsx` agrega barra de progreso y subtitulos dinamicos para que `Base inicial` y `Actualizacion incremental` dejen de verse congeladas durante la primera carga pesada
+
+Riesgo cubierto:
+
+- evitar que el primer arranque offline-first parezca freeze o cuelgue cuando el bootstrap inicial tarda varios segundos por volumen de jobs/eventos aunque el proceso siga avanzando correctamente
+
+Puntos ciegos conocidos:
+
+- el porcentaje de `Base inicial` es aproximado sobre jobs descargados/aplicados y no sobre cada subentidad derivada (`items`, `work_logs`, `appointments`, adjuntos), asi que puede desacelerarse visualmente en paginas con jobs muy cargados
+- `Actualizacion incremental` usa progreso por checkpoint/lotes; si los ids de eventos tienen huecos grandes, la barra puede no reflejar una linealidad exacta aunque si muestra actividad real
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.ui` -> PASS
+
 ## Avance parcial - checklist transversal para tablas sync
 
 Estado: completado
