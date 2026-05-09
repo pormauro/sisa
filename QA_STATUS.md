@@ -1,5 +1,69 @@
 # Estado QA
 
+## Avance parcial - fix de ruta duplicada en sync/push
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/src/Routes/api.php` tenia dos registros de `POST /sync/push`: uno canonico hacia `SyncOperationsController::push` y otro legacy hacia `SyncController::processPush`, lo que hacia explotar FastRoute antes de resolver cualquier endpoint, incluido `/login`
+- para destrabar el router sin perder el handler viejo, la ruta legacy se movio a `POST /sync/legacy/push`; `POST /sync/push` queda como endpoint canonico unico de sync operations
+
+Riesgo cubierto:
+
+- evitar que Slim falle al boot por rutas duplicadas y deje toda la API respondiendo `500` aunque el endpoint consultado no sea de sync
+
+Puntos ciegos conocidos:
+
+- si existe algun cliente antiguo que llame explicitamente a `POST /sync/push` esperando el comportamiento de `SyncController::processPush`, ahora va a entrar al flujo canonico nuevo; el handler legacy sigue disponible solo en `/sync/legacy/push`
+
+Validacion parcial:
+
+- `php -l src/Routes/api.php` en `sisa.api` -> PASS
+
+## Avance parcial - diagnostico directo en respuesta HTTP de /login
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/index.php` ahora fuerza respuesta verbose para excepciones de `POST /login` aunque `APP_DEBUG` este apagado: incluye `exception`, `message`, `file`, `line`, `trace`, `trace_as_string` y metadata basica de la request para poder copiar la falla completa desde Postman
+- el cambio es tactico de diagnostico y queda acotado a `/login` / `/api/login`; no abre el resto de endpoints
+
+Riesgo cubierto:
+
+- evitar depender del acceso a logs del host cuando el bloqueo actual esta especificamente en el login HTTP y hace falta ver el stack real de Slim/PHP desde el cliente
+
+Puntos ciegos conocidos:
+
+- sigue siendo informacion sensible para un ambiente publico; una vez detectada la causa raiz conviene retirar este modo verbose
+
+Validacion parcial:
+
+- `php -l index.php` en `sisa.api` -> PASS
+
+## Avance parcial - revert tactico de hardening HTTP en /login
+
+Estado: en progreso
+
+Que cambio:
+
+- por pedido explicito de volver al comportamiento previo y comparar contra el codigo anterior, `sisa.api/index.php` y `sisa.api/src/Routes/api.php` se devolvieron al flujo simple original de login/refresh
+- esta reversión saca los helpers y logs agregados durante la investigacion de hoy y restaura la respuesta anterior, incluido el header `Authorization` cuando el login o refresh devuelven token
+
+Riesgo cubierto:
+
+- evitar seguir mezclando cambios de diagnostico con el problema original mientras se intenta aislar si el `500` aparece solo en el camino HTTP previo
+
+Puntos ciegos conocidos:
+
+- la causa raiz del `500` HTTP en host sigue abierta; este paso solo devuelve la ruta al comportamiento anterior para facilitar la comparacion
+
+Validacion parcial:
+
+- `php -l index.php` en `sisa.api` -> PASS
+- `php -l src/Routes/api.php` en `sisa.api` -> PASS
+
 ## Avance parcial - hardening HTTP de /login en API
 
 Estado: en progreso
