@@ -1,5 +1,30 @@
 # Estado QA
 
+## Avance parcial - fan-out local reducido en jobs/worklogs y sync post-save menos bloqueante
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/src/modules/jobs/data/repositories/SQLiteJobsRepository.ts` deja de resolver contadores del listado de trabajos con multiples subqueries correlacionadas por fila y pasa a usar agregados batcheados por entidad; esto baja el costo al abrir `/Home` y `/jobs` cuando ya existe base local
+- `sisa.ui/src/modules/jobs/data/db/schema.ts` y `sisa.ui/src/modules/jobs/data/db/jobsMigrations.ts` suben a schema `26` y agregan indices para rutas calientes de detalle: `job_items(job_uuid, deleted_at, sort_order, local_id)`, `appointments(job_uuid, deleted_at, appointment_date, appointment_time)`, `job_group_members(job_uuid, deleted_at)` y `job_root_cause_links(job_uuid, deleted_at)`
+- `sisa.ui/src/modules/jobs/data/repositories/SQLiteJobItemsRepository.ts`, `sisa.ui/src/modules/jobs/data/mappers/jobItemMapper.ts`, `sisa.ui/src/modules/jobs/domain/entities/JobItem.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/useJobItems.ts` y `sisa.ui/app/jobs/[id].tsx` incorporan `attachmentCount` agregado en la query local y eliminan el patron N+1 de `AttachmentCountChip` por cada job item/worklog dentro del detalle de trabajo
+- `sisa.ui/app/jobs/worklogs.tsx` elimina reloads manuales redundantes despues de guardar, adjuntar o borrar worklogs cuando el mismo cambio ya emite `jobs-data-refresh`, reduciendo recargas duplicadas de la misma pantalla
+- `sisa.ui/src/modules/jobs/presentation/hooks/useRunJobsSync.ts` y `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` desacoplan el auto-sync del pull posterior al push: el guardado local sigue encolando sync, pero el autosync disparado por save ya no espera un pull extra por defecto; ademas deja trazas separadas `listPendingMs` / `pushMs` / `pullMs`
+
+Riesgo cubierto:
+
+- evitar que abrir trabajos o detalle de trabajo haga fan-out de queries SQLite serializadas sobre la misma cola local y degrade fuerte la UX aun sin red
+- evitar que el autosync inmediato despues de guardar extienda artificialmente la percepcion de guardado por un pull incremental que no aporta confirmacion UX inmediata
+
+Puntos ciegos conocidos:
+
+- esta pasada reduce el fan-out mas visible y agrega indices en joins criticos, pero no cambia todavia la cola serial global de `jobsDatabase`; si los tiempos siguen altos, la segunda pasada debe instrumentar esperas `waitMs`/`sqlMs` por statement para confirmar si la contencion restante vive ahi
+
+Validacion parcial:
+
+- `npx eslint "src/modules/jobs/domain/entities/JobItem.ts" "src/modules/jobs/data/mappers/jobItemMapper.ts" "src/modules/jobs/data/repositories/SQLiteJobItemsRepository.ts" "src/modules/jobs/presentation/hooks/useJobItems.ts" "src/modules/jobs/data/db/schema.ts" "src/modules/jobs/data/db/jobsMigrations.ts" "src/modules/jobs/data/repositories/SQLiteJobsRepository.ts" "src/modules/jobs/presentation/hooks/useRunJobsSync.ts" "src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx" "app/jobs/[id].tsx" "app/jobs/worklogs.tsx"` en `sisa.ui` -> PASS
+
 ## Avance parcial - monitor de trafico ahora incluye historico en tiempo real
 
 Estado: en progreso
