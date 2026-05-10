@@ -1,28 +1,5 @@
 # Estado QA
 
-## Avance parcial - diagnostico reforzado de lentitud en worklogs
-
-Estado: en progreso
-
-Que cambio:
-
-- `sisa.ui/config/Index.ts` ahora separa fusibles de diagnostico para jobs en `JOBS_RENDER_DEBUG_LOGS_ENABLED`, `JOBS_PERF_DEBUG_LOGS_ENABLED` y `JOBS_SYNC_EVENT_DEBUG_LOGS_ENABLED`, de modo que la investigacion de lentitud pueda dejar logs utiles sin volver a inundar la consola con cada render por defecto
-- `sisa.ui/src/modules/jobs/presentation/debug/renderDebug.ts` agrega `logJobsPerf(...)` y `logJobsSyncEvent(...)`; `useRenderDebug(...)` queda atado al fuse especifico de renders, para poder encender/apagar el ruido fino sin perder mediciones de tiempos
-- `sisa.ui/src/utils/autoSyncEvents.ts` ahora informa coalescing real de eventos (`schedule` / `emit`, cantidad de listeners y eventos agrupados), lo que permite ver si la lentitud sigue viniendo de una tormenta de refresh global
-- `sisa.ui/src/modules/jobs/presentation/hooks/useWorkLogs.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/useAttachments.ts`, `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` y `sisa.ui/app/jobs/worklogs.tsx` suman logs de performance mas accionables: scope activo, eventos recibidos, reloads lentos, snapshot de cola sync, tiempo real de entrada a pantalla, apertura de modal y toggles de adjuntos
-
-Riesgo cubierto:
-
-- evitar seguir depurando a ciegas cuando la pantalla sigue lenta, distinguiendo si el cuello viene de renders, refresh global coalescido, SQLite local, carga de adjuntos o cola de sync
-
-Puntos ciegos conocidos:
-
-- esta pasada prioriza observabilidad y deja los fusibles listos para la reparacion; no reemplaza todavia un profiler nativo/Flipper si la lentitud final viniera de bridge o layout fuera del modulo jobs
-
-Validacion parcial:
-
-- `npx eslint "config/Index.ts" "src/modules/jobs/presentation/debug/renderDebug.ts" "src/utils/autoSyncEvents.ts" "src/modules/jobs/presentation/hooks/useAttachments.ts" "src/modules/jobs/presentation/hooks/useWorkLogs.ts" "src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx" "app/jobs/worklogs.tsx"` en `sisa.ui` -> PASS
-
 ## Avance parcial - worklogs entran livianos y el guardado vuelve a ser local-first
 
 Estado: en progreso
