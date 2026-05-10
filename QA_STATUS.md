@@ -1,5 +1,36 @@
 # Estado QA
 
+## Avance parcial - flujo minimo de cobro factura -> recibo -> pagos
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/src/Controllers/InvoicesController.php` ahora permite crear el recibo directamente desde `POST /invoices/{id}/receipts` o seguir vinculando uno existente; valida saldo pendiente, coherencia cliente/empresa, opcionalmente asocia `payment_links` y sigue reconciliando el estado de la factura sin inventar estados nuevos fuera de `issued` / `paid`
+- `sisa.api/src/Models/ReceiptPayments.php`, `sisa.api/src/History/ReceiptPaymentsHistory.php`, `sisa.api/scripts/migrations/receipt-payments.php`, `sisa.api/src/Controllers/ReceiptsController.php`, `sisa.api/src/Controllers/PaymentsController.php`, `sisa.api/src/Controllers/SyncOperationsController.php` y `sisa.api/src/Services/SyncEventGenerator.php` agregan la relacion `receipt_payments`, sus endpoints de consulta/alta/baja, guardas de doble imputacion por factura, bloqueo de borrado de pagos ya asociados, borrado en cascada logica al eliminar recibos y propagacion sync/offline-first de la nueva entidad
+- `sisa.api/src/Models/Invoices.php` expone `applied_receipts_total` y `pending_balance` al hidratar facturas para que UI/reportes lean el saldo real sin recalcular cada consumidor por su cuenta
+- `sisa.ui/app/invoices/[id].tsx` abre recibos asociados y prioriza `pending_balance` / `applied_receipts_total` del backend cuando existen; `sisa.ui/app/receipts/create.tsx` ahora muestra resumen de factura, saldo pendiente, selector minimo de pagos del cliente y alta rapida de pago desde el propio flujo; `sisa.ui/app/receipts/[id].tsx` suma lectura de pagos asociados
+- `sisa.ui/contexts/InvoicesContext.tsx`, `sisa.ui/contexts/ReceiptsContext.tsx`, `sisa.ui/contexts/PaymentsContext.tsx`, `sisa.ui/constants/selectionKeys.ts`, `sisa.ui/app/payments/create.tsx` y la capa sync/cache (`useBootstrapJobsFromApi`, `usePullJobsSync`, `referenceCache`) se alinean para cargar/propagar `receipt_payments` y devolver el pago creado a la pantalla del recibo sin perder el draft
+- se documento el runbook tecnico/manual en `qa/INVOICE_RECEIPT_COLLECTION_FLOW.md` y se agrego la regresion `sisa.api/tests/Regression/InvoiceReceiptsAndPaymentsFlowRegressionTest.php` para cubrir saldo aplicado/pending y la guarda de pago duplicado sobre la misma factura
+
+Riesgo cubierto:
+
+- evitar que el cobro quede partido en pasos manuales sin trazabilidad clara entre factura, recibo y pagos asociados
+- evitar sobrecobros y doble imputacion silenciosa de un mismo pago sobre la misma factura
+- evitar que eliminar un recibo deje la factura marcada como cobrada o conserve links financieros fantasmas en sync/cache
+
+Puntos ciegos conocidos:
+
+- la creacion inline del recibo desde la factura no corre todavia dentro de una transaccion DB explicita; si mas adelante se suman mas efectos atomicos conviene cerrar ese hueco
+- la UI actual permite seleccionar pagos y crear uno nuevo desde el recibo, pero no expone todavia una pantalla dedicada para reimputar montos de pagos ya asociados o reordenar varias imputaciones complejas
+- el modulo `payments` conserva su semantica financiera existente; este hito agrega trazabilidad con recibos sin redisenar todo el modelo contable legacy alrededor de pagos cobrables/imputables
+
+Validacion parcial:
+
+- `php -l src/Controllers/InvoicesController.php && php -l src/Controllers/ReceiptsController.php && php -l src/Controllers/PaymentsController.php && php -l src/Controllers/SyncOperationsController.php && php -l src/Models/ReceiptPayments.php && php -l src/History/ReceiptPaymentsHistory.php && php -l src/Models/Invoices.php && php -l src/Services/SyncEventGenerator.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Regression/InvoiceReceiptsAndPaymentsFlowRegressionTest.php` en `sisa.api` -> PASS
+- `npx eslint "app/receipts/create.tsx" "app/payments/create.tsx" "contexts/InvoicesContext.tsx" "contexts/PaymentsContext.tsx" "contexts/ReceiptsContext.tsx" "src/modules/jobs/presentation/hooks/usePullJobsSync.ts" "src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts" "src/modules/jobs/presentation/sync/referenceCache.ts" "app/invoices/[id].tsx" "app/receipts/[id].tsx"` en `sisa.ui` -> PASS con warnings tipados preexistentes/no bloqueantes sobre `Array<T>` y callbacks `error` sin uso en contextos financieros
+
 ## Avance parcial - productos/servicios recuperan metadata sync tras mutaciones
 
 Estado: en progreso
