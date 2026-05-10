@@ -7,7 +7,8 @@ Estado: en progreso
 Que cambio:
 
 - `sisa.ui/contexts/NetworkLogContext.tsx` ahora mantiene un historial en memoria de muestras de trafico cada 2 segundos durante los ultimos 3 minutos, sin persistirlo, para observar evolucion temporal y no solo un snapshot instantaneo
-- `sisa.ui/components/NetworkTrafficOverlay.tsx` muestra ese historico dentro del modal flotante con un grafico simple de barras: requests activas y payload aproximado reciente, junto con ventana temporal relativa y metricas resumidas
+- `sisa.ui/components/NetworkTrafficOverlay.tsx` muestra ese historico dentro del modal flotante con un grafico simple de barras: requests activas y payload aproximado reciente, junto con ventana temporal relativa, hora de ultima actualizacion y metricas resumidas
+- el mismo overlay ahora agrega mas detalle operativo de lectura rapida: valores actuales, picos y promedios del historico para activas/payload, mas pico y estado actual de errores y requests lentas
 - el monitor sigue siendo liviano y efimero: no guarda el historico, pero deja suficiente cola visual para correlacionar picos de trafico con lentitud de UI o sync
 
 Riesgo cubierto:
