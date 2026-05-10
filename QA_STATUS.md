@@ -1,5 +1,28 @@
 # Estado QA
 
+## Avance parcial - worklogs ya no rompen al guardar toast y refrescan adjuntos locales
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/app/jobs/worklogs.tsx` corrige un bug real de runtime en la pantalla de worklogs: el callback `handleSavedWorkLog` usaba `showToast(...)` sin obtenerlo del contexto en `ActiveJobWorkLogsScreen`, lo que disparaba el error visible `Property 'showToast' doesn't exist` justo despues de guardar
+- la misma pantalla ahora incluye `showToast` en las dependencias del callback y notifica correctamente cuando el worklog o un adjunto quedan en cola local
+- tambien se agrega un `attachmentRefreshVersion` por worklog para forzar el refresco de `AttachmentList` tras adjuntar o borrar archivos, evitando que la tarjeta quede clavada mostrando `Cargando adjuntos...` aunque el adjunto local ya exista en SQLite
+
+Riesgo cubierto:
+
+- evitar que un error JS post-guardado corte la UX y deje la percepcion de que el worklog "no termino" aunque la escritura local si haya ocurrido
+- evitar UI stale en adjuntos locales de worklogs, especialmente en escenarios offline-first donde el archivo queda pendiente de sync pero debe verse enseguida
+
+Puntos ciegos conocidos:
+
+- esta pasada corrige el error de runtime y el refresco local de adjuntos, pero si el push al servidor falla por red/backend la cola seguira pendiente hasta que el auto-sync pueda completar o marque error real
+
+Validacion parcial:
+
+- `npx eslint "app/jobs/worklogs.tsx"` en `sisa.ui` -> PASS
+
 ## Avance parcial - sync recupera operaciones work log interrumpidas y baja ruido de permisos offline
 
 Estado: en progreso
