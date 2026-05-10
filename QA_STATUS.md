@@ -1,5 +1,34 @@
 # Estado QA
 
+## Avance parcial - cobro minimo desde factura y senalizacion visual
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/app/invoices/[id].tsx` ahora expone el flujo minimo de cobro desde una factura emitida: muestra estado de cobro (`Pendiente` / `Cobro parcial` / `Cobro total`), total aplicado, saldo pendiente y un CTA `Crear recibo desde factura` cuando todavia queda saldo por cobrar
+- `sisa.ui/app/receipts/create.tsx` y `sisa.ui/contexts/InvoicesContext.tsx` ahora aceptan prefills desde factura y, al guardar el recibo, lo vinculan automaticamente con `POST /invoices/{id}/receipts`, aplicando por defecto el saldo pendiente que venia de la factura
+- `sisa.ui/contexts/InvoicesContext.tsx` corrige el parseo de `receipt_links`, y `sisa.api/src/Models/Invoices.php` ahora adjunta esos links tambien en los listados con items; con eso la UI deja de perder la conciliacion al navegar por el cache principal de facturas
+- `sisa.api/src/Controllers/InvoicesController.php` ahora reconcilia el estado de la factura tras adjuntar o desadjuntar recibos: cuando el total aplicado cubre la factura la marca `paid`, y si vuelve a quedar saldo la devuelve a `issued`; ademas devuelve la factura actualizada en la respuesta del attach/detach
+- `sisa.api/src/Controllers/ReceiptsController.php` suma `invoice_links` en `listReceipts`, y `sisa.ui/app/receipts/index.tsx` + `sisa.ui/app/payments/index.tsx` reemplazan la etiqueta `No facturado` por iconos operativos minimos: adjunto, factura asociada, o ambos segun corresponda
+- se agrego `sisa.ui/components/AccountingLinkIndicators.tsx` para reutilizar esos indicadores sin sobrecargar las pantallas de recibos y pagos
+
+Riesgo cubierto:
+
+- evitar que la factura quede desacoplada del cobro real, obligando a crear recibos por fuera y conciliarlos manualmente despues
+- mejorar la lectura operativa en listados financieros para detectar rapido si un pago/recibo tiene adjuntos, factura asociada o ambas cosas
+
+Puntos ciegos conocidos:
+
+- esta pasada cubre el flujo minimo `factura -> recibo -> vinculo -> saldo`; no agrega todavia una UI dedicada para vincular un recibo existente distinto del recien creado ni para editar el monto aplicado desde la pantalla de factura
+- la reconciliacion automatica de estado usa `issued`/`paid`; si mas adelante hace falta un estado de negocio explicito para `parcial`, conviene modelarlo aparte en vez de inferirlo solo en UI desde el saldo pendiente
+
+Validacion parcial:
+
+- `vendor/bin/phpunit tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php` en `sisa.api` -> PASS
+- `php -l src/Controllers/InvoicesController.php && php -l src/Controllers/ReceiptsController.php && php -l src/Models/Invoices.php` en `sisa.api` -> PASS
+- `npm run lint` en `sisa.ui` -> PASS
+
 ## Avance parcial - progreso visible durante bootstrap bloqueante
 
 Estado: en progreso
