@@ -12,6 +12,7 @@ Que cambio:
 - `sisa.api/src/Controllers/InvoicesController.php` ahora reconcilia el estado de la factura tras adjuntar o desadjuntar recibos: cuando el total aplicado cubre la factura la marca `paid`, y si vuelve a quedar saldo la devuelve a `issued`; ademas devuelve la factura actualizada en la respuesta del attach/detach
 - `sisa.api/src/Controllers/ReceiptsController.php` suma `invoice_links` en `listReceipts`, y `sisa.ui/app/receipts/index.tsx` + `sisa.ui/app/payments/index.tsx` reemplazan la etiqueta `No facturado` por iconos operativos minimos: adjunto, factura asociada, o ambos segun corresponda
 - se agrego `sisa.ui/components/AccountingLinkIndicators.tsx` para reutilizar esos indicadores sin sobrecargar las pantallas de recibos y pagos
+- ajuste posterior: algunos ambientes con facturas viejas o migraciones financieras incompletas podian quedarse sin listado porque `sisa.api/src/Models/Invoices.php` ahora pedía `invoice_receipt_payments` al hidratar cada factura; se agrego fallback defensivo para que, si esa tabla/consulta falla, la factura siga cargando con `receipt_links = []` en vez de desaparecer del endpoint
 
 Riesgo cubierto:
 
@@ -22,6 +23,7 @@ Puntos ciegos conocidos:
 
 - esta pasada cubre el flujo minimo `factura -> recibo -> vinculo -> saldo`; no agrega todavia una UI dedicada para vincular un recibo existente distinto del recien creado ni para editar el monto aplicado desde la pantalla de factura
 - la reconciliacion automatica de estado usa `issued`/`paid`; si mas adelante hace falta un estado de negocio explicito para `parcial`, conviene modelarlo aparte en vez de inferirlo solo en UI desde el saldo pendiente
+- el fallback evita perder visibilidad de facturas existentes, pero no reemplaza la migracion real del esquema financiero faltante; si un ambiente sigue sin `invoice_receipt_payments`, el vinculo recibo-factura no quedara persistido ahi hasta completar esa deuda de base
 
 Validacion parcial:
 
