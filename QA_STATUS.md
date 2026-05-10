@@ -1,5 +1,32 @@
 # Estado QA
 
+## Avance parcial - cuello exacto detectado en SQLite local y monitor de trafico agregado
+
+Estado: en progreso
+
+Que cambio:
+
+- el diagnostico de campo mostro que la lentitud principal no venia de `/sync/push` sino de SQLite local: `useWorkLogs.reload` estaba tardando 6-7s y `useAttachments.reload` 3.6s aun con cero adjuntos, señal clara de scans locales pesados
+- `sisa.ui/src/modules/jobs/data/repositories/SQLiteWorkLogsRepository.ts` deja de calcular contadores de adjuntos con subqueries correlacionadas por fila y pasa a un agregado unico por `attachable_uuid`; ademas suma logs `sqlite.work_logs.*.slow` para distinguir costo de `list`, `getByUuid` y `create`
+- `sisa.ui/src/modules/jobs/data/db/schema.ts` y `sisa.ui/src/modules/jobs/data/db/jobsMigrations.ts` suben a schema `25` y agregan indices criticos para este baseline: `work_logs(job_uuid, deleted_at, started_at)`, `work_logs(uuid, deleted_at)` y dos indices sobre `file_attachments(attachable_type, attachable_uuid, ...)`
+- `sisa.ui/src/modules/jobs/domain/use-cases/createWorkLog.ts` y `sisa.ui/src/modules/jobs/data/repositories/SQLiteSyncRepository.ts` agregan trazas por etapa (`create`, `enqueue`) para separar si el guardado local demora por escritura de worklog, por cola sync o por lock/contencion de DB
+- `sisa.ui/src/modules/jobs/presentation/hooks/useTriggerJobsSync.ts` deja de lanzar un `runJobsSync()` paralelo desde el hook y pasa a delegar al autosync coalescido; esto reduce el doble disparo observado en logs (`useRunJobsSync:start` duplicado sobre la misma operacion)
+- `sisa.ui/contexts/NetworkLogContext.tsx`, `sisa.ui/components/NetworkTrafficOverlay.tsx` y `sisa.ui/app/_layout.tsx` agregan un monitor flotante de trafico de red con modal movible, mostrando requests activas, requests del ultimo minuto, payload aproximado, lentas >1s y errores recientes, para correlacionar saturacion de red vs cuello local
+
+Riesgo cubierto:
+
+- evitar atribuir la demora a la red cuando el bloqueo real es contencion/scan local sobre SQLite
+- reducir reintentos redundantes de sync en background que competian por la misma cola inmediatamente despues de crear el worklog
+
+Puntos ciegos conocidos:
+
+- todavia quedan queries paralelas de `useWorkLogs` en listados generales (`/jobs`) y de adjuntos en detalle de trabajo; con los nuevos indices deberian bajar fuerte, pero si siguen pesadas la siguiente pasada debe atacar batching/lazy load de esos consumidores
+
+Validacion parcial:
+
+- `npx eslint "app/_layout.tsx" "app/jobs/worklogs.tsx" "components/NetworkTrafficOverlay.tsx" "contexts/NetworkLogContext.tsx" "src/modules/jobs/domain/use-cases/createWorkLog.ts" "src/modules/jobs/presentation/hooks/useTriggerJobsSync.ts" "src/modules/jobs/data/repositories/SQLiteWorkLogsRepository.ts" "src/modules/jobs/data/repositories/SQLiteSyncRepository.ts"` en `sisa.ui` -> PASS
+- `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerWorkLogsPushTest.php` en `sisa.api` -> PASS
+
 ## Avance parcial - worklogs entran livianos y el guardado vuelve a ser local-first
 
 Estado: en progreso
