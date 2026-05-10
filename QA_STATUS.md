@@ -14,6 +14,7 @@ Que cambio:
 - se agrego `sisa.ui/components/AccountingLinkIndicators.tsx` para reutilizar esos indicadores sin sobrecargar las pantallas de recibos y pagos
 - ajuste posterior: algunos ambientes con facturas viejas o migraciones financieras incompletas podian quedarse sin listado porque `sisa.api/src/Models/Invoices.php` ahora pedía `invoice_receipt_payments` al hidratar cada factura; se agrego fallback defensivo para que, si esa tabla/consulta falla, la factura siga cargando con `receipt_links = []` en vez de desaparecer del endpoint
 - ajuste posterior 2: habia otro caso de invisibilidad al entrar a facturas desde un cliente si el servidor devolvia facturas legacy con `invoices.client_id` apuntando a la empresa real (`client_company_id`) en vez del vinculo `clients.id`; `sisa.ui/app/invoices/index.tsx` y `sisa.ui/app/invoices/[id].tsx` ahora resuelven ambas variantes para listar, mostrar nombre del cliente y prefijar cobros sin perder compatibilidad con el contrato nuevo
+- ajuste posterior 3: se cerro el circuito completo del bug de IDs cliente/factura. `sisa.ui/app/clients/viewModal.tsx` y `sisa.ui/app/clients/accounting.tsx` ya navegaban con `clients.id`; ahora `sisa.ui/app/invoices/index.tsx` normaliza params entrantes a `clients.id`, filtra por cliente efectivo, y emite `console.debug` controlado en desarrollo para diagnosticar params/ids/listas visibles. A la vez `sisa.ui/app/invoices/create.tsx` y `sisa.ui/app/invoices/[id].tsx` normalizan cualquier valor legacy antes de enviar `client_id`, y `sisa.api/src/Controllers/InvoicesController.php` + `sisa.api/src/Models/Clients.php` resuelven explicitamente `company_id + client_company_id -> clients.id` antes de persistir para no volver a guardar `empresas.id` en `invoices.client_id`
 
 Riesgo cubierto:
 
@@ -26,12 +27,15 @@ Puntos ciegos conocidos:
 - la reconciliacion automatica de estado usa `issued`/`paid`; si mas adelante hace falta un estado de negocio explicito para `parcial`, conviene modelarlo aparte en vez de inferirlo solo en UI desde el saldo pendiente
 - el fallback evita perder visibilidad de facturas existentes, pero no reemplaza la migracion real del esquema financiero faltante; si un ambiente sigue sin `invoice_receipt_payments`, el vinculo recibo-factura no quedara persistido ahi hasta completar esa deuda de base
 - la compatibilidad UI para `client_id` legacy evita ocultar datos historicos, pero no corrige todavia el baseline del servidor; si siguen existiendo facturas persistidas con `empresas.id` en `invoices.client_id`, conviene sanearlas para no seguir arrastrando ambiguedad en reportes o integraciones nuevas
+- los `console.debug` agregados al listado de facturas estan acotados a desarrollo (`__DEV__`) y deben retirarse o degradarse a telemetria formal cuando deje de investigarse este incidente
 
 Validacion parcial:
 
 - `vendor/bin/phpunit tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Regression/InvoicesClientIdResolutionRegressionTest.php tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php` en `sisa.api` -> PASS
 - `php -l src/Controllers/InvoicesController.php && php -l src/Controllers/ReceiptsController.php && php -l src/Models/Invoices.php` en `sisa.api` -> PASS
 - `npm run lint` en `sisa.ui` -> PASS
+- `node scripts/invoice-client-filter-smoke.js` en `sisa.ui` -> PASS
 
 ## Avance parcial - progreso visible durante bootstrap bloqueante
 
