@@ -1,5 +1,27 @@
 # Estado QA
 
+## Avance parcial - productos/servicios recuperan metadata sync tras mutaciones
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/contexts/ProductsServicesContext.tsx` normaliza de forma explicita los payloads de `products_services` antes de filtrarlos/cachearlos, para no perder `uuid`, `version`, `source_device_id` ni campos numericos cuando el backend los devuelve serializados como string
+- el mismo contexto ahora acepta recarga forzada en `loadProductsServices(force)` y la usa despues de `POST`, `PUT`, `DELETE` y de eventos del reference cache; esto evita que el TTL de 5 minutos o la version del startup bootstrap dejen congelado un item recien creado/actualizado con `UUID: sin uuid` aunque el servidor ya lo haya persistido correctamente
+- en altas y ediciones, si la API ya devuelve `product_service` en la respuesta, la UI lo mezcla enseguida en el estado local antes del refresh forzado; con eso el detalle vuelve a mostrar metadata sync valida en lugar de `Version: 0 / Device: n/a` mientras llega la recarga completa
+
+Riesgo cubierto:
+
+- evitar falsos negativos de sincronizacion en productos/servicios donde la escritura si llegaba al backend pero la UI seguia mostrando metadata vacia por una rehidratacion local stale
+
+Puntos ciegos conocidos:
+
+- esta pasada corrige el desfasaje de estado/cache en `products_services`, pero no agrega todavia una cola offline dedicada para altas/ediciones de este modulo si el request HTTP falla antes de llegar al servidor
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.ui` -> PASS
+
 ## Avance parcial - cobro minimo desde factura y senalizacion visual
 
 Estado: en progreso
