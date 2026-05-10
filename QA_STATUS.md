@@ -15,6 +15,7 @@ Que cambio:
 - ajuste posterior: algunos ambientes con facturas viejas o migraciones financieras incompletas podian quedarse sin listado porque `sisa.api/src/Models/Invoices.php` ahora pedía `invoice_receipt_payments` al hidratar cada factura; se agrego fallback defensivo para que, si esa tabla/consulta falla, la factura siga cargando con `receipt_links = []` en vez de desaparecer del endpoint
 - ajuste posterior 2: habia otro caso de invisibilidad al entrar a facturas desde un cliente si el servidor devolvia facturas legacy con `invoices.client_id` apuntando a la empresa real (`client_company_id`) en vez del vinculo `clients.id`; `sisa.ui/app/invoices/index.tsx` y `sisa.ui/app/invoices/[id].tsx` ahora resuelven ambas variantes para listar, mostrar nombre del cliente y prefijar cobros sin perder compatibilidad con el contrato nuevo
 - ajuste posterior 3: se cerro el circuito completo del bug de IDs cliente/factura. `sisa.ui/app/clients/viewModal.tsx` y `sisa.ui/app/clients/accounting.tsx` ya navegaban con `clients.id`; ahora `sisa.ui/app/invoices/index.tsx` normaliza params entrantes a `clients.id`, filtra por cliente efectivo, y emite `console.debug` controlado en desarrollo para diagnosticar params/ids/listas visibles. A la vez `sisa.ui/app/invoices/create.tsx` y `sisa.ui/app/invoices/[id].tsx` normalizan cualquier valor legacy antes de enviar `client_id`, y `sisa.api/src/Controllers/InvoicesController.php` + `sisa.api/src/Models/Clients.php` resuelven explicitamente `company_id + client_company_id -> clients.id` antes de persistir para no volver a guardar `empresas.id` en `invoices.client_id`
+- ajuste posterior 4: `sisa.ui/contexts/ReceiptsContext.tsx` y `sisa.ui/contexts/PaymentsContext.tsx` estaban filtrando por `selectedCompanyId` sin normalizar los payloads del backend; como PHP suele serializar ids numericos como string, `company_id` podia llegar como `'45'` y quedar descartado por comparacion estricta contra `45`. Ahora ambos contextos normalizan ids/montos/versiones antes de cachear/filtrar, igualando el comportamiento robusto que ya tenia `InvoicesContext`
 
 Riesgo cubierto:
 
@@ -28,6 +29,7 @@ Puntos ciegos conocidos:
 - el fallback evita perder visibilidad de facturas existentes, pero no reemplaza la migracion real del esquema financiero faltante; si un ambiente sigue sin `invoice_receipt_payments`, el vinculo recibo-factura no quedara persistido ahi hasta completar esa deuda de base
 - la compatibilidad UI para `client_id` legacy evita ocultar datos historicos, pero no corrige todavia el baseline del servidor; si siguen existiendo facturas persistidas con `empresas.id` en `invoices.client_id`, conviene sanearlas para no seguir arrastrando ambiguedad en reportes o integraciones nuevas
 - los `console.debug` agregados al listado de facturas estan acotados a desarrollo (`__DEV__`) y deben retirarse o degradarse a telemetria formal cuando deje de investigarse este incidente
+- pagos y recibos siguen usando cache liviano compartido (`useCachedState`/reference cache) y no repositorios SQLite dedicados como clientes/providers; esta pasada corrige la invisibilidad por tipado de `company_id`, pero no cambia todavia esa arquitectura de persistencia
 
 Validacion parcial:
 
@@ -36,6 +38,7 @@ Validacion parcial:
 - `php -l src/Controllers/InvoicesController.php && php -l src/Controllers/ReceiptsController.php && php -l src/Models/Invoices.php` en `sisa.api` -> PASS
 - `npm run lint` en `sisa.ui` -> PASS
 - `node scripts/invoice-client-filter-smoke.js` en `sisa.ui` -> PASS
+- `npm run lint` en `sisa.ui` tras normalizacion de pagos/recibos -> PASS
 
 ## Avance parcial - progreso visible durante bootstrap bloqueante
 
