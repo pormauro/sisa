@@ -1,5 +1,35 @@
 # Estado QA
 
+## Avance parcial - worklogs entran livianos y el guardado vuelve a ser local-first
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/src/modules/jobs/presentation/hooks/useAttachments.ts` ya no duplica carga por `useEffect` + `useFocusEffect`; ahora hace una sola carga inicial por `attachableType`/`attachableUuid`, deduplica reloads concurrentes, evita `setState` si la lista no cambio y deja el refresh por foco apagado por defecto
+- `sisa.ui/src/modules/jobs/presentation/components/AttachmentList.tsx` deja de montarse masivamente al abrir `/jobs/worklogs`; la pantalla usa ahora `sisa.ui/src/modules/jobs/presentation/components/WorkLogAttachmentsSummary.tsx` y solo monta la lista completa cuando el usuario expande un worklog
+- `sisa.ui/src/modules/jobs/data/repositories/SQLiteWorkLogsRepository.ts` agrega resumen liviano de adjuntos por worklog (`attachment_count`, pendientes, conflictos), para evitar abrir hooks pesados solo para pintar contadores e iconos
+- `sisa.ui/src/modules/jobs/presentation/hooks/useWorkLogs.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/useJobsList.ts` ahora coalescen refreshes, evitan reloads concurrentes del mismo scope, no prenden `loading` otra vez si ya habia datos y registran metricas de tiempo/cantidad de recargas
+- `sisa.ui/src/utils/autoSyncEvents.ts` agrega debounce global para `jobsDataRefresh` y `jobsAutoSync`, evitando que una rafaga de eventos termine recargando la UI muchas veces por el mismo cambio cercano
+- `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` mantiene la proteccion de cooldown pero deja de forzar pulls por cada trigger de autosync generado localmente; el push de worklogs sigue teniendo prioridad, pero sin disparar otra tormenta de recargas al entrar a la pantalla
+- `sisa.ui/src/modules/jobs/presentation/hooks/useCreateWorkLog.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/useRunJobsSync.ts` y `sisa.ui/app/jobs/worklogs.tsx` agregan instrumentacion minima de tiempos y cambian el post-guardado para cerrar el modal enseguida y refrescar en background, en vez de bloquear la UX esperando reload/sync remoto
+- `sisa.ui/app/jobs/worklogs.tsx` tambien deja de cargar `clients` y `tariffs` al entrar por defecto; esos datos se difieren al abrir el modal, y la lista de jobs para mover worklogs se carga recien cuando se expone la seccion `Mover de Trabajo`
+
+Riesgo cubierto:
+
+- evitar que abrir worklogs con varios registros dispare `AttachmentList`/`useAttachments` para todos a la vez y degrade fuerte la navegacion inicial
+- evitar que crear o editar un worklog se perciba lento por esperar refreshes globales, pulls o listas auxiliares que no son necesarias para confirmar el guardado local
+
+Puntos ciegos conocidos:
+
+- esta pasada reduce la tormenta de renders y reloads dentro del modulo de worklogs, pero no reemplaza todavia con telemetria persistente los logs puntuales de `jobs-debug`; la observabilidad fina sigue siendo principalmente de desarrollo
+
+Validacion parcial:
+
+- `npx eslint "src/modules/jobs/presentation/hooks/useAttachments.ts" "src/modules/jobs/presentation/hooks/useWorkLogs.ts" "src/modules/jobs/presentation/hooks/useJobsList.ts" "src/modules/jobs/presentation/components/AttachmentList.tsx" "src/modules/jobs/presentation/components/WorkLogAttachmentsSummary.tsx" "src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx" "src/modules/jobs/presentation/hooks/useCreateWorkLog.ts" "src/modules/jobs/presentation/hooks/useRunJobsSync.ts" "src/utils/autoSyncEvents.ts" "app/jobs/worklogs.tsx"` en `sisa.ui` -> PASS
+- `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerWorkLogsPushTest.php` en `sisa.api` -> PASS
+- `php -l src/Controllers/SyncOperationsController.php && php -l tests/Controllers/SyncOperationsControllerWorkLogsPushTest.php` en `sisa.api` -> PASS
+
 ## Avance parcial - worklogs reflejan sync real tras push aceptado
 
 Estado: en progreso
