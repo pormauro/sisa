@@ -1,5 +1,31 @@
 # Estado QA
 
+## Avance parcial - borrado de facturas muestra causa real y tolera estado `Completado`
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/src/Services/JobStatusResolver.php` amplia la heuristica de estados finales para reconocer tambien variantes usadas en empresas que renombraron el cierre del job como `completado/completada` o `resuelto/resuelta`; con eso el borrado/anulacion de facturas con items `jobs` ya no queda bloqueado por naming valido pero no contemplado
+- `sisa.api/src/Services/InvoiceCancellationService.php` ahora devuelve un mensaje de negocio claro cuando no encuentra un estado final reconocible para liberar trabajos facturados, en vez de dejar un `409` opaco dificil de diagnosticar desde la app
+- `sisa.ui/contexts/InvoicesContext.tsx` deja de colapsar cualquier fallo del `DELETE /invoices/{id}` a `false` silencioso y propaga el error estructurado del backend; `sisa.ui/app/invoices/[id].tsx` lo muestra en el alert de eliminacion para que el usuario vea por que no se pudo borrar
+- `sisa.api/tests/Services/InvoiceCancellationServiceTest.php` agrega regresion para una empresa cuyo estado final usa `code = completado`, cubriendo el caso real donde la factura antes parecia "no hacer nada" aunque el bloqueo venia del resolver
+
+Riesgo cubierto:
+
+- evitar falsos bloqueos al eliminar/anular facturas en empresas que renombran el estado final del job sin salir de una semantica esperable
+- evitar que la UI oculte la causa real cuando el servidor rechaza el borrado por una regla de integridad valida
+
+Puntos ciegos conocidos:
+
+- el sistema sigue dependiendo de heuristicas por texto para inferir estados funcionales; esto mejora compatibilidad pero no reemplaza el mapeo explicito por empresa documentado en `qa/COMPANY_STATUS_ROLE_MAPPING_FUTURE.md`
+- si una empresa usa nombres totalmente propios para el estado final, la eliminacion seguira bloqueada hasta mapear o ampliar la heuristica correspondiente
+
+Validacion parcial:
+
+- `vendor/bin/phpunit tests/Services/InvoiceCancellationServiceTest.php` en `sisa.api` -> PASS
+- `npx eslint "contexts/InvoicesContext.tsx" "app/invoices/[id].tsx"` en `sisa.ui` -> PASS con warnings preexistentes/no bloqueantes en `contexts/InvoicesContext.tsx` sobre `Array<T>` y callbacks `error` sin uso
+
 ## Avance parcial - flujo minimo de cobro factura -> recibo -> pagos
 
 Estado: en progreso
