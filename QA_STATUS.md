@@ -13,6 +13,7 @@ Que cambio:
 - `sisa.api/src/Controllers/ReceiptsController.php` suma `invoice_links` en `listReceipts`, y `sisa.ui/app/receipts/index.tsx` + `sisa.ui/app/payments/index.tsx` reemplazan la etiqueta `No facturado` por iconos operativos minimos: adjunto, factura asociada, o ambos segun corresponda
 - se agrego `sisa.ui/components/AccountingLinkIndicators.tsx` para reutilizar esos indicadores sin sobrecargar las pantallas de recibos y pagos
 - ajuste posterior: algunos ambientes con facturas viejas o migraciones financieras incompletas podian quedarse sin listado porque `sisa.api/src/Models/Invoices.php` ahora pedía `invoice_receipt_payments` al hidratar cada factura; se agrego fallback defensivo para que, si esa tabla/consulta falla, la factura siga cargando con `receipt_links = []` en vez de desaparecer del endpoint
+- ajuste posterior 2: habia otro caso de invisibilidad al entrar a facturas desde un cliente si el servidor devolvia facturas legacy con `invoices.client_id` apuntando a la empresa real (`client_company_id`) en vez del vinculo `clients.id`; `sisa.ui/app/invoices/index.tsx` y `sisa.ui/app/invoices/[id].tsx` ahora resuelven ambas variantes para listar, mostrar nombre del cliente y prefijar cobros sin perder compatibilidad con el contrato nuevo
 
 Riesgo cubierto:
 
@@ -24,6 +25,7 @@ Puntos ciegos conocidos:
 - esta pasada cubre el flujo minimo `factura -> recibo -> vinculo -> saldo`; no agrega todavia una UI dedicada para vincular un recibo existente distinto del recien creado ni para editar el monto aplicado desde la pantalla de factura
 - la reconciliacion automatica de estado usa `issued`/`paid`; si mas adelante hace falta un estado de negocio explicito para `parcial`, conviene modelarlo aparte en vez de inferirlo solo en UI desde el saldo pendiente
 - el fallback evita perder visibilidad de facturas existentes, pero no reemplaza la migracion real del esquema financiero faltante; si un ambiente sigue sin `invoice_receipt_payments`, el vinculo recibo-factura no quedara persistido ahi hasta completar esa deuda de base
+- la compatibilidad UI para `client_id` legacy evita ocultar datos historicos, pero no corrige todavia el baseline del servidor; si siguen existiendo facturas persistidas con `empresas.id` en `invoices.client_id`, conviene sanearlas para no seguir arrastrando ambiguedad en reportes o integraciones nuevas
 
 Validacion parcial:
 
