@@ -616,6 +616,9 @@ Que cambio:
 - cascada obligatoria: `sisa.api/src/Controllers/InvoicesController.php` y `sisa.api/src/Models/InvoiceItems.php` fuerzan el borrado logico por factura completa para que ningun `invoice_item` quede vigente despues de eliminar la factura, incluso si algun item no entro en la hidratacion normal del documento
 - observabilidad de borrado: `sisa.api/src/Controllers/PaymentsController.php` ahora captura excepciones del delete y devuelve JSON con el mensaje real en vez de caer en `Slim Application Error`, para poder identificar baseline roto o schema faltante en servidor
 - compatibilidad de historial: `sisa.api/src/History/PaymentsHistory.php` normaliza `attached_files` a JSON valido o `null` antes de grabar el historial, evitando fallas por constraints JSON legacy al eliminar pagos sin adjuntos bien serializados
+- ajuste posterior 1: `sisa.api/src/Controllers/JobReportsController.php` deja generar el PDF comercial aunque el filtro no devuelva trabajos pero si pagos cobrables del cliente; el resumen horizontal ahora incluye una tabla propia de esos pagos y un total comercial combinado servicios + cargos
+- ajuste posterior 2: `sisa.api/src/Controllers/InvoicesController.php` enriquece los items `payments` del PDF de factura con etiqueta legible (`Pago cliente`) y detalle de asignacion/fecha/acreedor para que el cargo trasladable quede explicitado tambien en el comprobante
+- ajuste posterior 3: el `404 No printable data found` persistia en algunos clientes porque `sisa.api/src/Controllers/JobReportsController.php` estaba tomando `clients.empresa_id` (empresa del propio cliente) como scope/encabezado del reporte en vez de `clients.company_id` (empresa operadora dueña del vinculo). Ahora prioriza `company_id` y deja `empresa_id` solo como fallback legacy, por lo que vuelve a encontrar pagos/recibos/facturas cobrables del cliente en el scope correcto
 - `qa/INVOICE_CHARGEABLE_PAYMENTS_RUNBOOK.md` deja un runbook manual corto para validar inclusion de pagos cobrables en factura, PDF, resumen de cuenta y rechazos por cliente/empresa cruzados
 - `qa/INVOICE_CHARGEABLE_PAYMENTS_RUNBOOK.md` ahora cubre tambien desaparicion del pago una vez facturado y reaparicion tras eliminar la factura
 - `qa/INVOICE_CHARGEABLE_PAYMENTS_RUNBOOK.md` tambien cubre el rechazo explicito al intentar borrar un pago ya facturado
@@ -638,6 +641,9 @@ Validacion parcial:
 - rerun `vendor/bin/phpunit tests/Services/InvoiceLineNormalizerTest.php tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php` tras endurecer rechazos por payment/company/client -> PASS
 - rerun `npm run lint` en `sisa.ui` tras corregir crash `value.toFixed is not a function` y autoagregado de pagos cobrables -> PASS
 - rerun `vendor/bin/phpunit tests/Services/InvoiceLineNormalizerTest.php tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php` tras bloquear pagos ya facturados -> PASS
+- `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Controllers/InvoicesControllerPdfRegressionTest.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Services/InvoiceLineNormalizerTest.php tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Regression/AccountingSummaryAndInvoicesRegressionTest.php tests/Controllers/InvoicesControllerPdfRegressionTest.php` en `sisa.api` -> PASS con warnings conocidos del fallback SQLite sobre `invoice_receipt_payments` ausente en pruebas legacy
+- rerun `vendor/bin/phpunit tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php tests/Controllers/InvoicesControllerPdfRegressionTest.php` tras corregir el scope `company_id`/`empresa_id` del reporte cliente -> PASS con warnings conocidos no bloqueantes
 
 ## Avance parcial - categorias contables por empresa y visibilidad individual
 
