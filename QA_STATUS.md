@@ -56,6 +56,8 @@ Que cambio:
 - ajuste posterior 7: el logo de empresa podia disparar descargas concurrentes del mismo `fileId` desde mas de un consumidor (por ejemplo `CircleImagePicker` y la marca del `BottomNavigationBar`), generando un `403` temprano visible aunque otro intento terminara bien; `sisa.ui/contexts/FilesContext.tsx` ahora deduplica descargas en vuelo por `fileId` y `sisa.ui/components/BottomNavigationBar.tsx` trata ese fetch como silencioso para no contaminar el panel de eventos con un logo decorativo
 - ajuste posterior 8: la descarga nativa de `expo-file-system` no pasaba por el `fetch` protegido del auth layer, por lo que podia reintentar con un bearer viejo aun despues de `checkConnection()`; `sisa.ui/contexts/FilesContext.tsx` ahora resuelve el token mas reciente desde secure storage en cada intento, con lo que las imagenes vuelven a levantar tras limpiar DB/archivos o rotar sesion
 - ajuste posterior 9: el primer arranque despues de `Reinstalar localmente` podia dejar `clients/providers/member_companies` hidratados desde startup bootstrap sin `profile_file_id` suficiente y a la vez considerarlos frescos; ahora `sisa.ui/contexts/ClientsContext.tsx` y `sisa.ui/contexts/ProvidersContext.tsx` no sellan TTL/version cuando falta media de perfil, guardan los datos completos recuperados desde API en cache compartida, y `sisa.ui/contexts/BootstrapContext.tsx` ejecuta un warmup post-bootstrap que fuerza la rehidratacion necesaria y precachea logos/avatares con `getFile(..., silent)` para reconstruir imagenes en el primer login limpio sin alertas masivas offline
+- ajuste posterior 10: para endurecer el primer arranque limpio tras el incidente intermitente de permisos/SQLite, `sisa.ui/src/modules/jobs/data/repositories/SQLitePermissionsRepository.ts` ahora serializa lecturas y escrituras sobre `permissions_cache` en una sola cola, `sisa.ui/src/modules/jobs/data/db/jobsDatabase.ts` reintenta una vez las fallas transitorias del bridge `expo-sqlite` reseteando la conexion/cache antes de repetir, y `sisa.ui/contexts/PermissionsContext.tsx` degrada con gracia si falla leer/escribir el cache local de permisos (conserva snapshot/memoria en vez de convertir un tropiezo transitorio en alerta persistente o crash)
+- ajuste posterior 11: `sisa.ui/config/Index.ts` ahora deja apagados por defecto varios logs ruidosos de push/device/jobs/cache y concentra el debug puntual de facturas en `INVOICES_DEBUG_LOGS_ENABLED`; el smoke `sisa.ui/scripts/startup-stability-smoke.js` se actualizo para validar la presencia de flags sin exigir que todos queden siempre encendidos
 
 Riesgo cubierto:
 
@@ -69,6 +71,7 @@ Puntos ciegos conocidos:
 Validacion parcial:
 
 - `npm run lint` en `sisa.ui` -> PASS
+- `npm run check:startup-stability` en `sisa.ui` -> PASS
 
 ## Avance parcial - checklist transversal para tablas sync
 
