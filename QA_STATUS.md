@@ -1,5 +1,23 @@
 # Estado QA
 
+## Avance parcial - monitor de trafico ahora incluye historico en tiempo real
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/contexts/NetworkLogContext.tsx` ahora mantiene un historial en memoria de muestras de trafico cada 2 segundos durante los ultimos 3 minutos, sin persistirlo, para observar evolucion temporal y no solo un snapshot instantaneo
+- `sisa.ui/components/NetworkTrafficOverlay.tsx` muestra ese historico dentro del modal flotante con un grafico simple de barras: requests activas y payload aproximado reciente, junto con ventana temporal relativa y metricas resumidas
+- el monitor sigue siendo liviano y efimero: no guarda el historico, pero deja suficiente cola visual para correlacionar picos de trafico con lentitud de UI o sync
+
+Riesgo cubierto:
+
+- evitar diagnosticos basados solo en valores puntuales del momento; ahora se puede ver si la red viene sostenidamente cargada, si hay rafagas o si el cuello esta estable aun sin mucho trafico
+
+Validacion parcial:
+
+- `npx eslint "contexts/NetworkLogContext.tsx" "components/NetworkTrafficOverlay.tsx"` en `sisa.ui` -> PASS
+
 ## Avance parcial - cuello exacto detectado en SQLite local y monitor de trafico agregado
 
 Estado: en progreso
