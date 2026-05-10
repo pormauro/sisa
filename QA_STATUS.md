@@ -21,6 +21,8 @@ Que cambio:
 - ajuste posterior 9: editar un recibo vinculado ya vuelve a empujar el estado de la factura y sus asientos incluso cuando el `applied_amount` estaba congelado en el link. `sisa.api/src/Controllers/ReceiptsController.php` ahora reajusta automaticamente `invoice_receipt_payments.applied_amount` cuando el recibo tiene una sola factura activa vinculada, y luego re-sincroniza factura/recibo
 - ajuste posterior 10: editar un pago vinculado ya no refresca solo el asiento del pago. `sisa.api/src/Controllers/PaymentsController.php` ahora recorre `receipt_payments` -> `invoice_receipt_payments`, resincroniza asientos de recibos relacionados y revalida el estado/asientos de las facturas impactadas
 - ajuste posterior 11: los listados de facturas (`sisa.ui/app/invoices/index.tsx`, `sisa.ui/app/clients/accounting.tsx`, `sisa.ui/app/clients/unpaidInvoices.tsx`) ahora muestran saldo pendiente, barra de progreso de cobro y texto `Pagado` / `Debe` para que el cobro parcial sea visible sin entrar al detalle
+- ajuste posterior 12: al editar o borrar recibos/pagos desde sus detalles, la factura origen podia quedar stale si el usuario volvia enseguida porque la pantalla cerraba antes de refrescar `InvoicesContext`. `sisa.ui/app/receipts/[id].tsx` y `sisa.ui/app/payments/[id].tsx` ahora esperan `loadInvoices()` antes de levantar el spinner y cerrar la vista, de modo que el detalle/listado de facturas ya vuelva con estado, saldo y barra actualizados
+- ajuste posterior 13: el mismo criterio se extendio a eliminaciones directas desde los listados financieros. `sisa.ui/app/receipts/index.tsx` y `sisa.ui/app/payments/index.tsx` ahora recargan `InvoicesContext` despues de borrar, evitando que otras pantallas de facturas queden mostrando saldo viejo si el usuario navega enseguida sin reabrir manualmente el detalle
 - `sisa.ui/contexts/InvoicesContext.tsx`, `sisa.ui/contexts/ReceiptsContext.tsx`, `sisa.ui/contexts/PaymentsContext.tsx`, `sisa.ui/constants/selectionKeys.ts`, `sisa.ui/app/payments/create.tsx` y la capa sync/cache (`useBootstrapJobsFromApi`, `usePullJobsSync`, `referenceCache`) se alinean para cargar/propagar `receipt_payments` y devolver el pago creado a la pantalla del recibo sin perder el draft
 - se documento el runbook tecnico/manual en `qa/INVOICE_RECEIPT_COLLECTION_FLOW.md` y se agrego la regresion `sisa.api/tests/Regression/InvoiceReceiptsAndPaymentsFlowRegressionTest.php` para cubrir saldo aplicado/pending y la guarda de pago duplicado sobre la misma factura
 
@@ -50,6 +52,8 @@ Validacion parcial:
 - `npx eslint "contexts/InvoicesContext.tsx"` en `sisa.ui` tras fix de `sortInvoicesByNewest` -> PASS con warnings no bloqueantes preexistentes
 - `php -l "src/Controllers/ReceiptsController.php" && php -l "src/Controllers/PaymentsController.php"` en `sisa.api` -> PASS
 - `npx eslint "app/invoices/index.tsx" "app/clients/accounting.tsx" "app/clients/unpaidInvoices.tsx" "app/invoices/[id].tsx"` en `sisa.ui` -> PASS
+- `npx eslint "app/receipts/[id].tsx" "app/payments/[id].tsx"` en `sisa.ui` -> PASS
+- `npx eslint "app/receipts/index.tsx" "app/payments/index.tsx"` en `sisa.ui` -> PASS
 
 ## Avance parcial - productos/servicios recuperan metadata sync tras mutaciones
 
