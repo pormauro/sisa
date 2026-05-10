@@ -1,5 +1,29 @@
 # Estado QA
 
+## Avance parcial - sync recupera operaciones work log interrumpidas y baja ruido de permisos offline
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/src/modules/jobs/data/repositories/SQLiteSyncRepository.ts` ahora rescata operaciones locales que quedaron clavadas en `processing` por mas de 90 segundos y las devuelve a `pending` con `error_code = interrupted`, evitando que un `work_logs` quede colgado indefinidamente si la app, Hermes o Metro cortan el intento a mitad de push
+- `sisa.ui/app/jobs/sync.tsx` muestra una causa explicita para ese nuevo estado recuperado, de modo que el diagnostico ya no parezca un conflicto silencioso sino un intento interrumpido y reintentable
+- `sisa.ui/contexts/PermissionsContext.tsx` deja de abrir un alert bloqueante cuando falla el refresh de permisos pero ya existen permisos cacheados validos; conserva el cache y solo registra el warning, alineando la UX con el baseline offline-first durante flujos como crear factura desde un trabajo
+
+Riesgo cubierto:
+
+- evitar que una operacion local de `work_logs` quede eternamente en `processing` despues de una caida del runtime o corte de red durante el push
+- evitar falsos errores visibles al usuario cuando el refresh de permisos falla transitoriamente pero la app ya tiene un ultimo snapshot valido para seguir operando
+
+Puntos ciegos conocidos:
+
+- esta pasada recupera el estado local trabado, pero no diagnostica por si sola la causa remota exacta si el corte original fue fuera de la app (por ejemplo Wi-Fi/LAN, backend caido o Metro reconectando en debug)
+- si no existe cache de permisos valido, el alert actual se mantiene porque en ese caso si hay riesgo real de operar sin autorizacion conocida
+
+Validacion parcial:
+
+- `npx eslint "src/modules/jobs/data/repositories/SQLiteSyncRepository.ts" "app/jobs/sync.tsx" "contexts/PermissionsContext.tsx"` en `sisa.ui` -> PASS con 1 warning preexistente/no bloqueante en `contexts/PermissionsContext.tsx` por regla `@typescript-eslint/array-type`
+
 ## Avance parcial - borrado de facturas muestra causa real y tolera estado `Completado`
 
 Estado: en progreso
