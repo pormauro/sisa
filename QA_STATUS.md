@@ -66,6 +66,7 @@ Que cambio:
 - ajuste posterior 9: el primer arranque despues de `Reinstalar localmente` podia dejar `clients/providers/member_companies` hidratados desde startup bootstrap sin `profile_file_id` suficiente y a la vez considerarlos frescos; ahora `sisa.ui/contexts/ClientsContext.tsx` y `sisa.ui/contexts/ProvidersContext.tsx` no sellan TTL/version cuando falta media de perfil, guardan los datos completos recuperados desde API en cache compartida, y `sisa.ui/contexts/BootstrapContext.tsx` ejecuta un warmup post-bootstrap que fuerza la rehidratacion necesaria y precachea logos/avatares con `getFile(..., silent)` para reconstruir imagenes en el primer login limpio sin alertas masivas offline
 - ajuste posterior 10: para endurecer el primer arranque limpio tras el incidente intermitente de permisos/SQLite, `sisa.ui/src/modules/jobs/data/repositories/SQLitePermissionsRepository.ts` ahora serializa lecturas y escrituras sobre `permissions_cache` en una sola cola, `sisa.ui/src/modules/jobs/data/db/jobsDatabase.ts` reintenta una vez las fallas transitorias del bridge `expo-sqlite` reseteando la conexion/cache antes de repetir, y `sisa.ui/contexts/PermissionsContext.tsx` degrada con gracia si falla leer/escribir el cache local de permisos (conserva snapshot/memoria en vez de convertir un tropiezo transitorio en alerta persistente o crash)
 - ajuste posterior 11: `sisa.ui/config/Index.ts` ahora deja apagados por defecto varios logs ruidosos de push/device/jobs/cache y concentra el debug puntual de facturas en `INVOICES_DEBUG_LOGS_ENABLED`; el smoke `sisa.ui/scripts/startup-stability-smoke.js` se actualizo para validar la presencia de flags sin exigir que todos queden siempre encendidos
+- ajuste posterior 12: ante cierres esporadicos al entrar en detalle de trabajos, se endurecio el acceso compartido a SQLite en `sisa.ui/src/modules/jobs/data/db/jobsDatabase.ts`; ahora todas las operaciones (`getFirstSql`, `getAllSql`, `executeSql`) pasan por una cola unica ademas del retry transitorio. Esto reduce la presion de statements concurrentes cuando la pantalla de job abre varias lecturas a la vez (detalle, items, worklogs, appointments, participantes) y apunta directo al patron de crash nativo intermitente de `expo-sqlite` observado en primer arranque y navegacion pesada
 
 Riesgo cubierto:
 
@@ -80,6 +81,7 @@ Validacion parcial:
 
 - `npm run lint` en `sisa.ui` -> PASS
 - `npm run check:startup-stability` en `sisa.ui` -> PASS
+- `npm run lint && npm run check:startup-stability` en `sisa.ui` tras serializar operaciones SQLite compartidas -> PASS
 
 ## Avance parcial - checklist transversal para tablas sync
 
