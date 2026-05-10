@@ -1,5 +1,32 @@
 # Estado QA
 
+## Avance parcial - worklogs reflejan sync real tras push aceptado
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/src/modules/jobs/presentation/hooks/useRunJobsSync.ts` ahora refresca la UI apenas una operacion local cambia de estado por push, incluso cuando el pull posterior no trae eventos porque `/sync/pull` excluye operaciones del mismo dispositivo; con eso un `work_logs` aceptado ya no queda visualmente clavado en `pending`
+- el mismo hook marca entidades locales como `error` o `conflict` cuando `/sync/push` rechaza la operacion, en vez de dejar el worklog eternamente como `pending` aunque `sync_operations.error_message` ya tenga la causa real
+- `sisa.ui/src/modules/jobs/presentation/sync/syncVisualState.ts` y `sisa.ui/src/modules/jobs/presentation/components/SyncStateChip.tsx` dejan de mostrar `Nuevo local` como pseudo-estado de negocio y pasan a `Pendiente de sincronizar` / `Error de sincronizacion`, separando mejor negocio vs sync tecnico
+- `sisa.api/src/Controllers/SyncOperationsController.php` endurece el flujo `work_logs/upsert`: cuando llega `job_uuid` invalido responde una causa explicita, valida `job_item_uuid` contra el job resuelto y compara contra el `job` real actual en vez de un campo inexistente del `work_log` al decidir si debe soltar el item al moverlo
+- `sisa.api/tests/Controllers/SyncOperationsControllerWorkLogsPushTest.php` agrega regresion de push con `job_uuid` + `job_item_uuid` + participants validos, verificando `accepted=true`, resolucion a `job_id` / `job_item_id` del servidor y persistencia de participantes
+
+Riesgo cubierto:
+
+- evitar falsos `Nuevo local` despues de un push exitoso cuando el servidor ya acepto el worklog pero la app no refrescaba el cambio local porque el pull del mismo device no devuelve ese evento
+- exponer antes los rechazos reales de sync de `work_logs` para distinguir un problema de backend/dependencias de un simple pendiente offline
+
+Puntos ciegos conocidos:
+
+- esta pasada endurece el caso de push directo de `work_logs`, pero no agrega todavia una vista dedicada dentro de la pantalla de worklogs para leer el `error_message` completo de `sync_operations`; el detalle tecnico sigue quedando principalmente en la cola/log de sync
+
+Validacion parcial:
+
+- `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerWorkLogsPushTest.php` en `sisa.api` -> PASS
+- `php -l src/Controllers/SyncOperationsController.php && php -l tests/Controllers/SyncOperationsControllerWorkLogsPushTest.php` en `sisa.api` -> PASS
+- `npx eslint "src/modules/jobs/presentation/hooks/useRunJobsSync.ts" "src/modules/jobs/presentation/sync/syncVisualState.ts" "src/modules/jobs/presentation/components/SyncStateChip.tsx"` en `sisa.ui` -> PASS
+
 ## Avance parcial - worklogs ya no rompen al guardar toast y refrescan adjuntos locales
 
 Estado: en progreso
