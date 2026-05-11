@@ -1,5 +1,36 @@
 # Estado QA
 
+## Avance parcial - caller exacto identificado: hydrate remoto hacia SQLite hacia getByUuid repetido
+
+Estado: en progreso
+
+Que cambio:
+
+- la traza fina `sql.slow` permitio identificar el patron real: el `getByUuid` repetido no venia del `push` HTTP en si, sino del camino de aplicacion local de datos remotos (`usePullJobsSync` y bootstrap jobs) que llamaba `upsertRemote(...)` para `jobs`, `job_items`, `work_logs` y `appointments`; cada `upsertRemote` hacia `getByUuid` antes de escribir y otra vez al final para releer la fila, multiplicando lecturas del mismo UUID en una cola SQLite ya saturada
+- `sisa.ui/src/modules/jobs/data/repositories/SQLiteJobsRepository.ts`, `sisa.ui/src/modules/jobs/data/repositories/SQLiteJobItemsRepository.ts`, `sisa.ui/src/modules/jobs/data/repositories/SQLiteWorkLogsRepository.ts` y `sisa.ui/src/modules/jobs/data/repositories/SQLiteAppointmentsRepository.ts` agregan `applyRemote(...)` con `INSERT ... ON CONFLICT DO UPDATE` directo, sin `getByUuid` previo ni readback final, y respetando entidades locales `pending/syncing/conflict` con `WHERE ... sync_state NOT IN (...)`
+- `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` pasan a usar `applyRemote(...)` en vez de `upsertRemote(...)` para la aplicacion remota, manteniendo snapshots e id maps pero eliminando la relectura local redundante por entidad importada
+
+Call chain confirmado:
+
+- `JobsSyncAutoRunner` / bootstrap / checkpoint pull
+- `usePullJobsSync` o `useBootstrapJobsFromApi`
+- `*.Repository.upsertRemote(...)`
+- `getByUuid(...)` previo + `getByUuid(...)` final
+- contencion de cola SQLite
+- degradacion indirecta de `listPending`, `useWorkLogs.reload` y tiempo total percibido
+
+Riesgo cubierto:
+
+- eliminar N+1 de lecturas locales durante la aplicacion remota sin romper proteccion de cambios locales pendientes
+
+Puntos ciegos conocidos:
+
+- quedan otras fuentes de contencion no relacionadas al worklog save, sobre todo limpieza/refresh de bootstrap y `sync_state`/`reference cache`; si el runner sigue compitiendo con bootstrap en la misma ventana, la siguiente pasada debe desacoplar esas tareas o hacerlas mas batch
+
+Validacion parcial:
+
+- `npx eslint "src/modules/jobs/data/repositories/SQLiteJobsRepository.ts" "src/modules/jobs/data/repositories/SQLiteJobItemsRepository.ts" "src/modules/jobs/data/repositories/SQLiteAppointmentsRepository.ts" "src/modules/jobs/data/repositories/SQLiteWorkLogsRepository.ts" "src/modules/jobs/presentation/hooks/usePullJobsSync.ts" "src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts"` en `sisa.ui` -> PASS
+
 ## Avance parcial - trazas SQL finas para aislar el caller exacto del getByUuid repetido
 
 Estado: en progreso
