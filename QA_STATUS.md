@@ -1,5 +1,35 @@
 # Estado QA
 
+## Avance parcial - cuello confirmado en cleanupDuplicateRows repetido y ahora throttled
+
+Estado: en progreso
+
+Que cambio:
+
+- el ultimo log ya muestra un cuello muy concreto y mas grave que el resto: `cleanupDuplicateRows()` estaba corriendo desde `useBootstrapJobsFromApi` y `usePullJobsSync` una y otra vez, y cada pasada barria tablas como `jobs`, `job_items`, `work_logs`, `job_status_history` y especialmente `job_item_status_history` con `DELETE ... WHERE local_id NOT IN (...)`; eso explica los eventos explosivos al entrar a detalle mientras habia actividad de sync compartida
+- `sisa.ui/src/modules/jobs/data/db/cleanupDuplicateRows.ts` ahora evita ejecuciones redundantes con dos protecciones de bajo riesgo:
+  - `join-inflight` si otra limpieza ya esta corriendo
+  - `skip-recent` si la ultima corrida fue hace menos de 5 minutos
+- esto mantiene la proteccion contra duplicados, pero evita re-barrer las mismas tablas en cada pull/bootstrap/autosync cercano, que era exactamente lo que estaba llenando la cola SQLite segun los `sql.slow`
+
+Causa raiz confirmada de esta pasada:
+
+- no era ya el `getByUuid` del push
+- tampoco era solo `listPending`
+- era `cleanupDuplicateRows()` invocado demasiado seguido y solapado con bootstrap/pull, generando deletes caros que bloqueaban todo lo demas
+
+Riesgo cubierto:
+
+- cortar scans/deletes repetidos sobre tablas grandes sin perder la correccion basica de limpieza de duplicados
+
+Puntos ciegos conocidos:
+
+- si despues de este throttle sigue habiendo costo alto, el siguiente paso es mover la limpieza pesada a momentos controlados de bootstrap frio o hacerla por tablas/segmentos con criterio incremental en vez de barrer todo
+
+Validacion parcial:
+
+- `npx eslint "src/modules/jobs/data/db/cleanupDuplicateRows.ts"` en `sisa.ui` -> PASS
+
 ## Avance parcial - el cuello ahora es solapamiento entre bootstrap/pull y auto-sync
 
 Estado: en progreso
