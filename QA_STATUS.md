@@ -1,5 +1,27 @@
 # Estado QA
 
+## Avance parcial - trazas SQL finas para aislar el caller exacto del getByUuid repetido
+
+Estado: en progreso
+
+Que cambio:
+
+- la corrida posterior confirmo que el cuello ya no era solo `listPending`: aunque el camino `execution` mejoro fuerte al inicio, seguian apareciendo decenas de `sqlite.work_logs.getByUuid.slow` sobre los mismos UUID y saturando la cola serial de SQLite durante la sync y la reapertura de pantallas
+- como el caller exacto no queda visible solo con logs de repositorio, `sisa.ui/src/modules/jobs/data/db/jobsDatabase.ts` ahora agrega trazas por operacion SQL lenta (`sql.slow`) con `traceId`, `type`, `statementKey`, `caller`, `waitMs`, `sqlMs`, `totalMs`, `rowCount` y `paramsPreview`; esto permite distinguir si el costo viene de la query en si o de espera por contencion en la cola global
+- la misma capa agrega `sql.explain` una sola vez por `statementKey` para queries `SELECT` lentas, dejando el plan de ejecucion asociado al caller real que dispara la saturacion
+
+Riesgo cubierto:
+
+- evitar seguir optimizando a ciegas sobre el lugar equivocado cuando el cuello real puede venir de otra ruta que reutiliza `workLogsRepository.getByUuid(...)` fuera del push principal
+
+Puntos ciegos conocidos:
+
+- esta pasada prioriza observabilidad exacta antes de tocar otra vez el flujo; el siguiente ajuste debe apoyarse en los nuevos `caller`/`waitMs` para corregir el origen real de los `getByUuid` repetidos sin romper offline-first
+
+Validacion parcial:
+
+- `npx eslint "src/modules/jobs/data/db/jobsDatabase.ts"` en `sisa.ui` -> PASS
+
 ## Avance parcial - listPending deja de inspeccionar de mas durante el push de una sola operacion
 
 Estado: en progreso
