@@ -1,5 +1,34 @@
 # Estado QA
 
+## Avance parcial - el cuello ahora es solapamiento entre bootstrap/pull y auto-sync
+
+Estado: en progreso
+
+Que cambio:
+
+- los ultimos logs muestran que el `getByUuid` repetido ya no es el cuello dominante del push: el problema principal pasa a ser que `JobsSyncAutoRunner` dispara auto-sync mientras otra instancia de `usePullJobsSync` o `useBootstrapJobsFromApi` sigue aplicando lotes remotos sobre la misma cola SQLite. La evidencia es clara: `listPending(mode=execution)` queda con `waitMs` enormes detras de `insert into jobs`, `delete from jobs ... not in`, `delete from job_items ... not in` y otros writes del bootstrap/pull
+- `sisa.ui/src/modules/jobs/presentation/sync/jobsSyncActivity.ts` introduce contadores compartidos de actividad (`bootstrap`, `pull`, `push`) a nivel modulo, para que distintas instancias de hooks vean el mismo estado de actividad real
+- `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/useRunJobsSync.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` ahora marcan inicio/fin de actividad compartida en `try/finally`
+- `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` salta el auto-sync cuando ya existe otra actividad compartida en curso (`shared-sync-activity`), evitando que el runner compita con bootstrap/checkpoint pull o con otro push/pull sobre la misma base local
+
+Call chain confirmado en esta pasada:
+
+- bootstrap / checkpoint pull siguen haciendo escrituras locales intensivas (`insert into jobs`, deletes de limpieza, snapshots, id_map)
+- `JobsSyncAutoRunner` arrancaba en paralelo porque solo miraba su estado local de hook, no la actividad real de otras instancias
+- la cola SQLite serializada convertia eso en `waitMs` gigantes para `listPending`, `useWorkLogs.reload` y luego para el propio push de 1 worklog
+
+Riesgo cubierto:
+
+- evitar que sync de usuario compita con hidratacion remota ya en curso y degrade brutalmente la UX aunque cada query individual sea razonable
+
+Puntos ciegos conocidos:
+
+- sigue habiendo costo real en varias limpiezas `delete ... not in (...)` y snapshots/id_map del bootstrap; esta pasada corta el solapamiento, no reescribe esos procesos batch aun
+
+Validacion parcial:
+
+- `npx eslint "src/modules/jobs/presentation/sync/jobsSyncActivity.ts" "src/modules/jobs/presentation/hooks/usePullJobsSync.ts" "src/modules/jobs/presentation/hooks/useRunJobsSync.ts" "src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts" "src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx"` en `sisa.ui` -> PASS
+
 ## Avance parcial - caller exacto identificado: hydrate remoto hacia SQLite hacia getByUuid repetido
 
 Estado: en progreso
