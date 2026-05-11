@@ -1,5 +1,29 @@
 # Estado QA
 
+## Avance parcial - se elimina fan-out remanente del listado y adjuntos del detalle pasan a demanda
+
+Estado: en progreso
+
+Que cambio:
+
+- el log nuevo confirmo que la mejora anterior no habia cerrado el cuello principal del listado: `app/jobs/index.tsx` seguia montando `useWorkLogs` por tarjeta para mostrar participantes y `useJobItems` por tarjeta para listar pendientes, serializando varias lecturas `listByJobUuid` de SQLite apenas se abria `/jobs`
+- `sisa.ui/app/jobs/index.tsx` deja de montar hooks por card y pasa a mostrar solo hints resumidos usando contadores ya proyectados (`itemCount`, `workLogCount`); ademas se elimina el `reload()` extra en `focus`, que estaba generando recargas manuales duplicadas encima del `initial`
+- el mismo log mostro ruido residual de `AttachmentCountChip` aun con `fallbackCount`; la causa era que el componente seguia llamando `useAttachments()` con `attachableUuid = null`. `sisa.ui/app/jobs/[id].tsx` ahora separa modo live vs fallback y deja de crear esos hooks vacios
+- `sisa.ui/app/jobs/[id].tsx` tambien deja de montar `AttachmentList` del trabajo por defecto; los adjuntos del job pasan a expandirse bajo demanda, evitando otra query que en la corrida seguia tardando ~2.8s aunque devolviera 0 filas porque quedaba encolada detras del resto
+
+Riesgo cubierto:
+
+- evitar que abrir `/jobs` haga una tormenta de queries SQLite por cada tarjeta visible solo para enriquecer la UI con datos no criticos para la decision comercial inicial
+- evitar que el detalle de trabajo siga “asentandose por abajo” varios segundos por adjuntos del trabajo que el usuario no pidio abrir
+
+Puntos ciegos conocidos:
+
+- todavia no se instrumenta `jobsDatabase.ts` con `waitMs/sqlMs` por statement; si despues de sacar este fan-out siguen apareciendo latencias altas por `work_logs.listByJobUuid`, la siguiente pasada debe medir contencion exacta en la cola serial global
+
+Validacion parcial:
+
+- `npx eslint "app/jobs/index.tsx" "app/jobs/[id].tsx"` en `sisa.ui` -> PASS
+
 ## Avance parcial - fan-out local reducido en jobs/worklogs y sync post-save menos bloqueante
 
 Estado: en progreso
