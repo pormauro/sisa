@@ -1,5 +1,27 @@
 # Estado QA
 
+## Avance parcial - singleflight endurecido a nivel global para evitar pulls/bootstrap paralelos
+
+Estado: en progreso
+
+Que cambio:
+
+- el log siguiente mostro que el singleflight por `companyId` no alcanzaba: seguian naciendo muchas corridas paralelas de pull/bootstrap y el estado compartido seguia inflandose (`bootstrap:25`, `pull:32`), con repeticion brutal de `select last_checkpoint from sync_checkpoints ...`
+- `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` pasa de singleflight por key a singleflight global de proceso (`sharedPullInFlight`), para que cualquier caller nuevo reutilice la misma corrida aunque llegue desde otra instancia o con distinto scope aparente
+- `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` hace lo mismo con `sharedBootstrapInFlight`
+
+Riesgo cubierto:
+
+- cortar duplicacion accidental de procesos remotos completos que no deberian correr en paralelo en una sola app movil, priorizando UX fluida sobre paralelismo teorico
+
+Puntos ciegos conocidos:
+
+- si despues de esto sigue habiendo write amplification, el siguiente cuello ya no sera multiplicacion de corridas sino repeticion de escrituras auxiliares (`entity_snapshots`, `id_map`) dentro de una sola corrida real
+
+Validacion parcial:
+
+- `npx eslint "src/modules/jobs/presentation/hooks/usePullJobsSync.ts" "src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts"` en `sisa.ui` -> PASS
+
 ## Avance parcial - singleflight en pull/bootstrap y cache corta de checkpoint
 
 Estado: en progreso
