@@ -1,5 +1,32 @@
 # Estado QA
 
+## Avance parcial - listPending deja de inspeccionar de mas durante el push de una sola operacion
+
+Estado: en progreso
+
+Que cambio:
+
+- el analisis del ultimo log mostro que el cuello dominante ya no era `createWorkLog`, sino `listPendingMs` dentro de `useRunJobsSync`: para empujar 1 worklog, la app estaba usando el mismo `listPending()` pesado que tambien sirve para UI/diagnostico y que ejecutaba mantenimiento completo antes de devolver operaciones
+- `sisa.ui/src/modules/jobs/data/repositories/SQLiteSyncRepository.ts` ahora separa dos caminos: `listPending()` completo para vistas de estado y `listPendingForExecution()` liviano para el runner de sync. El camino de ejecucion evita reconciliacion obsoleta global y consulta solo operaciones ejecutables, con nuevas metricas `sync.listPending.slow` separadas por modo, `queryMs`, `maintenanceMs`, `reconcileMs`, `operationsCount` y `uniqueEntitiesCount`
+- el mismo repositorio ahora batcha snapshots locales al capturar operaciones pendientes con `capturePendingEntitySnapshots(...)`, evitando repetir lecturas por uuid y dejando trazas `sync.capturePendingEntitySnapshot` con `requestedCount`, `uniqueCount`, `cacheHits` y `cacheMisses`
+- `sisa.ui/src/modules/jobs/data/db/schema.ts` y `sisa.ui/src/modules/jobs/data/db/jobsMigrations.ts` suben a schema `27` y agregan indices para la cola de sync: `sync_operations(status, next_attempt_at, created_at)`, `sync_operations(entity_type, entity_uuid, status)` y `sync_operations(company_id, status, next_attempt_at)`
+- `sisa.ui/src/modules/jobs/presentation/hooks/useRunJobsSync.ts` y `sisa.ui/src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx` pasan a usar el camino liviano de ejecucion para no hidratar operaciones pendientes no relacionadas cuando solo hay que empujar un cambio local
+- `sisa.ui/src/modules/jobs/presentation/hooks/useWorkLogs.ts` agrega `skip-recent-success` para evitar el doble reload `initial` + `event` del mismo `jobUuid` dentro de 1 segundo despues de un guardado o refresco exitoso
+- `sisa.ui/src/modules/jobs/data/repositories/SQLiteWorkLogsRepository.ts` expone `getByUuids(...)` para futuras lecturas batch del dominio y evitar volver a caer en `getByUuid` repetidos si otro camino de sync necesita varios worklogs juntos
+
+Riesgo cubierto:
+
+- evitar que una sola sync local pague mantenimiento completo de cola y scans sobre operaciones viejas o irrelevantes, alejando `listPendingMs` del costo real de push
+- reducir recargas duplicadas de worklogs justo despues del guardado, cuando la UI ya tiene el dato local confirmado
+
+Puntos ciegos conocidos:
+
+- la evidencia de `perf:sqlite.work_logs.getByUuid.slow` repetidos no sale del `push` directo inspeccionado en esta pasada; por código, el cuello confirmado estaba en `listPending()` y mantenimiento de cola. Si esos `getByUuid` vuelven a aparecer tras esta optimizacion, la siguiente pasada debe instrumentar caller/statement en `jobsDatabase.ts` para atribuirlos 1:1
+
+Validacion parcial:
+
+- `npx eslint "src/modules/jobs/domain/repositories/WorkLogsRepository.ts" "src/modules/jobs/data/repositories/SQLiteWorkLogsRepository.ts" "src/modules/jobs/data/repositories/SQLiteSyncRepository.ts" "src/modules/jobs/presentation/hooks/useRunJobsSync.ts" "src/modules/jobs/presentation/components/JobsSyncAutoRunner.tsx" "src/modules/jobs/presentation/hooks/useWorkLogs.ts" "src/modules/jobs/data/db/schema.ts" "src/modules/jobs/data/db/jobsMigrations.ts"` en `sisa.ui` -> PASS
+
 ## Avance parcial - se elimina fan-out remanente del listado y adjuntos del detalle pasan a demanda
 
 Estado: en progreso
