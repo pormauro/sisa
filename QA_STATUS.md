@@ -1,5 +1,27 @@
 # Estado QA
 
+## Avance parcial - bootstrap critico vuelve a ser frontera real antes de liberar la shell
+
+Estado: en progreso
+
+Que cambio:
+
+- para UX comercial, la app no debe parecer lista mientras el bootstrap pesado todavia compite con detalle/jobs. En el codigo real, `BootstrapProvider` marcaba `criticalReady` demasiado temprano, antes de terminar `jobsBootstrap/jobsCheckpoint`; eso permitia que efectos posteriores de startup y refrescos secundarios arrancaran mientras la shell ya estaba navegable
+- `sisa.ui/contexts/BootstrapContext.tsx` ahora mueve `criticalReady` al final del bloque critico, junto con `isReady`, y ademas evita que `startupBootstrapRequest` secundario arranque mientras `isBootstrapping` sigue activo o antes de `isReady`
+- esto vuelve a alinear la implementacion con la expectativa UX: la carga inicial cubre el bootstrap critico, y lo secundario se difiere hasta despues de esa frontera en vez de pelear con las primeras pantallas
+
+Riesgo cubierto:
+
+- evitar que la shell se libere en una ventana intermedia donde todavia hay bootstrap/pull critico ocupando la cola SQLite y generando “tilde” al entrar a jobs/detalle
+
+Puntos ciegos conocidos:
+
+- sigue habiendo un warning preexistente de estilo en `contexts/BootstrapContext.tsx` (`Array<T>`), pero no afecta ejecucion ni performance
+
+Validacion parcial:
+
+- `npx eslint "contexts/BootstrapContext.tsx"` en `sisa.ui` -> PASS con 1 warning de estilo preexistente (`@typescript-eslint/array-type`)
+
 ## Avance parcial - singleflight endurecido a nivel global para evitar pulls/bootstrap paralelos
 
 Estado: en progreso
