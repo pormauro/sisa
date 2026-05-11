@@ -1,5 +1,32 @@
 # Estado QA
 
+## Avance parcial - singleflight en pull/bootstrap y cache corta de checkpoint
+
+Estado: en progreso
+
+Que cambio:
+
+- el ultimo log confirma que el throttle de `cleanupDuplicateRows()` funciono, pero quedo otro cuello muy claro: habia muchas invocaciones concurrentes/repetidas de `usePullJobsSync` y `useBootstrapJobsFromApi`, visibles en `shared-sync-activity` con contadores absurdamente altos (`bootstrap:25`, `pull:32`) y en multiples lecturas repetidas de `sync_checkpoints.last_checkpoint`
+- `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` ahora usa singleflight por `companyId`: si ya hay un pull en curso, los siguientes callers se cuelgan de la misma `Promise` en vez de abrir otra corrida paralela. Ademas agrega cache corta e inflight dedupe para `getCheckpoint(...)`, reduciendo lecturas repetidas de `sync_checkpoints`
+- `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` ahora tambien usa singleflight por `companyId`, evitando bootstrap paralelo del mismo scope
+- con esto, el estado compartido de actividad deja de inflarse artificialmente y el runner puede distinguir mejor actividad real de duplicacion accidental
+
+Causa raiz refinada:
+
+- despues de frenar `cleanupDuplicateRows`, el costo seguia alto porque habia demasiados callers pidiendo el mismo pull/bootstrap a la vez; cada uno volvia a pedir checkpoint y reejecutaba tramos del pipeline contra la misma cola SQLite
+
+Riesgo cubierto:
+
+- evitar corridas duplicadas del mismo sync/bootstrap scope sin tocar la semantica funcional del flujo offline-first
+
+Puntos ciegos conocidos:
+
+- si todavia quedan spikes, el siguiente cuello estara mas concentrado en writes repetidos de `entity_snapshots` / `id_map` y algunos inserts remotos repetidos por entidad, ya sin el ruido de corridas paralelas completas
+
+Validacion parcial:
+
+- `npx eslint "src/modules/jobs/presentation/hooks/usePullJobsSync.ts" "src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts"` en `sisa.ui` -> PASS
+
 ## Avance parcial - cuello confirmado en cleanupDuplicateRows repetido y ahora throttled
 
 Estado: en progreso
