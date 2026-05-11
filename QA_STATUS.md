@@ -1,5 +1,28 @@
 # Estado QA
 
+## Avance parcial - detalle de trabajo deja de reejecutar reloads en cascada
+
+Estado: en progreso
+
+Que cambio:
+
+- el ultimo log ya no muestra queries pesadas de por si: muestra muchas consultas chicas del detalle (`jobs`, `job_items`, `appointments`) esperando en cola porque se relanzan una y otra vez. En particular, se ve el patron repetido `getAll job_items` + `getAll appointments` + `getFirst jobs` seguido de `useJobDetail.reload:success` muchas veces seguidas
+- `sisa.ui/src/modules/jobs/presentation/hooks/useJobDetail.ts` ahora tiene debounce de eventos, join-inflight y `skip-recent-success` para no refrescar el mismo detalle varias veces en rafaga
+- `sisa.ui/src/modules/jobs/presentation/hooks/useJobItems.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/useJobAppointments.ts` ahora tienen join-inflight + debounce de eventos, para que cambios de refresh global no disparen varias lecturas identicas del mismo `jobUuid`
+- esto apunta directamente a la UX percibida al entrar al detalle: si una query tarda `sqlMs=10/20ms` pero `waitMs=2000ms`, el problema no es el SQL sino la multiplicacion de reloads concurrentes o encadenados
+
+Riesgo cubierto:
+
+- evitar que una lluvia de `jobs-data-refresh` o focos/re-renders convierta lecturas livianas del detalle en un congelamiento visible para el usuario
+
+Puntos ciegos conocidos:
+
+- si aun queda jitter visual, el siguiente paso sera desacoplar `useJobDetail` de algunos secundarios del detalle y priorizar render minimo antes de `job_items` / `appointments`
+
+Validacion parcial:
+
+- `npx eslint "src/modules/jobs/presentation/hooks/useJobDetail.ts" "src/modules/jobs/presentation/hooks/useJobItems.ts" "src/modules/jobs/presentation/hooks/useJobAppointments.ts"` en `sisa.ui` -> PASS
+
 ## Avance parcial - bootstrap critico vuelve a ser frontera real antes de liberar la shell
 
 Estado: en progreso
