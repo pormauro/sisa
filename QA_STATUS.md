@@ -9,6 +9,7 @@ Que cambio:
 - `sisa.api/src/Controllers/JobReportsController.php` rehizo la presentacion del PDF de trabajos para que cada bloque muestre cabecera mas profesional, chips operativos de fecha/horario/tecnicos y tarjetas de worklogs/citas mas legibles
 - los worklogs del PDF ya no muestran dinero, tarifa ni tipo de trabajo; ahora priorizan descripcion, fecha, horario, duracion y tecnicos, alineado con lo que se ve en la app como lectura operativa de campo
 - el unico importe visible por trabajo queda concentrado en `Total del trabajo`, y el cierre del informe agrega un resumen final con total de servicios, gastos cobrables al cliente y total general del informe
+- en una segunda pasada de ajuste visual, los worklogs tambien dejaron de mostrar duracion y el cierre del informe ya no expone `Horas trabajadas`, para mantener el PDF mas comercial y menos tecnico
 - `sisa.api/tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` se actualizo para reflejar la nueva semantica visual del reporte y proteger el cambio de etiquetas/estructura principal
 
 Riesgo cubierto:
