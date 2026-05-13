@@ -11,6 +11,8 @@ Que cambio:
 - el unico importe visible por trabajo queda concentrado en `Total del trabajo`, y el cierre del informe agrega un resumen final con total de servicios, gastos cobrables al cliente y total general del informe
 - en una segunda pasada de ajuste visual, los worklogs tambien dejaron de mostrar duracion y el cierre del informe ya no expone `Horas trabajadas`, para mantener el PDF mas comercial y menos tecnico
 - se ajusto el paginado del PDF para que el contenido no invada el pie: las plantillas reservan mas margen inferior y la numeracion ya no depende del placeholder HTML literal sino de `canvas->page_text(...)` en Dompdf, corrigiendo que salieran `{PAGE_NUM}` y `{PAGE_COUNT}` sin resolver
+- se compactaron margenes internos, separaciones entre bloques y reglas de `page-break-inside` del PDF detallado de trabajos para que el contenido fluya de forma mas continua en A4, sin dejar huecos grandes ni empujar bloques enteros a la pagina siguiente salvo cuando ya no queda espacio util antes del pie
+- una pasada adicional reemplazo la grilla basada en tabla dentro de cada trabajo por secciones de flujo continuo (`div`), porque Dompdf estaba conservando bloques demasiado rigidos y eso generaba paginas con huecos grandes, saltos desparejos y casos donde el contenido terminaba peleando con el pie
 - `sisa.api/tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` se actualizo para reflejar la nueva semantica visual del reporte y proteger el cambio de etiquetas/estructura principal
 
 Riesgo cubierto:
