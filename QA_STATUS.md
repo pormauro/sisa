@@ -7,8 +7,8 @@ Estado: en progreso
 Que cambio:
 
 - el diagnostico copiado desde `sisa.ui/app/invoices/[id].tsx` confirmo la causa raiz actual del `500` al exportar la factura `78`: el backend devolvia `PDOException` con `Unknown column 'j.type_of_work' in 'SELECT'`
-- `sisa.api/src/Controllers/InvoicesController.php` ya no consulta `j.type_of_work` dentro de `enrichInvoiceItemsForPdf()`; el detalle `Tipo:` del trabajo para el PDF pasa a resolverse desde `work_logs.work_type`, que si forma parte del modelo vigente de jobs/worklogs
-- con esto, la exportacion deja de depender de una columna legacy ausente en algunos ambientes y se alinea mejor con el esquema offline-first actual donde el tipo de trabajo vive en los work logs
+- `sisa.api/src/Controllers/InvoicesController.php` ya no consulta `j.type_of_work` dentro de `enrichInvoiceItemsForPdf()`; el detalle `Tipo:` del trabajo para el PDF pasa a partir de `work_logs.work_type`, y cuando ese valor referencia una tarifa numerica la app resuelve y muestra el nombre de la entidad `tariffs` en vez del id crudo
+- con esto, la exportacion deja de depender de una columna legacy ausente en algunos ambientes y se alinea mejor con el esquema offline-first actual donde el work log conserva la referencia operativa al tipo/tarifa aplicada
 
 Riesgo cubierto:
 
@@ -16,7 +16,7 @@ Riesgo cubierto:
 
 Puntos ciegos conocidos:
 
-- el PDF ahora toma un `work_type` representativo desde work logs; si un trabajo mezcla varios tipos en distintos logs, el detalle mostrado sigue siendo una aproximacion breve y no una enumeracion completa
+- el PDF ahora toma un `work_type` representativo desde work logs; si un trabajo mezcla varias tarifas/tipos en distintos logs, el detalle mostrado sigue siendo una aproximacion breve y no una enumeracion completa
 
 Validacion parcial:
 
