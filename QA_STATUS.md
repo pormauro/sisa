@@ -1,5 +1,27 @@
 # Estado QA
 
+## Avance parcial - export de PDF deja de consultar `jobs.type_of_work` inexistente
+
+Estado: en progreso
+
+Que cambio:
+
+- el diagnostico copiado desde `sisa.ui/app/invoices/[id].tsx` confirmo la causa raiz actual del `500` al exportar la factura `78`: el backend devolvia `PDOException` con `Unknown column 'j.type_of_work' in 'SELECT'`
+- `sisa.api/src/Controllers/InvoicesController.php` ya no consulta `j.type_of_work` dentro de `enrichInvoiceItemsForPdf()`; el detalle `Tipo:` del trabajo para el PDF pasa a resolverse desde `work_logs.work_type`, que si forma parte del modelo vigente de jobs/worklogs
+- con esto, la exportacion deja de depender de una columna legacy ausente en algunos ambientes y se alinea mejor con el esquema offline-first actual donde el tipo de trabajo vive en los work logs
+
+Riesgo cubierto:
+
+- evitar que la generacion de PDF falle por drift de esquema entre ambientes al renderizar items ligados a trabajos
+
+Puntos ciegos conocidos:
+
+- el PDF ahora toma un `work_type` representativo desde work logs; si un trabajo mezcla varios tipos en distintos logs, el detalle mostrado sigue siendo una aproximacion breve y no una enumeracion completa
+
+Validacion parcial:
+
+- `php -l "src/Controllers/InvoicesController.php"` en `sisa.api` -> PASS
+
 ## Avance parcial - diagnostico de PDF de facturas copiable desde alertas frontend
 
 Estado: en progreso
