@@ -1,5 +1,32 @@
 # Estado QA
 
+## Hito completado - generacion persistente de PDF de facturas con diagnostico visible
+
+Estado: completado
+
+Que cambio:
+
+- la revision profunda del flujo de facturas encontro una causa raiz real en backend: `InvoicesController::exportInvoicePdf()` resolvia el storage con `__DIR__ . '/../../../uploads/reports'`, una ruta que desde `sisa.api/src/Controllers` subia un nivel de mas y podia terminar fuera de `sisa.api/`; eso hacia que en ciertos entornos el PDF no se escribiera fisicamente aunque desde la app solo se viera un fallo generico
+- `sisa.api/src/Controllers/InvoicesController.php` ahora guarda el PDF en una ruta absoluta segura dentro de `sisa.api/uploads/invoices`, crea el directorio si falta, valida `is_writable`, verifica que el archivo exista y tenga tamano valido, y devuelve JSON uniforme con `success`, `invoice_id`, `file_id`, `report_id`, `path`, `url`, `filename`, `mime` y `size`
+- el mismo endpoint ya no deja errores silenciosos: cualquier fallo de libreria, escritura, registro en `files`, alta en `reports`, o persistencia de `invoice_pdf_file_id` devuelve `success=false` con `error` y `details` utiles; si la notificacion posterior falla, el PDF sigue considerandose generado y la respuesta vuelve con `warning` en vez de falsear toda la operacion
+- `sisa.ui/app/invoices/[id].tsx` ahora envia `Authorization`, `X-Company-Id`, `invoice_id` y `company_id`, agrega logs de desarrollo con `invoiceId/url/metodo/status/responseBody/error`, refresca metadata despues de generar y muestra el mensaje real del backend en vez de tragarse el error detras de un alert generico
+- como endurecimiento transversal, `sisa.api/src/Middleware/PermissionsMiddleware.php` ahora tambien resuelve `company_id` desde `X-Company-Id`, y `sisa.api/src/Models/Permission.php` incorpora `downloadInvoicePdf` al catalogo backend para evitar drift con la app
+- queda documentado el runbook manual en `sisa.api/docs/invoice-pdf-generation-runbook.md`
+
+Riesgo cubierto:
+
+- evitar que la app reporte “no paso nada” cuando el problema real es ruta de escritura mal resuelta, carpeta no escribible o respuesta backend poco diagnostica, y asegurar que el PDF quede persistido con metadata consistente en `files`, `reports` e `invoices`
+
+Puntos ciegos conocidos:
+
+- si el `POST /invoices/{id}/report/pdf` termina bien pero `GET /files/{file_id}` devuelve `403`, la causa ya no es generacion sino permisos de descarga (`downloadFile`); el flujo ahora lo hace visible, pero la habilitacion final depende de los permisos del usuario en ese ambiente
+
+Validacion parcial:
+
+- `php -l "src/Controllers/InvoicesController.php"` en `sisa.api` -> PASS
+- `php -l "src/Middleware/PermissionsMiddleware.php" && php -l "src/Models/Permission.php"` en `sisa.api` -> PASS
+- `npx eslint "app/invoices/[id].tsx"` en `sisa.ui` -> PASS
+
 ## Avance parcial - startup bootstrap de referencias vuelve a ser parte real del bloqueo inicial
 
 Estado: en progreso
