@@ -8,7 +8,9 @@ Que cambio:
 
 - el diagnostico copiado desde `sisa.ui/app/invoices/[id].tsx` confirmo la causa raiz actual del `500` al exportar la factura `78`: el backend devolvia `PDOException` con `Unknown column 'j.type_of_work' in 'SELECT'`
 - `sisa.api/src/Controllers/InvoicesController.php` ya no consulta `j.type_of_work` dentro de `enrichInvoiceItemsForPdf()`; el detalle `Tipo:` del trabajo para el PDF pasa a partir de `work_logs.work_type`, y cuando ese valor referencia una tarifa numerica la app resuelve y muestra el nombre de la entidad `tariffs` en vez del id crudo
+- el siguiente intento copiado desde frontend destapo una segunda causa real del mismo flujo: la consulta de resumen de work logs usaba sintaxis SQLite (`datetime(started_at, '+' || duration_minutes || ' minutes')`) dentro de MariaDB; esa expresion ahora se reemplazo por `DATE_ADD(started_at, INTERVAL duration_minutes MINUTE)`
 - con esto, la exportacion deja de depender de una columna legacy ausente en algunos ambientes y se alinea mejor con el esquema offline-first actual donde el work log conserva la referencia operativa al tipo/tarifa aplicada
+- con esto, la exportacion tambien deja de mezclar sintaxis de motores SQL incompatibles dentro del mismo endpoint de PDF
 
 Riesgo cubierto:
 
