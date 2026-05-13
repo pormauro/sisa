@@ -1,5 +1,27 @@
 # Estado QA
 
+## Avance parcial - startup bootstrap de referencias vuelve a ser parte real del bloqueo inicial
+
+Estado: en progreso
+
+Que cambio:
+
+- el analisis del arranque mostro otra carrera: `BootstrapProvider` liberaba `isReady` despues del bloque critico de perfil/permisos/jobs, pero el payload `startup-bootstrap:*` de referencias (`statuses`, `clients`, `folders`, `providers`, etc.) se descargaba recien despues en un efecto post-ready; eso dejaba providers ya montados leyendo cache vieja o vacia y hacia que la app pareciera lista antes de terminar de hidratar datos base
+- `sisa.ui/contexts/BootstrapContext.tsx` ahora pide y aplica el startup bootstrap dentro de `runBootstrap()` antes de marcar `isReady`, con fallback controlado a payload cacheado cuando existe
+- la misma pasada ya no solo guarda el payload crudo: tambien mergea referencias en cache/SQLite y emite updates (`clients`, `statuses`, `folders`, `tariffs`, `providers`, `memberships`, `member_companies`, etc.) para que los providers dependientes no queden esperando otro refresh manual
+
+Riesgo cubierto:
+
+- evitar que la shell se habilite con referencias operativas incompletas, especialmente en primer ingreso o despues de cambiar de empresa, donde listas y selects podian abrirse antes de que terminara la hidratacion base
+
+Puntos ciegos conocidos:
+
+- siguen existiendo algunos consumers secundarios que todavia prefieren su propio fetch al detectar cambios (`products_services`, `payment_templates`), asi que esta pasada ataca la frontera de arranque y la hidratacion de referencias principales antes que una unificacion total de todos los providers
+
+Validacion parcial:
+
+- `npx eslint "contexts/BootstrapContext.tsx"` en `sisa.ui` -> PASS con 1 warning de estilo preexistente (`@typescript-eslint/array-type`)
+
 ## Avance parcial - detalle de trabajo deja de reejecutar reloads en cascada
 
 Estado: en progreso
