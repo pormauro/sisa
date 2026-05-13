@@ -1,5 +1,27 @@
 # Estado QA
 
+## Avance parcial - diagnostico de PDF de facturas copiable desde alertas frontend
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/app/invoices/[id].tsx` ahora captura un diagnostico tecnico del flujo de PDF desde la app con stage, metodo, url, `invoiceId`, `companyId`, `file_id`, `report_id`, request body, status HTTP, content-type, response body y warning backend cuando existe
+- las alertas de errores y advertencias del flujo de factura PDF ahora exponen accion `Copiar detalle`, que usa portapapeles del dispositivo para poder pegar el diagnostico exacto desde el mismo globo sin depender de consola remota o Metro
+- cuando el backend devuelve `warning` pero el PDF igual queda generado, la app deja visible esa advertencia y permite copiarla; si el servidor genera el PDF pero la app no logra abrirlo o descargarlo, tambien muestra un alert copiable con el contexto tecnico acumulado del intento
+
+Riesgo cubierto:
+
+- evitar que QA o soporte queden atados a capturas parciales de Hermes/Expo cuando el problema real esta en el request, la respuesta backend o la descarga posterior del archivo
+
+Puntos ciegos conocidos:
+
+- el diagnostico copiado refleja lo que ve la app en ese intento, pero no reemplaza logs nativos del visor PDF ni logs del servidor si la falla ocurre fuera del fetch o del almacenamiento local del archivo
+
+Validacion parcial:
+
+- `npx eslint "app/invoices/[id].tsx"` en `sisa.ui` -> PASS
+
 ## Hito completado - generacion persistente de PDF de facturas con diagnostico visible
 
 Estado: completado
