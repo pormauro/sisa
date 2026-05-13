@@ -1,5 +1,29 @@
 # Estado QA
 
+## Avance parcial - reportes PDF de trabajos priorizan lectura operativa y cierre comercial limpio
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/src/Controllers/JobReportsController.php` rehizo la presentacion del PDF de trabajos para que cada bloque muestre cabecera mas profesional, chips operativos de fecha/horario/tecnicos y tarjetas de worklogs/citas mas legibles
+- los worklogs del PDF ya no muestran dinero, tarifa ni tipo de trabajo; ahora priorizan descripcion, fecha, horario, duracion y tecnicos, alineado con lo que se ve en la app como lectura operativa de campo
+- el unico importe visible por trabajo queda concentrado en `Total del trabajo`, y el cierre del informe agrega un resumen final con total de servicios, gastos cobrables al cliente y total general del informe
+- `sisa.api/tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` se actualizo para reflejar la nueva semantica visual del reporte y proteger el cambio de etiquetas/estructura principal
+
+Riesgo cubierto:
+
+- evitar que el PDF mezcle detalle operativo con ruido economico dentro de cada worklog y mejorar la consistencia entre la lectura movil del trabajo y su version exportada para cliente o administracion
+
+Puntos ciegos conocidos:
+
+- el cierre final resume correctamente servicios y gastos cobrables, pero la variante detallada sigue dependiendo de los datos historicos ya normalizados de `final_amount` / `worklog_total_amount`; si un trabajo arrastra montos legacy inconsistentes, el total visible seguira reflejando esa fuente
+
+Validacion parcial:
+
+- `php -l "src/Controllers/JobReportsController.php"` en `sisa.api` -> PASS
+- `vendor/bin/phpunit "tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php"` en `sisa.api` -> PASS
+
 ## Avance parcial - export de PDF deja de consultar `jobs.type_of_work` inexistente
 
 Estado: en progreso
