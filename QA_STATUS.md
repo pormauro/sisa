@@ -1,5 +1,29 @@
 # Estado QA
 
+## Avance parcial - nace `sisa.web` como panel React administrativo conectado a la API comun
+
+Estado: en progreso
+
+Que cambio:
+
+- se inicializo `sisa.web/.git` como repo separado dentro del workspace y se creo una base React + TypeScript + Vite, evitando SSR y manteniendo la web como cliente online-first liviano
+- `sisa.web/src/lib/api-client.ts` centraliza `Authorization: Bearer` y `X-Company-Id`, alineando la web con el contrato operativo ya usado por mobile
+- `sisa.web/src/contexts/session-context.tsx` y `sisa.web/src/pages/LoginPage.tsx` cubren login, persistencia local de sesion y seleccion de empresa activa desde membresias aprobadas
+- `sisa.web/src/pages/DashboardPage.tsx`, `sisa.web/src/pages/CompaniesPage.tsx`, `sisa.web/src/pages/ClientsPage.tsx`, `sisa.web/src/pages/ProvidersPage.tsx`, `sisa.web/src/pages/JobsPage.tsx`, `sisa.web/src/pages/InvoicesPage.tsx` y `sisa.web/src/pages/PaymentsPage.tsx` dejan un panel administrativo inicial sobre la misma API para empresas, relaciones comerciales, trabajos, facturas, PDF y pagos base
+
+Riesgo cubierto:
+
+- evitar abrir una tercera implementacion de negocio separada: la web nace consumiendo la API central y respetando el corte `companies` vs `clients/providers`
+
+Puntos ciegos conocidos:
+
+- la primera pasada de `sisa.web` prioriza CRUD y operacion administrativa minima; todavia no incorpora permisos finos, receipts, adjuntos complejos ni diagnosticos profundos de archivos/reportes
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
 ## Avance parcial - reportes PDF de trabajos priorizan lectura operativa y cierre comercial limpio
 
 Estado: en progreso
