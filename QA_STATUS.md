@@ -1,5 +1,29 @@
 # Estado QA
 
+## Avance parcial - `sisa.web` profundiza trabajos online-first sobre la API comun
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.web/src/pages/JobsPage.tsx` deja de ser solo un CRUD minimo por ids sueltos y pasa a operar trabajos con contexto real de cliente, estado y carpeta, todo directo contra la API existente
+- `sisa.web/src/services/statusesService.ts` y `sisa.web/src/services/foldersService.ts` agregan lectura online-first de referencias para que la web no dependa de inputs manuales de `status_id` o `folder_id`
+- `sisa.web/src/services/jobItemsService.ts` suma CRUD directo de items de trabajo usando `/jobs/{jobId}/items`, permitiendo que la web gestione subtareas basicas sin pasar por sync offline ni por SQLite
+- `sisa.web/src/types/domain.ts` y `sisa.web/src/app/globals.css` se amplian para soportar esta capa operativa web con entidades de estado/carpeta/item y una UI mas clara para backlog + detalle + subtareas
+
+Riesgo cubierto:
+
+- acercar la web al modelo real que pedis: online-first puro sobre la misma API comun, sin inventar un backend paralelo ni heredar el flujo mobile offline-first
+
+Puntos ciegos conocidos:
+
+- esta pasada deja mejor resueltos `jobs` y `job_items`, pero todavia no mete el mismo nivel de profundidad para `work_logs`, `appointments`, adjuntos ni relaciones mas avanzadas como grupos o root causes
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
 ## Avance parcial - nace `sisa.web` como panel React administrativo conectado a la API comun
 
 Estado: en progreso
