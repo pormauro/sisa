@@ -1,5 +1,27 @@
 # Estado QA
 
+## Avance parcial - tecnica monetaria separada por canal: en vivo para web, edicion simple para mobile
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.web/src/components/money-input.tsx` y `sisa.web/src/lib/utils.ts` consolidan la tecnica rica para navegador: prefijo fijo separado, formateo en vivo con miles, coma decimal visible, parseo tolerante a `,`/`.`/`$`, y storage normalizado tipo `1234.56`
+- en `sisa.ui` la experiencia final vuelve a alinearse con web: `MoneyMaskedInput` mantiene `$` fijo dentro del mismo campo, aplica puntos de miles y coma decimal sobre el propio valor visible, y normaliza storage decimal. Se descarto el experimento de preview separado porque seguia dejando la sensacion de input “partido”
+- la regla general queda asi: web y mobile comparten la misma semantica visual de dinero (prefijo fijo + miles + coma decimal), pero mobile usa una estrategia de caret mas pragmatica para React Native, priorizando escritura lineal y seleccion total al entrar
+
+Riesgo cubierto:
+
+- evitar que una mascara rica de dinero rompa la escritura tactil en mobile, manteniendo a la vez una UX web mas asistida para caja/cobros
+
+Puntos ciegos conocidos:
+
+- React Native sigue siendo mas sensible que web al manejo fino del cursor; si reaparece drift en casos de edicion intermedia, conviene tratar ese caso puntual en `MoneyMaskedInput` antes que volver a degradar la UX visual del dinero
+
+Validacion parcial:
+
+- `npx eslint "app/payments/[id].tsx" "app/payments/create.tsx" "app/receipts/[id].tsx" "app/receipts/create.tsx" "app/invoices/create.tsx" "app/invoices/[id].tsx" "app/products_services/create.tsx" "app/products_services/[id].tsx" "components/MoneyMaskedInput.tsx" "utils/moneyInput.ts"` en `sisa.ui` -> PASS
+
 ## Avance parcial - `sisa.web` profundiza trabajos online-first sobre la API comun
 
 Estado: en progreso
