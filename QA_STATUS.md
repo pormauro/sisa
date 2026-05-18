@@ -1,5 +1,323 @@
 # Estado QA
 
+## Avance parcial - `sisa.web` pasa a shell responsive con mapa completo de modulos
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.web/src/navigation/app-navigation.ts` centraliza el mapa completo del panel web y ya expone todos los dominios pedidos para administracion: `Finanzas`, `Comercial`, `Operaciones`, `Tracking`, `Sistema` y `Nucleo`, aunque varios modulos sigan en fase placeholder
+- `sisa.web/src/App.tsx` y `sisa.web/src/pages/ModulePlaceholderPage.tsx` crean rutas reales para esos modulos faltantes, de modo que el menu ya no es una promesa parcial sino una estructura navegable completa lista para crecer sin rearmar la shell
+- `sisa.web/src/components/app-shell.tsx` deja el sidebar previo y pasa a una navegacion mas actual: menu completo, badges de estado, cierre automatico al navegar, bloqueo de scroll cuando el drawer movil esta abierto y acceso responsive con boton hamburguesa
+- `sisa.web/src/components/app-icon.tsx` amplia el set de iconos para cubrir el menu entero, y `sisa.web/src/app/globals.css` endurece comportamiento responsive con sidebar off-canvas en mobile, topbar mas estable y cards placeholder consistentes
+- como plus funcional, `sisa.web/src/pages/JobsPage.tsx` y `sisa.web/src/pages/InvoicesPage.tsx` mantienen vivo el puente `trabajo -> factura`, pero ahora dentro de una shell que ya refleja el sistema administrativo completo y no solo los modulos implementados hasta hoy
+
+Riesgo cubierto:
+
+- evitar que la web siga creciendo con navegacion incompleta, deuda de IA por modulos invisibles y comportamiento flojo en mobile/tablet; esta pasada deja la estructura de informacion completa y una base de shell mucho mas alineada con estandares actuales de aplicaciones web
+
+Puntos ciegos conocidos:
+
+- el menu ya esta completo y responsive, pero varios modulos todavia son placeholders navegables; el siguiente valor fuerte sigue estando en profundizar funcionalidad real sobre esa estructura, no en seguir expandiendo mas superficie vacia
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
+## Avance parcial - work logs alineados a tarifa real en API y web
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/src/Controllers/WorkLogsController.php`, `sisa.api/src/Models/WorkLogs.php` y `sisa.api/src/Services/SyncEventGenerator.php` agregan soporte explicito para `tariff_id` en work logs, validando que la tarifa pertenezca a la empresa del trabajo y usando su `name` como snapshot en `work_type`
+- `sisa.api/scripts/migrations/worklogs-tariff-id-phase28.php` deja lista la migracion de esquema para sumar `work_logs.tariff_id` en instancias existentes
+- `sisa.api/tests/Controllers/WorkLogsControllerTest.php` se actualiza para cubrir la creacion de work logs con tarifa y para evitar el ruido de dependencias no necesarias durante el test
+- `sisa.web/src/services/referenceCatalogsService.ts`, `sisa.web/src/services/workLogsService.ts`, `sisa.web/src/types/domain.ts` y `sisa.web/src/pages/JobsPage.tsx` cambian el editor de work log de texto libre a seleccion por tarifa, mostrando nombre y costo y persistiendo `tariff_id` real hacia backend
+
+Riesgo cubierto:
+
+- evitar que el tipo de trabajo quede como string arbitrario y pierda vinculacion con la entidad de tarifas que despues alimenta costo, informe y facturacion
+
+Puntos ciegos conocidos:
+
+- ahora el work log ya guarda `tariff_id`, pero la factura todavia no calcula automaticamente montos desde esa tarifa; ese cierre comercial sigue siendo la siguiente capa fuerte
+
+Validacion parcial:
+
+- `vendor/bin/phpunit tests/Controllers/WorkLogsControllerTest.php` en `sisa.api` -> PASS
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
+## Avance parcial - adjuntos operativos visibles en pagos y recibos con marca contable
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.web/src/types/domain.ts`, `sisa.web/src/services/invoicesService.ts` y `sisa.web/src/services/receiptsService.ts` empiezan a transportar `attached_files` de `payments` y `receipts` como estructura tipada en la web, preservando la metadata `is_invoice`
+- `sisa.web/src/pages/PaymentsPage.tsx` suma carga, listado, preview y remocion de adjuntos del pago, y ademas deja marcar cada archivo como `Factura contable` para diferenciar comprobantes que despues sirven al contador/a
+- `sisa.web/src/pages/ReceiptsPage.tsx` suma el mismo flujo base de adjuntos para recibos, manteniendo trazabilidad documental del cobro desde la propia web
+- esta pasada reutiliza el preview autenticado ya armado en `filePreviewService`, evitando abrir binarios protegidos sin token y manteniendo consistencia con jobs/worklogs
+
+Riesgo cubierto:
+
+- evitar que pagos y recibos sigan siendo movimientos economicos sin respaldo documental visible desde la web y evitar perder la marca de adjunto-factura que luego alimenta la presentacion contable
+
+Puntos ciegos conocidos:
+
+- pagos y recibos ya soportan adjuntos desde la web, pero todavia no existe una bandeja administrativa transversal de adjuntos por entidad/periodo ni una exportacion contable dedicada de esos comprobantes marcados como factura
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
+## Avance parcial - bandeja transversal de archivos y filtro contable en pagos
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.web/src/pages/AttachmentsPage.tsx` convierte `Archivos` en modulo real y ya no placeholder: arma una bandeja transversal con adjuntos de `jobs`, `job_items`, `work_logs`, `payments` y `receipts`, con filtros por entidad, busqueda y preview autenticada
+- `sisa.web/src/navigation/app-navigation.ts` y `sisa.web/src/App.tsx` promueven `Archivos` a modulo vivo dentro del menu de `Operaciones`, dejando la ruta ya operativa en la shell completa
+- `sisa.web/src/pages/PaymentsPage.tsx` no solo permite marcar adjuntos como `Factura contable`, sino que ahora esa distincion alimenta el filtro de la bandeja transversal para aislar rapidamente comprobantes relevantes para contador/a
+- la bandeja unifica documentacion tecnica y economica en una sola vista administrativa, aunque los adjuntos de pagos/recibos sigan viniendo del campo `attached_files` y los operativos de `file_attachments`
+
+Riesgo cubierto:
+
+- evitar que cada entidad siga manejando adjuntos en silos y obligue a buscar comprobantes de manera manual entre modulos separados cuando toca auditoria, presentacion contable o control operativo
+
+Puntos ciegos conocidos:
+
+- la bandeja ya es transversal, pero para pagos/recibos hoy muestra mejor contexto de entidad que metadata rica del archivo; si hace falta una experiencia mas profunda, el siguiente salto natural es exponer metadata de `files` por lote desde API
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
+## Avance parcial - metadata real de archivos para pagos, recibos y bandeja documental
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/src/Controllers/FilesController.php` y `sisa.api/src/Routes/api.php` agregan `GET /files?ids=...` para recuperar metadata por lote de archivos autenticados sin descargar el binario completo
+- `sisa.web/src/services/filesService.ts` suma `listFilesMetadata(...)` y la web empieza a enriquecer adjuntos economicos con `original_name`, `file_type` y `file_size`
+- `sisa.web/src/pages/PaymentsPage.tsx` y `sisa.web/src/pages/ReceiptsPage.tsx` ya muestran nombre real del archivo, tipo y tamano dentro del editor de adjuntos, en vez de dejar solo `Archivo #id`
+- `sisa.web/src/pages/AttachmentsPage.tsx` usa la metadata batch para mejorar especialmente la parte economica de la bandeja transversal, de modo que contador/a y administracion ya vean contexto documental mas util sin abrir cada archivo a ciegas
+
+Riesgo cubierto:
+
+- evitar una UX pobre donde pagos y recibos solo expongan ids tecnicos de archivos, dificultando auditoria, seleccion de comprobantes y presentacion contable
+
+Puntos ciegos conocidos:
+
+- esta pasada mejora metadata de archivos economicos; si despues queremos una bandeja todavia mas fuerte, conviene agregar fecha de upload, usuario cargador y categoria explicita tambien para pagos/recibos desde backend
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
+## Avance parcial - costos valorizados de trabajos y shell lateral mas limpia
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.web/src/pages/JobsPage.tsx` deja de mostrar un tab de costos superficial y pasa a calcular costo real estimado de cada work log desde `tariff_id` y su duracion, consolidando total valorizado, base facturable, costo interno, costo visible al cliente, tarifa media y cobertura sin tarifa
+- la misma vista agrega desgloses por tarifa y por item, mas alertas para work logs sin tarifa, para que el modulo de trabajos ya sirva como lectura economica previa a informe y factura
+- el puente a `Facturas` ahora arrastra monto billable y minutos billables via query params, y `sisa.web/src/pages/InvoicesPage.tsx` prearma el item comercial con ese costo sugerido en vez de dejar solo la descripcion del trabajo
+- `sisa.web/src/components/app-shell.tsx` y `sisa.web/src/app/globals.css` corrigen el menu lateral: grupos colapsables, persistencia de expansion, apertura garantizada del grupo activo, desaparicion del overflow horizontal y scrollbar izquierda mas discreta para el sidebar
+- `sisa.web/src/app/globals.css` tambien reemplaza el aspecto default de scrollbars por una variante mas fina tipo capsula, con track transparente y thumb que aparece al interactuar en sidebar/contenido
+
+Riesgo cubierto:
+
+- evitar que la web siga sin una lectura economica usable del trabajo y evitar que el shell lateral siga metiendo scroll horizontal y ruido visual cuando la cantidad de modulos crece
+
+Puntos ciegos conocidos:
+
+- esta pasada deja costo valorizado operativo desde tarifas, pero todavia no suma materiales, pagos imputables al trabajo u otros costos indirectos; esa parte queda como siguiente capa de rentabilidad fina
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
+## Avance parcial - nuevos bloques UI extraidos como componentes reutilizables en castellano
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.web/src/components/tarjeta-resumen-metrica.tsx`, `sisa.web/src/components/titulo-formulario.tsx`, `sisa.web/src/components/lista-adjuntos.tsx` y `sisa.web/src/components/modal-vista-previa-archivo.tsx` extraen los bloques nuevos mas repetidos en componentes reutilizables con naming en castellano y pensados para reaparecer en varios modulos
+- `sisa.web/src/pages/JobsPage.tsx`, `sisa.web/src/pages/AttachmentsPage.tsx`, `sisa.web/src/pages/PaymentsPage.tsx` y `sisa.web/src/pages/ReceiptsPage.tsx` dejan de renderizar varias variantes ad hoc de tarjetas resumen, listas de adjuntos y previews de archivo, y pasan a consumir esas piezas compartidas
+- `sisa.web/src/app/globals.css` incorpora variables de tema para scrollbar, tarjetas de resumen, tarjetas de adjuntos y tarjetas de costo, para que estos bloques nuevos no queden atados a colores hardcodeados y puedan personalizarse mejor a futuro
+
+Riesgo cubierto:
+
+- evitar que el crecimiento de la web deje duplicacion de JSX/CSS por todos lados y complique mantener consistencia visual o tematizacion cuando los mismos patrones aparecen en operaciones, finanzas y bandejas documentales
+
+Puntos ciegos conocidos:
+
+- esta pasada consolida los bloques nuevos mas repetidos; si mas adelante se decide una migracion completa de naming de toda la UI, convendra encarar una fase dedicada para componentes legacy que todavia conservan nombres en ingles
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
+## Avance parcial - refresh automatico de token y carga reusable de adjuntos con drag and drop
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.web/src/services/authService.ts`, `sisa.web/src/types/domain.ts` y `sisa.web/src/contexts/session-context.tsx` agregan soporte para `session_id`, `device_uid`, expiracion del token y renovacion automatica via `POST /token/refresh` antes del vencimiento, sin pedir credenciales de nuevo
+- la sesion web ahora intenta renovar el token en background con timer preventivo y tambien al volver foco/visibilidad si la expiracion esta cerca, usando el endpoint de refresh y el `X-Device-Uid` ya entregado por login
+- `sisa.web/src/components/panel-carga-adjuntos.tsx` crea una pieza reusable en castellano para carga de archivos con drag and drop, boton estilizado, soporte multiple y modo especial opcional para marcar facturas de credito fiscal IVA
+- `sisa.web/src/components/lista-adjuntos.tsx` y `sisa.web/src/components/modal-vista-previa-archivo.tsx` ahora soportan descarga, no solo preview/remocion, y `sisa.web/src/services/filePreviewService.ts` suma `descargarArchivoProtegido(...)`
+- `sisa.web/src/pages/PaymentsPage.tsx`, `sisa.web/src/pages/ReceiptsPage.tsx`, `sisa.web/src/pages/JobsPage.tsx` y `sisa.web/src/pages/AttachmentsPage.tsx` adoptan estos flujos para que donde haya archivos tambien exista descarga directa y la carga se vea consistente y mas moderna
+- `sisa.web/src/app/globals.css` suma la capa visual del dropzone reusable con estilo mas intencional y variables pensadas para futura tematizacion
+
+Riesgo cubierto:
+
+- evitar expiraciones de token que corten la sesion activa en uso normal y evitar que cada modulo vuelva a inventar su propio uploader de archivos, especialmente en el caso sensible de facturas aptas para credito fiscal IVA dentro de pagos
+
+Puntos ciegos conocidos:
+
+- la renovacion automatica ya existe del lado web, pero si a futuro queremos blindarla aun mas conviene sumarle reintento centralizado ante `401` en el cliente API y observabilidad ligera de refresh fallidos
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
+## Avance parcial - galeria de archivos, refresh central en 401 e informe fiscal IVA
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.web/src/components/galeria-archivos.tsx` transforma el modulo `Archivos` en una grilla tipo explorador con tiles grandes, accion primaria contextual (`Abrir` o `Descargar`) y boton explicito de descarga
+- `sisa.web/src/components/modal-vista-previa-archivo.tsx` ahora soporta tambien audio embebido, ademas de imagen, video y PDF; los tipos no embebibles siguen descargandose para abrir con aplicacion externa
+- `sisa.web/src/lib/api-client.ts`, `sisa.web/src/lib/storage.ts` y `sisa.web/src/contexts/session-context.tsx` centralizan la renovacion de token tambien ante `401`, sincronizando storage/sesion sin pedir credenciales otra vez y evitando drift entre refresh preventivo y refresh por error de API
+- `sisa.web/src/pages/AttachmentsPage.tsx` agrega export CSV del informe de credito fiscal IVA usando `is_invoice`, de modo que pagos marcados como factura ya alimentan una salida contable concreta
+- `sisa.web/src/pages/JobsPage.tsx` y `sisa.web/src/pages/InvoicesPage.tsx` extienden la lectura economica del trabajo con pagos imputables al cliente y sugieren facturacion total de servicio + gastos recuperables; la factura prearmada ya puede llegar con ambos renglones
+
+Riesgo cubierto:
+
+- evitar una experiencia documental pobre en `Archivos`, evitar cortes de sesion por `401` cuando el refresh preventivo no alcanzo y evitar que la marca `is_invoice` quede sin salida util para contador/a
+
+Puntos ciegos conocidos:
+
+- el informe fiscal IVA hoy sale como CSV administrativo; si despues se necesita formato mas formal o imprimible, conviene sumarle export PDF/Excel especifico y mas metadata tributaria
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
+## Avance parcial - informe fiscal IVA imprimible y rentabilidad mas legible
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.web/src/pages/AttachmentsPage.tsx` ahora suma una vista formal de `Informe credito fiscal IVA` dentro de la propia web, con resumen, tabla administrativa y salida `Imprimir / Guardar PDF`, ademas del CSV ya existente
+- `sisa.web/src/components/galeria-archivos.tsx` y `sisa.web/src/components/modal-vista-previa-archivo.tsx` completan una UX documental mas cercana a explorador: grilla de tiles grandes, apertura media-aware y descarga consistente
+- `sisa.web/src/pages/JobsPage.tsx` mejora la lectura de rentabilidad separando mano de obra valorizada, gastos recuperables/materiales, margen del servicio y margen operativo total
+- la misma pestaña `Costos` ya lista pagos imputables al cliente como bloque propio, para que materiales/recuperos no queden escondidos adentro del numero total
+
+Riesgo cubierto:
+
+- evitar que el informe fiscal quede limitado a export plano y evitar que la rentabilidad del trabajo siga mezclando mano de obra y recuperos sin una composicion entendible para administracion
+
+Puntos ciegos conocidos:
+
+- la capa de materiales/recuperos hoy se apoya en pagos imputables al cliente; si despues existe una entidad dedicada de materiales por job, convendra sumarla al mismo tablero para una rentabilidad todavia mas precisa
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
+## Avance parcial - `sisa.web` deja de navegar como CRUD plano y arranca el modulo operativo real de trabajos
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.web/src/components/app-shell.tsx` y `sisa.web/src/app/globals.css` reorganizan la web por dominios (`Nucleo`, `Comercial`, `Operaciones`, `Finanzas`, `Sistema`) y dejan visibles los huecos planificados, evitando seguir creciendo con botones sueltos en el sidebar
+- `sisa.web/src/pages/JobsPage.tsx` deja el modal-CRUD como patron principal y pasa a una vista master-detail para escritorio: filtros persistentes a la izquierda, detalle operativo a la derecha y tabs internas para `items`, `work logs`, `archivos`, `historial`, `informe` y `costos`
+- la misma pasada profundiza `jobs` con CRUD inline de `job_items` dentro del detalle y suma CRUD web inicial de `work_logs`, para que la web ya pueda registrar horas, tipo de trabajo, descripcion tecnica, item asociado y visibilidad cliente directo contra la API comun
+- `sisa.web/src/services/workLogsService.ts` y `sisa.web/src/types/domain.ts` agregan la capa tipada de work logs/participantes/adjuntos necesaria para seguir cerrando el circuito `trabajo -> informe -> factura`
+
+Riesgo cubierto:
+
+- evitar que `sisa.web` siga creciendo como panel de CRUDs aislados sin un modulo operativo central capaz de concentrar backlog, detalle, subtareas y bitacora tecnica sobre la misma entidad de trabajo
+
+Puntos ciegos conocidos:
+
+- esta pasada deja lista la estructura correcta del modulo de trabajos, pero todavia no resuelve upload/preview real de archivos, historial auditado backend ni export de informe tecnico PDF desde la propia vista web
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
+## Avance parcial - `sisa.web` conecta informes PDF y adjuntos reales dentro de trabajos
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.web/src/services/jobReportsService.ts` conecta la web con `POST /jobs/{id}/report/pdf` y normaliza tanto respuestas JSON con `file_id` / `download_url` como respuestas binarias directas, para abrir el informe PDF del trabajo desde la propia vista detalle
+- `sisa.web/src/services/fileAttachmentsService.ts`, `sisa.web/src/services/jobsService.ts`, `sisa.web/src/services/jobItemsService.ts`, `sisa.web/src/services/workLogsService.ts` y `sisa.web/src/types/domain.ts` amplian la capa web para manejar `uuid`, adjuntos enriquecidos y lectura del detalle real de trabajo con inventario de archivos
+- `sisa.web/src/pages/JobsPage.tsx` deja la tab `Informe` como placeholder y la vuelve accionable con boton de apertura de PDF, mientras que la tab `Archivos` ya lista adjuntos del trabajo y de work logs, permite abrirlos y tambien subir nuevos archivos enlazandolos a `job` o `work_log` via `files` + `file_attachments`
+- `sisa.web/src/app/globals.css` suma estilos para cards de adjuntos, upload y acciones de desvinculacion, manteniendo el patron escritorio del modulo operativo
+
+Riesgo cubierto:
+
+- evitar que la web se quede en una estructura linda pero vacia para informe y archivos; ahora esos dos frentes ya pisan endpoints reales del backend y empiezan a cerrar el circuito documental del trabajo
+
+Puntos ciegos conocidos:
+
+- esta pasada cubre adjuntos de `job` y `work_log`, pero todavia no expone upload/listado dedicado para `job_item`; tampoco agrega preview rica por tipo de archivo ni auditoria historica completa de adjuntos
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
+## Avance parcial - `sisa.web` cierra mejor el puente trabajo-informe-factura y corrige shell encimado
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.web/src/pages/JobsPage.tsx` amplia la tab `Archivos` para cubrir tambien adjuntos de `job_items`, no solo de `job` y `work_logs`, y suma preview autenticada rica por tipo (`imagen`, `video`, `pdf` y fallback de descarga)
+- `sisa.web/src/services/filePreviewService.ts` agrega descarga autenticada a blob para que la web pueda previsualizar archivos protegidos por token sin depender de abrir `GET /files/{id}` directo en una nueva pestana
+- `sisa.web/src/pages/JobsPage.tsx` ahora tambien ofrece puente directo a facturacion desde el detalle, la tab `Informe` y la tab `Costos`, enviando `job_id` y `client_id` hacia `InvoicesPage`
+- `sisa.web/src/pages/InvoicesPage.tsx` ya consume ese contexto via query params y abre una factura nueva prearmada con el trabajo seleccionado como item comercial inicial
+- `sisa.web/src/app/globals.css` endurece el shell de escritorio con sidebar y topbar sticky/scroll-safe para evitar que contenido o dropdowns queden visualmente encimados al menu lateral durante navegacion larga
+
+Riesgo cubierto:
+
+- evitar que el modulo de trabajos quede cortado justo antes del cierre comercial y evitar drift visual del shell cuando el panel crece en altura y densidad operativa
+
+Puntos ciegos conocidos:
+
+- la factura prearmada nace con el trabajo asociado y descripcion inicial, pero todavia no calcula automaticamente tarifa/monto desde work logs o costos del trabajo; eso sigue siendo el siguiente cierre funcional fuerte
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
 ## Avance parcial - tecnica monetaria separada por canal: en vivo para web, edicion simple para mobile
 
 Estado: en progreso
