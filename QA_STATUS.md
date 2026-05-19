@@ -245,6 +245,36 @@ Validacion parcial:
 - `npm run lint` en `sisa.web` -> PASS
 - `npm run build` en `sisa.web` -> PASS
 
+## Avance parcial - servicio central de aplicaciones de recibos y PDF de recibo
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/src/Services/ReceiptApplicationService.php` centraliza la aplicacion parcial/multiple de recibos contra facturas con validaciones transaccionales, control de saldo de recibo/factura, compatibilidad cliente-company y soft-delete de aplicaciones
+- `sisa.api/src/Controllers/InvoicesController.php` y `sisa.api/src/Controllers/ReceiptsController.php` empiezan a apoyarse en el servicio central para listar/vincular/desvincular aplicaciones en vez de seguir dispersando reglas de negocio por controlador
+- `sisa.api/src/Controllers/ReceiptsController.php` agrega `exportReceiptPdf`, registra `files` + `reports` y actualiza `receipts.receipt_pdf_file_id`; `sisa.api/src/Routes/api.php` expone `POST /receipts/{id}/report/pdf`
+- `sisa.api/scripts/migrations/receipts-reports-and-application-indexes-phase29.php` agrega `receipt_pdf_file_id` e indices operativos para `invoice_receipt_payments`
+- `sisa.api/tests/Services/ReceiptApplicationServiceTest.php` cubre escenarios clave de aplicacion parcial, multiples facturas, rechazos por exceso/cliente/company, detach, cambio de estado y no-duplicacion contable de asientos
+- `sisa.api/src/Services/AccountingSummaryService.php` deja de sumar recibos aplicados de forma inflada cuando una misma cobranza tiene multiples aplicaciones, usando `applied_amount` real de `invoice_receipt_payments`
+
+Riesgo cubierto:
+
+- evitar drift entre controladores, aplicaciones inconsistentes de recibos, overflow de montos aplicados y duplicacion conceptual del dinero al distribuir cobranzas contra facturas
+
+Puntos ciegos conocidos:
+
+- la base del servicio central ya esta y los tests principales corren, pero todavia queda margen para seguir reemplazando helpers legacy de `ReceiptsController` por el servicio central y para enriquecer mas el reporte/estado de cuenta del cliente si aparece un flujo PDF especifico dedicado a eso
+
+Validacion parcial:
+
+- `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Regression/InvoiceReceiptsAndPaymentsFlowRegressionTest.php` en `sisa.api` -> PASS
+- `php -l src/Services/ReceiptApplicationService.php` -> PASS
+- `php -l src/Controllers/ReceiptsController.php` -> PASS
+- `php -l src/Controllers/InvoicesController.php` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
 ## Avance parcial - `sisa.web` deja de navegar como CRUD plano y arranca el modulo operativo real de trabajos
 
 Estado: en progreso
