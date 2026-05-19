@@ -1,5 +1,31 @@
 # Estado QA
 
+## Avance parcial - lista de clientes con saldo contable y costos parciales finalizados
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/src/Models/Clients.php` y `sisa.api/src/Controllers/ClientsController.php` hacen que `GET /clients` entregue por endpoint `accounting_balance`, `unpaid_invoices_total`, `charge_client_payments_total`, `open_jobs_partial_cost_total` y el alias `finalized_jobs_partial_cost_total`, calculados por cliente y listos para ordenar desde API con `sort_by` y `sort_direction`
+- el saldo contable ahora sale de facturas emitidas/pagadas aun pendientes mas cargos imputados al cliente, mientras que el costo parcial suma work logs de trabajos ya finalizados valorizados por tarifa, prioridad y cantidad de participantes
+- `sisa.api/tests/Models/ClientsTest.php` y `sisa.api/tests/Controllers/ClientsControllerTest.php` cubren tanto los nuevos agregados como la aceptacion de columnas ordenables en el endpoint
+- `sisa.ui/contexts/ClientsContext.tsx`, `sisa.ui/src/modules/jobs/data/repositories/SQLiteClientsRepository.ts`, `sisa.ui/src/modules/jobs/data/db/schema.ts`, `sisa.ui/src/modules/jobs/data/db/jobsMigrations.ts` y `sisa.ui/app/clients/index.tsx` persisten esos totales offline, corrigen la lectura a trabajos finalizados y ahora tambien piden el orden remoto al backend segun la columna elegida
+- `sisa.web/src/services/clientsService.ts`, `sisa.web/src/types/domain.ts` y `sisa.web/src/pages/ClientsPage.tsx` llevan las mismas columnas a la web administrativa y exponen orden por nombre, fechas, saldo contable y costos parciales finalizados
+
+Riesgo cubierto:
+
+- evitar que la lista de clientes siga reconstruyendo saldo con heuristicas incompletas en UI o esconda el costo parcial de trabajos finalizados, dejando administracion sin una lectura rapida y ordenable del frente economico por cliente
+
+Puntos ciegos conocidos:
+
+- el costo parcial finalizado depende de work logs con `tariff_id`; si quedan logs legacy sin tarifa, seguiran aportando `0` hasta ser normalizados o valorizados por una regla historica dedicada
+
+Validacion parcial:
+
+- `vendor/bin/phpunit tests/Models/ClientsTest.php tests/Controllers/ClientsControllerTest.php` en `sisa.api` -> PASS
+- `npx eslint "app/clients/index.tsx" "contexts/ClientsContext.tsx" "src/modules/jobs/data/repositories/SQLiteClientsRepository.ts" "src/modules/jobs/data/db/schema.ts" "src/modules/jobs/data/db/jobsMigrations.ts"` en `sisa.ui` -> PASS
+- `npm run lint` en `sisa.web` -> PASS
+
 ## Avance parcial - `sisa.web` pasa a shell responsive con mapa completo de modulos
 
 Estado: en progreso
