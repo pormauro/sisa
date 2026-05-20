@@ -21,6 +21,7 @@ Que cambio:
 - refinamiento final: la web ya soporta drag-and-drop real en la misma tabla de estados y confirma cambios de `status_attribute` antes de persistirlos; la app confirma esos cambios en el editor y compacta la altura de cada fila para mostrar menos ruido visual sin perder reorder ni metadata de sync
 - ajuste de limpieza posterior: la tabla web de estados deja solo el drag handle en el extremo derecho para no duplicar reorder con flechas, y la app extiende el patron de confirmacion a prioridades cuando cambia la semantica de costo (`cost_type`/`cost_value`) por su impacto en costos parciales y cierres
 - mejora de alta de estados: crear un estado ya no pide posicion; backend, app y web lo agregan automaticamente al final del flujo actual, y ambas plataformas amplian notablemente la paleta de colores disponible para configuracion visual
+- paridad de prioridades: se aplica la misma regla de alta al final sin pedir posicion, la app deja de editar `order_index` manualmente y la web suma una ventana live de prioridades con CRUD, reorder visual y confirmacion de impacto economico cuando cambia el costo
 
 Riesgo cubierto:
 
