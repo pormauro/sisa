@@ -24,6 +24,7 @@ Que cambio:
 - paridad de prioridades: se aplica la misma regla de alta al final sin pedir posicion, la app deja de editar `order_index` manualmente y la web suma una ventana live de prioridades con CRUD, reorder visual y confirmacion de impacto economico cuando cambia el costo
 - refinamiento de prioridades: la lista movil vuelve a enfatizar drag-and-drop con filas compactas que muestran solo color, nombre y costo; ademas app y web agregan paletas amplias en el editor y una pista explicita del simbolo monetario/porcentual aplicado al costo
 - cierre de prioridades: el simbolo de costo ahora vive dentro del input en web y app, para que `%` y `$` se lean como parte del valor editable y no solo como ayuda externa
+- baseline de cierre operativo: cuando un trabajo entra en `completed`, `billable`, `invoiced`, `paid` o `cancelled`, la API bloquea mutaciones sobre job/item/worklog/adjuntos y sync; ademas app y web deshabilitan visualmente las acciones principales de edicion, alta, borrado y adjuntos, dejando solo la lectura y el cambio de estado del trabajo
 
 Riesgo cubierto:
 
