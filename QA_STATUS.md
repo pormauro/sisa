@@ -1,5 +1,47 @@
 # Estado QA
 
+## Avance parcial - `statuses` gana semantica global por `status_attribute`
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/scripts/migrations/statuses-phase3.php` agrega la columna `status_attribute`, backfill idempotente por inferencia legacy y nuevos indices por `scope/company_id + status_attribute` para resolver semantica sin depender del texto visible
+- `sisa.api/src/Services/StatusAttributeRegistry.php`, `sisa.api/src/Models/Status.php` y `sisa.api/src/Controllers/StatusController.php` fijan el catalogo global compartido de atributos, ahora tambien con `quoted` y `quote_approved`, vuelven obligatorio `status_attribute` y dejan a `label` como nombre visible canonico mientras `name/code` quedan solo como espejo derivado/discontinuado
+- `sisa.api/src/Services/JobStatusResolver.php` ahora prioriza `status_attribute` de empresa y luego global antes de caer al fallback legacy por texto, cubriendo especialmente `completed/billable` e `invoiced`
+- `sisa.api/src/Models/Clients.php`, `sisa.api/src/Controllers/JobItemsController.php`, `sisa.api/src/Controllers/SyncOperationsController.php` y `sisa.api/src/Controllers/JobReportsController.php` dejan de interpretar palabras visibles como fuente primaria y pasan a apoyarse en la nueva semantica compartida
+- `sisa.api/tests/Models/StatusTest.php`, `sisa.api/tests/Controllers/StatusControllerTest.php`, `sisa.api/tests/Services/StatusAttributeRegistryTest.php` y `sisa.api/tests/Services/JobStatusResolverTest.php` cubren normalizacion, rechazo de atributos invalidos, inferencia legacy y prioridad empresa/global del resolver
+- `STATUS_ATTRIBUTE_FILTER_CONTRACT.md` documenta el contrato comun para web online, app offline y sync, incluyendo el backfill exacto esperado para la empresa `45`
+- `sisa.ui/contexts/StatusesContext.tsx`, `sisa.ui/src/modules/jobs/data/repositories/SQLiteStatusesRepository.ts`, `sisa.ui/src/modules/jobs/data/db/schema.ts`, `sisa.ui/src/modules/jobs/data/db/jobsMigrations.ts`, `sisa.ui/src/modules/jobs/presentation/sync/referenceCache.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts` y `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` ya persisten `status_attribute` offline y lo propagan por bootstrap/pull/cache local
+- `sisa.ui/utils/statuses.ts`, `sisa.ui/app/Home.tsx`, `sisa.ui/app/jobs/index.tsx` y las pantallas CRUD de estados dejan de depender del nombre visible como fuente principal y usan `status_attribute` para filtros, tonos y resolucion de cierre
+- `sisa.web/src/services/statusesService.ts`, `sisa.web/src/types/domain.ts`, `sisa.web/src/lib/statusAttributes.ts`, `sisa.web/src/pages/ClientsPage.tsx` y `sisa.web/src/pages/DashboardPage.tsx` alinean la web online al mismo contrato, consumiendo `status_attribute` en filtros y presentacion en vez de heuristicas por label
+- `sisa.web/src/pages/StatusesPage.tsx`, `sisa.web/src/services/statusesService.ts`, `sisa.web/src/App.tsx` y `sisa.web/src/navigation/app-navigation.ts` crean la ventana online de configuracion de estados con CRUD para `label`, `background_color`, `order_index` y `status_attribute`; en paralelo `sisa.ui/app/statuses/create.tsx`, `sisa.ui/app/statuses/[id].tsx`, `sisa.ui/app/statuses/index.tsx` y `sisa.ui/app/statuses/viewModal.tsx` dejan la app offline coherente con el mismo set de atributos obligatorios
+- la ventana de configuracion ahora tambien explica cada atributo con descripcion humana y la web suma reorder visual drag-and-drop; la app reemplaza la paleta horizontal por una seleccion vertical/en grilla para que color y atributo se editen con la misma lectura operativa en ambos canales
+
+Riesgo cubierto:
+
+- evitar que facturacion, liberacion de trabajos, costos parciales y cierres operativos sigan atados a labels personalizables por empresa, algo que rompe semantica apenas cambian nombres visibles como `Facturado parcial`, `Cobrado` o `Esperando materiales`
+- evitar tambien que estados comerciales como `Cotizado` o `Cotizacion aprobada` queden mezclados con heuristicas abiertas o sin semantica obligatoria, y reducir drift entre `label`, `name` y `code` dejando una sola fuente visible canonica
+
+Puntos ciegos conocidos:
+
+- la inferencia legacy se mantiene solo como compatibilidad temporal; para no dejar nulos, la migracion cae en `completed` si `is_final=1` y en `pending` en el resto cuando no logra inferir mejor, asi que conviene revisar despues cualquier estado viejo ambiguo que quede con semantica demasiado generica
+
+Validacion parcial:
+
+- `composer dump-autoload` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Services/StatusAttributeRegistryTest.php tests/Models/StatusTest.php tests/Controllers/StatusControllerTest.php tests/Services/JobStatusResolverTest.php` en `sisa.api` -> PASS con la linea de ruido de conexion a base de datos ya documentada en baseline
+- `vendor/bin/phpunit` en `sisa.api` -> PASS con la linea de ruido de conexion a base de datos ya documentada en baseline
+- lint PHP de `src/Models/Status.php`, `src/Services/JobStatusResolver.php`, `src/Services/StatusAttributeRegistry.php`, `scripts/migrations/statuses-phase3.php` -> PASS
+- lint recursivo de `src/**/*.php` y `scripts/**/*.php` en `sisa.api` -> PASS con warnings legacy preexistentes de `use` redundantes en algunos scripts fuera de este hito
+- `npx eslint ...` sobre archivos tocados de `sisa.ui` -> PASS
+- `npm run check:cache` en `sisa.ui` -> PASS
+- `npm run check:sync-smoke` en `sisa.ui` -> PASS
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+- `npm run lint` en `sisa.web` despues de sumar `StatusesPage` -> PASS
+- `npm run build` en `sisa.web` despues de sumar `StatusesPage` -> PASS
+
 ## Avance parcial - lista de clientes con saldo contable y costos parciales finalizados
 
 Estado: en progreso
