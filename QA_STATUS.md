@@ -10,6 +10,8 @@ Que cambio:
 - `sisa.api/src/Models/Quotes.php`, `sisa.api/src/Models/QuoteItems.php`, `sisa.api/src/History/QuotesHistory.php` y `sisa.api/src/History/QuoteItemsHistory.php` agregan alcance por empresa, recalculo automatico de totales, snapshot historico completo y cascada soft delete de items
 - `sisa.api/src/Controllers/QuotesController.php`, `sisa.api/src/Controllers/QuoteItemsController.php` y `sisa.api/src/Controllers/QuotePdfController.php` exponen CRUD online protegido, validan `company_id` por scope, copian snapshot de `products_services` en items y generan PDF persistido en `uploads/reports/quotes`
 - `sisa.api/src/Routes/api.php`, `sisa.api/src/Models/Permission.php`, `sisa.api/install.php`, `sisa.api/update_install.php` y `sisa.api/docs/quotes-api.md` integran permisos, rutas, instalacion/update y contrato minimo del modulo
+- `sisa.ui/contexts/QuotesContext.tsx`, `sisa.ui/app/quotes/*`, `sisa.ui/app/_layout.tsx` y `sisa.ui/constants/menuSections.ts` agregan compatibilidad web/app para listar, crear, editar, cambiar estado, administrar items, ver historial y exportar PDF del modulo quotes dentro del shell existente
+- `sisa.web/src/pages/QuotesPage.tsx`, `sisa.web/src/services/quotesService.ts`, `sisa.web/src/types/domain.ts`, `sisa.web/src/navigation/app-navigation.ts` y `sisa.web/src/App.tsx` incorporan el modulo quotes al portal web con backlog, detalle, editor de cabecera, CRUD de items, historial y apertura del PDF generado por API
 
 Riesgo cubierto:
 
@@ -22,6 +24,8 @@ Puntos ciegos conocidos:
 Validacion parcial:
 
 - pendiente correr smoke CRUD/PDF contra una base local con datos reales de `clients`, `products_services` y permisos
+- frontend: `npm run lint`, `npm run check:cache` y `npm run check:sync-smoke` pasan; `npx tsc --noEmit` sigue reportando errores preexistentes en modulos no relacionados del proyecto y no en los archivos nuevos de quotes
+- web: `npm run lint` y `npm run build` en `sisa.web` pasan con el modulo quotes incorporado
 
 ## Avance parcial - `statuses` gana semantica global por `status_attribute`
 
