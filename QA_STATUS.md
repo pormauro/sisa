@@ -1,5 +1,28 @@
 # Estado QA
 
+## Avance parcial - quotes online con CRUD, historial y PDF en `sisa.api`
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/scripts/migrations/quotes-module.php` crea y normaliza `quotes`, `quote_items`, `quotes_history` y `quote_items_history`, dejando UUID/version/soft delete/auditoria alineados al patron actual y reservando `converted_at` + `converted_job_id` para la fase futura de conversion a `jobs`
+- `sisa.api/src/Models/Quotes.php`, `sisa.api/src/Models/QuoteItems.php`, `sisa.api/src/History/QuotesHistory.php` y `sisa.api/src/History/QuoteItemsHistory.php` agregan alcance por empresa, recalculo automatico de totales, snapshot historico completo y cascada soft delete de items
+- `sisa.api/src/Controllers/QuotesController.php`, `sisa.api/src/Controllers/QuoteItemsController.php` y `sisa.api/src/Controllers/QuotePdfController.php` exponen CRUD online protegido, validan `company_id` por scope, copian snapshot de `products_services` en items y generan PDF persistido en `uploads/reports/quotes`
+- `sisa.api/src/Routes/api.php`, `sisa.api/src/Models/Permission.php`, `sisa.api/install.php`, `sisa.api/update_install.php` y `sisa.api/docs/quotes-api.md` integran permisos, rutas, instalacion/update y contrato minimo del modulo
+
+Riesgo cubierto:
+
+- evitar que presupuestos comerciales nazcan sin aislamiento por empresa, sin foto historica de precios o sin trazabilidad completa de cabecera/items/PDF, algo que despues rompe auditoria y la futura conversion a trabajo
+
+Puntos ciegos conocidos:
+
+- la fase actual no convierte presupuestos a `jobs`, no sincroniza offline y no agrega tests automatizados dedicados del modulo; la validacion queda por ahora en lint/arranque del codigo y necesita smoke con base real para cerrar cobertura operativa
+
+Validacion parcial:
+
+- pendiente correr smoke CRUD/PDF contra una base local con datos reales de `clients`, `products_services` y permisos
+
 ## Avance parcial - `statuses` gana semantica global por `status_attribute`
 
 Estado: en progreso
