@@ -38,6 +38,8 @@ Que cambio:
 - `sisa.web/src/services/receiptsService.ts` y `sisa.web/src/pages/ReceiptsPage.tsx` ahora tambien permiten crear/editar recibos web con multiples `items[]`: efectivo, transferencia, cheque/e-check, tarjeta, retencion u otro, total calculado desde medios y validaciones por instrumento antes de enviar al backend
 - `sisa.web/src/pages/ReceiptsPage.tsx` suma filtros operativos por `settlement_status` y por medios pendientes/duplicados/rechazados, ademas de un resumen de instrumentos directo en la grilla de recibos
 - `sisa.api/scripts/migrations/receipt-header-status-phase35.php` queda corregida para bases legacy donde `receipts.currency_code` nunca existio: ahora agrega `receipts.status` despues de `total_amount` o `price`, evitando que el updater deje la fase 35 incompleta y luego falle el guardado de recibos
+- `sisa.api/src/Controllers/ReceiptsController.php` endurece create/update/delete de recibos para cerrar transacciones solo si el flujo realmente las abrio y siguen activas, evitando falsos 500 `There is no active transaction` despues de migraciones o conexiones que no conservan estado transaccional
+- `sisa.web/src/pages/ReceiptsPage.tsx` evita re-adjuntar aplicaciones de factura cuando el recibo se guarda sin cambios: compara links existentes por factura y monto antes de llamar `attachReceiptToInvoice`, reduciendo falsos `Receipt not found or inaccessible` en guardados idempotentes
 - `sisa.api/src/Services/AccountingFlowService.php` deja de depender solo de `receipts.paid_in_account` cuando existen items: contabiliza unicamente `receipt_items` confirmados con `cash_box_id`, y cae al flujo legacy solo si el recibo aun no tiene items
 - `sisa.api/src/Controllers/InvoicesController.php` y los tests de `AccountingFlowService`, `ReceiptApplicationService` y `ReceiptsOfflineFirstSmokeTest` quedan alineados al nuevo baseline minimo con `total_amount` + item legacy inicial
 
@@ -73,6 +75,8 @@ Validacion parcial:
 - `npm run lint` y `npm run build` en `sisa.web` -> PASS con captura/edicion multi-instrumento en receipts web
 - `npm run lint` y `npm run build` en `sisa.web` -> PASS con filtros operativos de settlement/instrumentos en receipts web
 - `php -l scripts/migrations/receipt-header-status-phase35.php` en `sisa.api` -> PASS tras corregir compatibilidad de la migracion con tablas `receipts` legacy sin `currency_code`
+- `php -l src/Controllers/ReceiptsController.php` en `sisa.api` -> PASS tras endurecer cierre transaccional de create/update/delete de recibos
+- `npm run lint` y `npm run build` en `sisa.web` -> PASS tras hacer idempotente el re-guardado de aplicaciones de recibos
 - lint PHP de `src/Models/ReceiptItems.php`, `src/Models/Checks.php`, `src/Models/BankTransfers.php`, `src/Models/Receipts.php`, `src/Models/InvoiceReceiptPayments.php`, `src/Models/Invoices.php`, `src/Models/Permission.php`, `src/Controllers/ReceiptsController.php`, `src/Controllers/SyncOperationsController.php`, `src/Controllers/InvoicesController.php`, `src/Routes/api.php`, `src/Services/AccountingFlowService.php`, `src/Services/ReceiptApplicationService.php`, `src/Services/ReceiptInstrumentLifecycleService.php`, `src/Services/SyncEventGenerator.php`, `scripts/migrations/receipt-items-phase32.php`, `scripts/migrations/receipt-instruments-phase33.php` y `scripts/migrations/invoice-settlement-phase34.php` -> PASS
 
 Siguiente monitoreo sugerido:
