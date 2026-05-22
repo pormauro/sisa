@@ -8,8 +8,17 @@ Que cambio:
 
 - `sisa.api/scripts/migrations/receipt-items-phase32.php`, `sisa.api/install.php` y `sisa.api/update_install.php` agregan `receipts.total_amount`, vuelven nullable `receipts.paid_in_account`, crean `receipt_items` con metadata offline-first y hacen backfill idempotente de cada recibo legacy a un item unico `legacy_single`
 - `sisa.api/src/Models/ReceiptItems.php` incorpora el modelo operativo para listar, persistir, sumar y soft-delete de items por recibo, incluyendo adjuntos y metadata JSON por item
+- `sisa.api/src/Models/Checks.php`, `sisa.api/src/Models/BankTransfers.php` y `sisa.api/scripts/migrations/receipt-instruments-phase33.php` agregan instrumentos propios para cheques y transferencias, ya ligados por `receipt_item_id` y con estados/datos minimos separados del item base
+- `sisa.api/scripts/migrations/invoice-settlement-phase34.php`, `sisa.api/src/Models/InvoiceReceiptPayments.php` y `sisa.api/src/Models/Invoices.php` agregan `invoice_receipt_payments.status` + `invoices.payment_status`, dejando explicitado cuando una imputacion sigue `pending_settlement` aunque el recibo ya este aplicado comercialmente
 - `sisa.api/src/Controllers/ReceiptsController.php` ahora acepta `items[]` al crear/editar, valida suma de items contra el total persistido, expone `items` en list/get, mantiene fallback legacy para clientes viejos y borra items en cascada al eliminar el recibo
+- `sisa.api/src/Controllers/ReceiptsController.php` tambien valida datos minimos por instrumento (`check_number`, `bank_name`, `due_date`, `operation_number`) y persiste `check` / `bank_transfer` anidados por item dentro de la misma transaccion del recibo
 - `sisa.api/src/Controllers/SyncOperationsController.php` y `sisa.api/src/Services/SyncEventGenerator.php` ya incluyen `items` dentro del payload canonico/sync de `receipts`, de modo que bootstrap y operaciones offline no pierdan el desglose del cobro
+- `sisa.api/src/Controllers/SyncOperationsController.php` ahora tambien reconstruye y soft-deletea instrumentos al aplicar operaciones de sync sobre `receipts`, evitando que pull/push dejen items sin su cheque o transferencia asociados
+- `sisa.api/src/Services/ReceiptApplicationService.php` ahora recalcula estado de aplicaciones por receipt segun monto confirmado en `receipt_items` y mueve la factura entre `unpaid`, `partial`, `pending_settlement` y `paid` usando `payment_status`, mientras `status` solo pasa a `paid` cuando la parte confirmada cubre realmente el total
+- `sisa.api/src/Controllers/ReceiptsController.php` e `sisa.api/src/Controllers/InvoicesController.php` dejan de usar reconciliaciones locales por monto bruto aplicado y delegan la convergencia comercial al servicio comun de aplicaciones
+- `sisa.api/src/Services/ReceiptInstrumentLifecycleService.php` agrega el primer ciclo de vida operativo para instrumentos: confirmar/rechazar transferencias y depositar/acreditar/rechazar cheques, siempre en transaccion y re-sincronizando receipt, aplicaciones, factura y asientos contables derivados
+- `sisa.api/src/Controllers/ReceiptsController.php`, `sisa.api/src/Routes/api.php` y `sisa.api/src/Models/Permission.php` exponen endpoints protegidos para `bank-transfers/{id}/confirm|reject` y `checks/{id}/deposit|clear|reject`, manteniendo el control de acceso a traves del receipt asociado
+- `sisa.api/src/Models/BankTransfers.php` ahora detecta duplicados fuertes por `company_id` + `operation_number` o `transaction_id` al crear/actualizar, fuerza `status = duplicated` cuando corresponde, deja huella en `metadata_json` y bloquea la confirmacion operativa desde `ReceiptInstrumentLifecycleService` mientras exista conflicto activo
 - `sisa.api/src/Services/AccountingFlowService.php` deja de depender solo de `receipts.paid_in_account` cuando existen items: contabiliza unicamente `receipt_items` confirmados con `cash_box_id`, y cae al flujo legacy solo si el recibo aun no tiene items
 - `sisa.api/src/Controllers/InvoicesController.php` y los tests de `AccountingFlowService`, `ReceiptApplicationService` y `ReceiptsOfflineFirstSmokeTest` quedan alineados al nuevo baseline minimo con `total_amount` + item legacy inicial
 
@@ -19,14 +28,17 @@ Riesgo cubierto:
 
 Puntos ciegos conocidos:
 
-- esta etapa todavia no crea entidades propias `checks` y `bank_transfers`, no separa `payment_status` de factura y no versiona `receipt_items` como entidad sync independiente; por ahora viajan anidados al `receipt` y la contabilidad solo impacta items `confirmed` con destino de caja explicito
+- esta etapa ya crea `checks` y `bank_transfers` y separa `payment_status` en factura, pero todavia no versiona `receipt_items`/instrumentos como entidades sync independientes ni agrega reglas fuertes anti-duplicado para `operation_number` / `transaction_id`; ademas, cuando un recibo tiene varias imputaciones, el servicio actual confirma o deja pendientes todas las aplicaciones del receipt en bloque segun cobertura confirmada total, sin prorrateo fino por link
 
 Validacion parcial:
 
 - `vendor/bin/phpunit tests/Services/AccountingFlowServiceTest.php` en `sisa.api` -> PASS
 - `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Services/ReceiptInstrumentLifecycleServiceTest.php` en `sisa.api` -> PASS
 - `vendor/bin/phpunit tests/Controllers/ReceiptsOfflineFirstSmokeTest.php` en `sisa.api` -> PASS
-- lint PHP de `src/Models/ReceiptItems.php`, `src/Models/Receipts.php`, `src/Controllers/ReceiptsController.php`, `src/Controllers/SyncOperationsController.php`, `src/Controllers/InvoicesController.php`, `src/Services/AccountingFlowService.php`, `src/Services/ReceiptApplicationService.php`, `src/Services/SyncEventGenerator.php` y `scripts/migrations/receipt-items-phase32.php` -> PASS
+- `vendor/bin/phpunit tests/Models/ReceiptItemsTest.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Services/ReceiptInstrumentLifecycleServiceTest.php tests/Models/ReceiptItemsTest.php` en `sisa.api` -> PASS para escenarios de duplicado de transferencias
+- lint PHP de `src/Models/ReceiptItems.php`, `src/Models/Checks.php`, `src/Models/BankTransfers.php`, `src/Models/Receipts.php`, `src/Models/InvoiceReceiptPayments.php`, `src/Models/Invoices.php`, `src/Models/Permission.php`, `src/Controllers/ReceiptsController.php`, `src/Controllers/SyncOperationsController.php`, `src/Controllers/InvoicesController.php`, `src/Routes/api.php`, `src/Services/AccountingFlowService.php`, `src/Services/ReceiptApplicationService.php`, `src/Services/ReceiptInstrumentLifecycleService.php`, `src/Services/SyncEventGenerator.php`, `scripts/migrations/receipt-items-phase32.php`, `scripts/migrations/receipt-instruments-phase33.php` y `scripts/migrations/invoice-settlement-phase34.php` -> PASS
 
 ## Avance parcial - quotes online con CRUD, historial y PDF en `sisa.api`
 
