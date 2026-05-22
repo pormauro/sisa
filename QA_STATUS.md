@@ -2,7 +2,7 @@
 
 ## Avance parcial - receipts separados en cabecera + `receipt_items` en `sisa.api`
 
-Estado: en progreso
+Estado: baseline compartido en verde
 
 Que cambio:
 
@@ -30,16 +30,20 @@ Que cambio:
 - `sisa.ui/app/receipts/create.tsx` y `sisa.ui/app/receipts/[id].tsx` mejoran la operacion diaria sobre `receipt_items`: cada medio ahora puede duplicarse, reordenarse, colapsarse/expandirse y devuelve validaciones por item con contexto (`Medio 1`, `Medio 2`, etc.) para que el usuario corrija exactamente el bloque que fallo
 - `sisa.api/tests/Services/ReceiptInstrumentLifecycleServiceTest.php` ahora cubre un flujo mixto integral: un receipt aplicado a dos facturas, confirmacion de transferencia, acreditacion de cheque y rechazo posterior del mismo cheque, verificando transiciones de `invoice_receipt_payments`, `invoice.payment_status` y `receipts.settlement_status`
 - `qa/receipt-settlement-full-flow-runbook.md` deja un runbook manual estricto para validar el circuito completo `sisa.api` + `sisa.ui` mientras todavia no exista automatizacion E2E multi-dispositivo confiable
+- `sisa.api/scripts/migrations/invoice-application-priority-phase36.php` y `sisa.api/src/Services/ReceiptApplicationService.php` agregan prioridad explicita de imputacion por link (`invoice_receipt_payments.allocation_priority`): cuando llega `priority` en el payload, el prorrateo de settlement ya no depende solo del orden de creacion sino del orden comercial elegido por el usuario/cliente integrador
+- `sisa.ui/contexts/InvoicesContext.tsx`, `sisa.ui/contexts/ReceiptsContext.tsx`, `sisa.ui/src/modules/jobs/presentation/hooks/useBootstrapJobsFromApi.ts`, `sisa.ui/src/modules/jobs/presentation/hooks/usePullJobsSync.ts` y `sisa.ui/app/receipts/index.tsx` ya bajan esa prioridad al frontend: al vincular un recibo existente a una factura, la UI permite definir `applied_amount` y `priority`, y luego muestra la prioridad resultante en detalle de factura y detalle de recibo
+- `sisa.ui/app/receipts/index.tsx` y `sisa.ui/app/invoices/index.tsx` ahora agregan vistas operativas rapidas: filtro por `receipts.settlement_status`, filtro por `invoice.payment_status`, prioridad visible al vincular/aplicar y resumen breve de instrumentos pendientes/rechazados/duplicados en la lista de recibos
 - `sisa.api/src/Services/AccountingFlowService.php` deja de depender solo de `receipts.paid_in_account` cuando existen items: contabiliza unicamente `receipt_items` confirmados con `cash_box_id`, y cae al flujo legacy solo si el recibo aun no tiene items
 - `sisa.api/src/Controllers/InvoicesController.php` y los tests de `AccountingFlowService`, `ReceiptApplicationService` y `ReceiptsOfflineFirstSmokeTest` quedan alineados al nuevo baseline minimo con `total_amount` + item legacy inicial
 
 Riesgo cubierto:
 
 - evitar que nuevos recibos sigan naciendo como una sola fila que mezcla comprobante, caja y medio de cobro, algo que ya impedia modelar pagos mixtos y dejaba contabilidad/sync listos para romperse apenas aparecian cheque o transferencia pendiente
+- dejar receipts/invoices como flujo operable de punta a punta entre `sisa.api` y `sisa.ui`, con settlement real, lifecycle de instrumentos, prioridad comercial configurable y una postura QA repetible para detectar regresiones de dominio antes de que se mezclen nuevamente documento, caja y acreditacion
 
 Puntos ciegos conocidos:
 
-- esta etapa ya crea `checks` y `bank_transfers`, separa `payment_status` en factura y agrega control fuerte de duplicados para transferencias; todavia no versiona `receipt_items`/instrumentos como entidades sync independientes, y el prorrateo actual de confirmacion entre links usa orden estable por creacion, sin politica configurable de prioridad comercial
+- esta etapa ya crea `checks` y `bank_transfers`, separa `payment_status` en factura, agrega control fuerte de duplicados para transferencias y prioridad explicita de imputacion; todavia no versiona `receipt_items`/instrumentos como entidades sync independientes ni automatiza E2E multi-dispositivo real
 
 Validacion parcial:
 
@@ -54,7 +58,17 @@ Validacion parcial:
 - `npm run lint` en `sisa.ui` -> PASS
 - `npm run check:sync-smoke` en `sisa.ui` -> PASS
 - `vendor/bin/phpunit tests/Services/ReceiptInstrumentLifecycleServiceTest.php tests/Services/ReceiptApplicationServiceTest.php` en `sisa.api` -> PASS con flujo integral mixto de settlement
+- `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php tests/Services/ReceiptInstrumentLifecycleServiceTest.php` en `sisa.api` -> PASS con prioridad explicita de imputacion y override sobre orden de creacion
+- `npm run lint` en `sisa.ui` -> PASS tras exponer prioridad de imputacion en UI
+- `npm run check:sync-smoke` en `sisa.ui` -> PASS tras exponer prioridad de imputacion en UI
+- `npm run check:startup-stability` en `sisa.ui` -> PASS tras re-alinear la hidratacion edit-only de worklogs con el contrato del smoke
+- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` en raiz -> PASS completo (`Backend PHPUnit`, `Frontend lint`, `Frontend cache guard`, `Frontend sync smoke`, `Frontend startup guard`)
 - lint PHP de `src/Models/ReceiptItems.php`, `src/Models/Checks.php`, `src/Models/BankTransfers.php`, `src/Models/Receipts.php`, `src/Models/InvoiceReceiptPayments.php`, `src/Models/Invoices.php`, `src/Models/Permission.php`, `src/Controllers/ReceiptsController.php`, `src/Controllers/SyncOperationsController.php`, `src/Controllers/InvoicesController.php`, `src/Routes/api.php`, `src/Services/AccountingFlowService.php`, `src/Services/ReceiptApplicationService.php`, `src/Services/ReceiptInstrumentLifecycleService.php`, `src/Services/SyncEventGenerator.php`, `scripts/migrations/receipt-items-phase32.php`, `scripts/migrations/receipt-instruments-phase33.php` y `scripts/migrations/invoice-settlement-phase34.php` -> PASS
+
+Siguiente monitoreo sugerido:
+
+- correr `qa/receipt-settlement-full-flow-runbook.md` contra una base local con usuarios operativos reales y registrar cualquier friccion de UX/permisos
+- si se habilita mas uso concurrente de cobranza, evaluar mover `allocation_priority` a una UI de reorder explicita dentro del detalle de factura/recibo, no solo en el momento de vincular
 
 ## Avance parcial - quotes online con CRUD, historial y PDF en `sisa.api`
 
