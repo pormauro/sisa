@@ -1,5 +1,33 @@
 # Estado QA
 
+## Avance parcial - receipts separados en cabecera + `receipt_items` en `sisa.api`
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.api/scripts/migrations/receipt-items-phase32.php`, `sisa.api/install.php` y `sisa.api/update_install.php` agregan `receipts.total_amount`, vuelven nullable `receipts.paid_in_account`, crean `receipt_items` con metadata offline-first y hacen backfill idempotente de cada recibo legacy a un item unico `legacy_single`
+- `sisa.api/src/Models/ReceiptItems.php` incorpora el modelo operativo para listar, persistir, sumar y soft-delete de items por recibo, incluyendo adjuntos y metadata JSON por item
+- `sisa.api/src/Controllers/ReceiptsController.php` ahora acepta `items[]` al crear/editar, valida suma de items contra el total persistido, expone `items` en list/get, mantiene fallback legacy para clientes viejos y borra items en cascada al eliminar el recibo
+- `sisa.api/src/Controllers/SyncOperationsController.php` y `sisa.api/src/Services/SyncEventGenerator.php` ya incluyen `items` dentro del payload canonico/sync de `receipts`, de modo que bootstrap y operaciones offline no pierdan el desglose del cobro
+- `sisa.api/src/Services/AccountingFlowService.php` deja de depender solo de `receipts.paid_in_account` cuando existen items: contabiliza unicamente `receipt_items` confirmados con `cash_box_id`, y cae al flujo legacy solo si el recibo aun no tiene items
+- `sisa.api/src/Controllers/InvoicesController.php` y los tests de `AccountingFlowService`, `ReceiptApplicationService` y `ReceiptsOfflineFirstSmokeTest` quedan alineados al nuevo baseline minimo con `total_amount` + item legacy inicial
+
+Riesgo cubierto:
+
+- evitar que nuevos recibos sigan naciendo como una sola fila que mezcla comprobante, caja y medio de cobro, algo que ya impedia modelar pagos mixtos y dejaba contabilidad/sync listos para romperse apenas aparecian cheque o transferencia pendiente
+
+Puntos ciegos conocidos:
+
+- esta etapa todavia no crea entidades propias `checks` y `bank_transfers`, no separa `payment_status` de factura y no versiona `receipt_items` como entidad sync independiente; por ahora viajan anidados al `receipt` y la contabilidad solo impacta items `confirmed` con destino de caja explicito
+
+Validacion parcial:
+
+- `vendor/bin/phpunit tests/Services/AccountingFlowServiceTest.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Controllers/ReceiptsOfflineFirstSmokeTest.php` en `sisa.api` -> PASS
+- lint PHP de `src/Models/ReceiptItems.php`, `src/Models/Receipts.php`, `src/Controllers/ReceiptsController.php`, `src/Controllers/SyncOperationsController.php`, `src/Controllers/InvoicesController.php`, `src/Services/AccountingFlowService.php`, `src/Services/ReceiptApplicationService.php`, `src/Services/SyncEventGenerator.php` y `scripts/migrations/receipt-items-phase32.php` -> PASS
+
 ## Avance parcial - quotes online con CRUD, historial y PDF en `sisa.api`
 
 Estado: en progreso
