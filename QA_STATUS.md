@@ -19,6 +19,7 @@ Que cambio:
 - `sisa.api/src/Services/ReceiptInstrumentLifecycleService.php` agrega el primer ciclo de vida operativo para instrumentos: confirmar/rechazar transferencias y depositar/acreditar/rechazar cheques, siempre en transaccion y re-sincronizando receipt, aplicaciones, factura y asientos contables derivados
 - `sisa.api/src/Controllers/ReceiptsController.php`, `sisa.api/src/Routes/api.php` y `sisa.api/src/Models/Permission.php` exponen endpoints protegidos para `bank-transfers/{id}/confirm|reject` y `checks/{id}/deposit|clear|reject`, manteniendo el control de acceso a traves del receipt asociado
 - `sisa.api/src/Models/BankTransfers.php` ahora detecta duplicados fuertes por `company_id` + `operation_number` o `transaction_id` al crear/actualizar, fuerza `status = duplicated` cuando corresponde, deja huella en `metadata_json` y bloquea la confirmacion operativa desde `ReceiptInstrumentLifecycleService` mientras exista conflicto activo
+- `sisa.api/src/Services/ReceiptApplicationService.php` ahora prorratea la cobertura confirmada del receipt por link de aplicacion en orden estable (`created_at`, `id`), de modo que un recibo parcialmente acreditado ya no confirma en bloque todas las imputaciones: confirma solo los links completamente cubiertos y deja el resto en `pending_settlement`
 - `sisa.api/src/Services/AccountingFlowService.php` deja de depender solo de `receipts.paid_in_account` cuando existen items: contabiliza unicamente `receipt_items` confirmados con `cash_box_id`, y cae al flujo legacy solo si el recibo aun no tiene items
 - `sisa.api/src/Controllers/InvoicesController.php` y los tests de `AccountingFlowService`, `ReceiptApplicationService` y `ReceiptsOfflineFirstSmokeTest` quedan alineados al nuevo baseline minimo con `total_amount` + item legacy inicial
 
@@ -28,7 +29,7 @@ Riesgo cubierto:
 
 Puntos ciegos conocidos:
 
-- esta etapa ya crea `checks` y `bank_transfers` y separa `payment_status` en factura, pero todavia no versiona `receipt_items`/instrumentos como entidades sync independientes ni agrega reglas fuertes anti-duplicado para `operation_number` / `transaction_id`; ademas, cuando un recibo tiene varias imputaciones, el servicio actual confirma o deja pendientes todas las aplicaciones del receipt en bloque segun cobertura confirmada total, sin prorrateo fino por link
+- esta etapa ya crea `checks` y `bank_transfers`, separa `payment_status` en factura y agrega control fuerte de duplicados para transferencias; todavia no versiona `receipt_items`/instrumentos como entidades sync independientes, y el prorrateo actual de confirmacion entre links usa orden estable por creacion, sin politica configurable de prioridad comercial
 
 Validacion parcial:
 
@@ -38,6 +39,7 @@ Validacion parcial:
 - `vendor/bin/phpunit tests/Controllers/ReceiptsOfflineFirstSmokeTest.php` en `sisa.api` -> PASS
 - `vendor/bin/phpunit tests/Models/ReceiptItemsTest.php` en `sisa.api` -> PASS
 - `vendor/bin/phpunit tests/Services/ReceiptInstrumentLifecycleServiceTest.php tests/Models/ReceiptItemsTest.php` en `sisa.api` -> PASS para escenarios de duplicado de transferencias
+- `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` en `sisa.api` -> PASS con escenario de prorrateo fino entre links confirmados vs `pending_settlement`
 - lint PHP de `src/Models/ReceiptItems.php`, `src/Models/Checks.php`, `src/Models/BankTransfers.php`, `src/Models/Receipts.php`, `src/Models/InvoiceReceiptPayments.php`, `src/Models/Invoices.php`, `src/Models/Permission.php`, `src/Controllers/ReceiptsController.php`, `src/Controllers/SyncOperationsController.php`, `src/Controllers/InvoicesController.php`, `src/Routes/api.php`, `src/Services/AccountingFlowService.php`, `src/Services/ReceiptApplicationService.php`, `src/Services/ReceiptInstrumentLifecycleService.php`, `src/Services/SyncEventGenerator.php`, `scripts/migrations/receipt-items-phase32.php`, `scripts/migrations/receipt-instruments-phase33.php` y `scripts/migrations/invoice-settlement-phase34.php` -> PASS
 
 ## Avance parcial - quotes online con CRUD, historial y PDF en `sisa.api`
