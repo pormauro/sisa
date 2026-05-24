@@ -1,5 +1,36 @@
 # Estado QA
 
+## Avance parcial - catalogos comerciales operables en `sisa.web`
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.web/src/services/referenceCatalogsService.ts` agrega mutaciones CRUD para `products_services` y `tariffs`, normaliza metadata util de empresa/uuid/actualizacion y mantiene las lecturas existentes de referencias
+- `sisa.web/src/pages/ReferenceCatalogsPages.tsx` convierte Productos/Servicios en modulo administrativo real: alta, edicion, baja, busqueda, categoria sugerida desde catalogos, tipo, precio, costo, dificultad y stock
+- `sisa.web/src/pages/ReferenceCatalogsPages.tsx` convierte Tarifas en modulo CRUD real para nombre e importe, alineado al contrato actual de la API
+- el contrato queda dual: la web administra online por CRUD contra la API, y la app mantiene el modelo sync/offline porque esos mismos endpoints registran eventos `SyncEventGenerator` para `products_services` y `tariffs`, consumidos luego por bootstrap/pull/cache en `sisa.ui`
+- Cajas y Categorias quedan intencionalmente como consulta para no mezclar el hito comercial-operativo con caja/contabilidad
+
+Riesgo cubierto:
+
+- evitar que presupuestos, trabajos, work logs y facturas dependan de catalogos que solo se pueden consultar desde web, bloqueando administracion online de los insumos economicos basicos
+- evitar tambien que el CRUD web se convierta en un canal paralelo que saltee sync; los cambios web deben seguir propagandose a la app offline como referencias versionadas
+
+Puntos ciegos conocidos:
+
+- la API actual de tarifas solo persiste nombre e importe; moneda, vigencia e historial visible quedan para una iteracion posterior
+- Productos/Servicios usa categoria textual del contrato actual y sugerencias desde `categories`, pero no fuerza todavia relacion estructurada ni muestra uso historico en presupuestos/trabajos/facturas
+- todavia no se implementa la conversion Presupuesto -> Trabajo; el backend ya reserva `converted_at` y `converted_job_id`, pero falta endpoint/contrato dedicado para hacerlo sin improvisar desde la UI
+
+Validacion parcial:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+- `vendor/bin/phpunit tests/Controllers/TariffsControllerOfflineFirstTest.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Controllers/ProductsServicesControllerOfflineFirstTest.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerBootstrapReferencesTest.php` en `sisa.api` -> bloqueado por error de conexion a DB en un test de adjuntos/canonical sync no relacionado; antes del bloqueo la traza confirma presencia de `tariffs` y `products_services` en referencias bootstrap
+
 ## Avance parcial - receipts separados en cabecera + `receipt_items` en `sisa.api`
 
 Estado: baseline compartido en verde
