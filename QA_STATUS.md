@@ -1,5 +1,36 @@
 # Estado QA
 
+## Avance parcial - listas largas con carga incremental por scroll en `sisa.ui`
+
+Estado: en progreso
+
+Que cambio:
+
+- `sisa.ui/hooks/useIncrementalList.ts` agrega un patron reusable de carga incremental sobre listas ya filtradas/ordenadas, con `visibleItems`, `visibleCount`, `totalCount`, `hasMore` y `loadMore`
+- `sisa.ui/app/companies/index.tsx`, `sisa.ui/app/clients/index.tsx` y `sisa.ui/app/providers/index.tsx` ahora muestran `Mostrando X de Y` y agregan resultados a medida que el usuario hace scroll, sin cambiar la busqueda/filtro actual en memoria
+- `sisa.ui/app/invoices/index.tsx`, `sisa.ui/app/payments/index.tsx` y `sisa.ui/app/receipts/index.tsx` aplican el mismo patron sobre las listas enriquecidas/filtradas, preservando separadores por dia y filtros operativos existentes
+- `sisa.ui/app/cash_boxes/index.tsx`, `sisa.ui/app/products_services/index.tsx`, `sisa.ui/app/tariffs/index.tsx`, `sisa.ui/app/quotes/index.tsx` y `sisa.ui/app/folders/index.tsx` extienden el patron a catalogos medianos y a la navegacion jerarquica de carpetas/clientes raiz
+- `sisa.ui/app/reports/index.tsx` aplica el mismo append por scroll a la bandeja principal de reportes; los selectores auxiliares de filtros quedan explicitamente fuera de esta pasada porque siguen dependiendo de colecciones completas cargadas en memoria
+- `sisa.ui/app/accounts/index.tsx`, `sisa.ui/app/transfers/index.tsx` y `sisa.ui/app/notifications/index.tsx` completan otra tanda de listas operativas con contador visible y agregado incremental por scroll
+- `sisa.ui/docs/architecture/web-list-incremental-rollout.md` deja inventario explicito de pantallas implementadas, pantallas pendientes y casos que ya tenian un patron parcial (`jobs`, `appointments`, `journal_entries`)
+
+Riesgo cubierto:
+
+- evitar que listados largos de empresas, clientes, proveedores, facturas, pagos y recibos rendericen todos los resultados visibles de una sola vez, generando sensacion de carga pesada y degradacion innecesaria en scroll
+
+Puntos ciegos conocidos:
+
+- esta etapa resuelve incrementalidad de render en UI, pero la mayoria de los contexts todavia descargan la coleccion completa antes de filtrar
+- `jobs`, `appointments` y `journal_entries` necesitan una segunda pasada para unificar este patron con sus mecanismos actuales o con paginacion real
+- `reports` mejora la bandeja visible, pero sus combos/buscadores auxiliares todavia no limitan volumen y merecen una etapa aparte
+- `journal_entries` queda fuera de esta pasada a proposito: ya tiene metadata de paginacion en contexto y conviene resolverlo con append real por pagina, no solo con recorte visual local
+
+Validacion parcial:
+
+- `npx eslint "app/companies/index.tsx" "app/clients/index.tsx" "app/providers/index.tsx" "app/invoices/index.tsx" "app/payments/index.tsx" "app/receipts/index.tsx" "hooks/useIncrementalList.ts"` en `sisa.ui` -> PASS
+- `npx eslint "app/cash_boxes/index.tsx" "app/products_services/index.tsx" "app/tariffs/index.tsx" "app/quotes/index.tsx" "app/folders/index.tsx" "app/reports/index.tsx"` en `sisa.ui` -> PASS
+- `npx eslint "app/accounts/index.tsx" "app/transfers/index.tsx" "app/notifications/index.tsx"` en `sisa.ui` -> PASS
+
 ## Avance parcial - catalogos comerciales operables en `sisa.web`
 
 Estado: en progreso
