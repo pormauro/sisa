@@ -20,7 +20,14 @@ Que cambio:
 - `sisa.api/src/Controllers/InvoicesController.php`, `sisa.web/src/services/invoicesService.ts` y `sisa.web/src/pages/InvoicesPage.tsx` agregan paginación híbrida para facturas: la API ya puede devolver `pagination` y la web usa append real sin búsqueda, manteniendo fallback full cuando la búsqueda local debe conservar total filtrado exacto
 - `sisa.api/src/Controllers/PaymentsController.php`, `sisa.web/src/services/invoicesService.ts` y `sisa.web/src/pages/PaymentsPage.tsx` agregan paginación híbrida para pagos, con el mismo criterio de búsqueda local exacta
 - `sisa.api/src/Controllers/ReceiptsController.php`, `sisa.web/src/services/receiptsService.ts` y `sisa.web/src/pages/ReceiptsPage.tsx` agregan paginación híbrida para recibos; además de la búsqueda local, la web vuelve a colección completa cuando el usuario activa filtros locales por `settlement_status` o por estado de instrumentos
-- `sisa.api/src/Models/Jobs.php` (nuevo `listPage(sortBy,sortDirection)` con JOIN para cliente, ORDER BY dinámico seguro, SQL real) + controlador + servicio + `JobsPage.tsx` (estado de sort, select en cabecera, sort client-side en full mode). Ahora se puede ordenar por fecha/cliente/prioridad/estado combinado con filtros y paginación. Baseline sigue pasando.
+- `sisa.api/src/Models/Jobs.php` (listPage ahora recibe array $sortCriteria, ORDER BY múltiple con CASE para priority, COALESCE(comp.name, c.business_name) verificado en JobsPage render, joins condicionales, COUNT y LIMIT intactos) + `JobsController.php` (parseSortCriteria que soporta sort=field:dir,field2:dir2 y backward compat) + `jobsService.ts` (nuevo tipo JobSortCriterion[] y serialización a sort=...) + `JobsPage.tsx` (sortCriteria array, helpers compare/get/normalize, UI con selects+agregar+chips, multi-sort client en full y paged, useEffect con ref para evitar loops, clean resetea a default). Cumple contrato exacto. 
+Archivos tocados: solo los 6 permitidos.
+Comandos ejecutados:
+  php -l src/Models/Jobs.php → No syntax errors
+  php -l src/Controllers/JobsController.php → No syntax errors
+  npm run lint → 0 errors (warnings de deps minimizados)
+  npm run build → PASS (tsc + vite)
+Pruebas manuales sugeridas: las 5 URLs del contrato (sort múltiple, campo inválido ignorado, compat old params, paged vs full, limpiar).
 - `sisa.web/docs/web-incremental-pagination-rollout.md` deja registro puntual de los lugares cubiertos y de la deuda restante hacia paginacion real de API
 
 Riesgo cubierto:
