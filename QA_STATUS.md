@@ -17,6 +17,9 @@ Que cambio:
 - `sisa.api/src/Models/Clients.php`, `sisa.api/src/Controllers/ClientsController.php`, `sisa.web/src/services/clientsService.ts` y `sisa.web/src/pages/ClientsPage.tsx` agregan el primer contrato híbrido de alto volumen para una entidad comercial real: `GET /clients` ahora puede devolver `pagination`, la web consume páginas reales cuando no hay búsqueda y vuelve a carga completa cuando necesita preservar total filtrado correcto por búsqueda local o por orden `unbilledCount`
 - `sisa.api/src/Controllers/ProvidersController.php`, `sisa.web/src/services/providersService.ts` y `sisa.web/src/pages/ProvidersPage.tsx` agregan paginación híbrida para proveedores: la API ya puede devolver `pagination` y la web usa append real sin búsqueda, manteniendo fallback full cuando la búsqueda local debe conservar total filtrado exacto
 - `sisa.api/src/Controllers/CompaniesController.php`, `sisa.web/src/services/companiesService.ts` y `sisa.web/src/pages/CompaniesPage.tsx` aplican el mismo patrón híbrido sobre empresas, reutilizando `page/per_page/total` desde web sin romper el flujo actual de búsqueda local
+- `sisa.api/src/Controllers/InvoicesController.php`, `sisa.web/src/services/invoicesService.ts` y `sisa.web/src/pages/InvoicesPage.tsx` agregan paginación híbrida para facturas: la API ya puede devolver `pagination` y la web usa append real sin búsqueda, manteniendo fallback full cuando la búsqueda local debe conservar total filtrado exacto
+- `sisa.api/src/Controllers/PaymentsController.php`, `sisa.web/src/services/invoicesService.ts` y `sisa.web/src/pages/PaymentsPage.tsx` agregan paginación híbrida para pagos, con el mismo criterio de búsqueda local exacta
+- `sisa.api/src/Controllers/ReceiptsController.php`, `sisa.web/src/services/receiptsService.ts` y `sisa.web/src/pages/ReceiptsPage.tsx` agregan paginación híbrida para recibos; además de la búsqueda local, la web vuelve a colección completa cuando el usuario activa filtros locales por `settlement_status` o por estado de instrumentos
 - `sisa.web/docs/web-incremental-pagination-rollout.md` deja registro puntual de los lugares cubiertos y de la deuda restante hacia paginacion real de API
 
 Riesgo cubierto:
@@ -31,6 +34,7 @@ Puntos ciegos conocidos:
 - `JournalPage` y `AppointmentsPage` ya salen de esa limitacion porque usan paginacion real; el resto sigue dependiendo del costo de carga inicial de sus endpoints actuales
 - `ClientsPage` tambien sale parcialmente de esa limitacion en modo sin búsqueda, pero mantiene fallback full cuando la semántica de UI depende de datos locales todavía no resueltos por el backend
 - `ProvidersPage` y `CompaniesPage` quedan en la misma categoría híbrida: mejoran costo inicial en modo sin búsqueda, pero todavía requieren colección completa cuando el filtro textual se resuelve localmente
+- `InvoicesPage` y `PaymentsPage` entran en esa misma categoría híbrida; `ReceiptsPage` suma además dependencia de filtros locales enriquecidos por instrumentos/aplicaciones
 
 Validacion parcial:
 
@@ -46,6 +50,9 @@ Validacion parcial:
 - `php -l src/Controllers/ProvidersController.php` y `php -l src/Controllers/CompaniesController.php` en `sisa.api` -> PASS
 - `npm run lint` en `sisa.web` -> PASS tras conectar paginacion real híbrida en `ProvidersPage` y `CompaniesPage`
 - `npm run build` en `sisa.web` -> PASS tras conectar paginacion real híbrida en `ProvidersPage` y `CompaniesPage`
+- `php -l src/Controllers/PaymentsController.php`, `php -l src/Controllers/ReceiptsController.php` y `php -l src/Controllers/InvoicesController.php` en `sisa.api` -> PASS
+- `npm run lint` en `sisa.web` -> PASS tras conectar paginacion real híbrida en `InvoicesPage`, `PaymentsPage` y `ReceiptsPage`
+- `npm run build` en `sisa.web` -> PASS tras conectar paginacion real híbrida en `InvoicesPage`, `PaymentsPage` y `ReceiptsPage`
 
 ## Avance parcial - catalogos comerciales operables en `sisa.web`
 
