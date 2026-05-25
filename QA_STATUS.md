@@ -1,35 +1,45 @@
 # Estado QA
 
-## Avance parcial - listas largas con carga incremental por scroll en `sisa.ui`
+## Avance parcial - paginacion incremental por scroll en `sisa.web`
 
 Estado: en progreso
 
 Que cambio:
 
-- `sisa.ui/hooks/useIncrementalList.ts` agrega un patron reusable de carga incremental sobre listas ya filtradas/ordenadas, con `visibleItems`, `visibleCount`, `totalCount`, `hasMore` y `loadMore`
-- `sisa.ui/app/companies/index.tsx`, `sisa.ui/app/clients/index.tsx` y `sisa.ui/app/providers/index.tsx` ahora muestran `Mostrando X de Y` y agregan resultados a medida que el usuario hace scroll, sin cambiar la busqueda/filtro actual en memoria
-- `sisa.ui/app/invoices/index.tsx`, `sisa.ui/app/payments/index.tsx` y `sisa.ui/app/receipts/index.tsx` aplican el mismo patron sobre las listas enriquecidas/filtradas, preservando separadores por dia y filtros operativos existentes
-- `sisa.ui/app/cash_boxes/index.tsx`, `sisa.ui/app/products_services/index.tsx`, `sisa.ui/app/tariffs/index.tsx`, `sisa.ui/app/quotes/index.tsx` y `sisa.ui/app/folders/index.tsx` extienden el patron a catalogos medianos y a la navegacion jerarquica de carpetas/clientes raiz
-- `sisa.ui/app/reports/index.tsx` aplica el mismo append por scroll a la bandeja principal de reportes; los selectores auxiliares de filtros quedan explicitamente fuera de esta pasada porque siguen dependiendo de colecciones completas cargadas en memoria
-- `sisa.ui/app/accounts/index.tsx`, `sisa.ui/app/transfers/index.tsx` y `sisa.ui/app/notifications/index.tsx` completan otra tanda de listas operativas con contador visible y agregado incremental por scroll
-- `sisa.ui/docs/architecture/web-list-incremental-rollout.md` deja inventario explicito de pantallas implementadas, pantallas pendientes y casos que ya tenian un patron parcial (`jobs`, `appointments`, `journal_entries`)
+- `sisa.web/src/hooks/useIncrementalRows.ts` agrega un patron reusable de carga incremental para listas web ya filtradas, con `visibleRows`, `visibleCount`, `totalCount`, `hasMore` y `sentinelRef`
+- `sisa.web/src/app/globals.css` agrega estilos comunes para el resumen `Mostrando X de Y` y el sentinel de scroll
+- `sisa.web/src/pages/CompaniesPage.tsx`, `sisa.web/src/pages/ClientsPage.tsx` y `sisa.web/src/pages/ProvidersPage.tsx` ahora limitan el render inicial de tablas largas y anexan mas filas al scrollear
+- `sisa.web/src/pages/InvoicesPage.tsx`, `sisa.web/src/pages/PaymentsPage.tsx` y `sisa.web/src/pages/ReceiptsPage.tsx` aplican el mismo patron a los listados administrativos mas volumetricos de cobranzas y egresos
+- `sisa.web/src/pages/QuotesPage.tsx` aplica el patron al backlog comercial en formato tarjetas, manteniendo visibles filtros y total filtrado
+- `sisa.web/src/pages/JobsPage.tsx` aplica el mismo append por scroll al backlog operativo principal, preservando filtros complejos, tarjetas enriquecidas y apertura de detalle existente
+- `sisa.web/src/pages/ReferenceCatalogsPages.tsx`, `sisa.web/src/pages/FinanceCatalogsPages.tsx`, `sisa.web/src/pages/OperationsCatalogsPages.tsx` y `sisa.web/src/pages/TrackingCatalogsPages.tsx` adoptan el mismo patron en listados catalogo/genericos para evitar render completo cuando crezcan referencias o historiales
+- `sisa.web/src/services/financeCatalogsService.ts` y `sisa.web/src/services/operationsCatalogsService.ts` ahora exponen variantes paginadas reales (`listAccountingEntriesPage`, `listAppointmentsPage`) y `JournalPage` / `AppointmentsPage` consumen `page/perPage/totalEntries/totalPages` directamente desde backend para anexar paginas al hacer scroll
+- `sisa.api/src/Models/Clients.php`, `sisa.api/src/Controllers/ClientsController.php`, `sisa.web/src/services/clientsService.ts` y `sisa.web/src/pages/ClientsPage.tsx` agregan el primer contrato híbrido de alto volumen para una entidad comercial real: `GET /clients` ahora puede devolver `pagination`, la web consume páginas reales cuando no hay búsqueda y vuelve a carga completa cuando necesita preservar total filtrado correcto por búsqueda local o por orden `unbilledCount`
+- `sisa.web/docs/web-incremental-pagination-rollout.md` deja registro puntual de los lugares cubiertos y de la deuda restante hacia paginacion real de API
 
 Riesgo cubierto:
 
-- evitar que listados largos de empresas, clientes, proveedores, facturas, pagos y recibos rendericen todos los resultados visibles de una sola vez, generando sensacion de carga pesada y degradacion innecesaria en scroll
+- evitar que listados largos de empresas, clientes, proveedores, facturas, pagos, recibos y presupuestos intenten renderizar toda la coleccion visible de una sola vez, degradando respuesta y scroll en web
 
 Puntos ciegos conocidos:
 
-- esta etapa resuelve incrementalidad de render en UI, pero la mayoria de los contexts todavia descargan la coleccion completa antes de filtrar
-- `jobs`, `appointments` y `journal_entries` necesitan una segunda pasada para unificar este patron con sus mecanismos actuales o con paginacion real
-- `reports` mejora la bandeja visible, pero sus combos/buscadores auxiliares todavia no limitan volumen y merecen una etapa aparte
-- `journal_entries` queda fuera de esta pasada a proposito: ya tiene metadata de paginacion en contexto y conviene resolverlo con append real por pagina, no solo con recorte visual local
+- esta etapa es incremental en frontend sobre colecciones ya cargadas; no introduce todavia paginacion real de red
+- otros modulos web con volumen potencial alto quedan fuera de esta pasada hasta confirmar necesidad real o soporte de API
+- algunos listados tipo tabla comparten el mismo dataset completo desde servicios genericos; si el volumen real sigue creciendo, el siguiente paso debe ser soporte de pagina/filtro desde servicio/backend y no solo append visual
+- `JournalPage` y `AppointmentsPage` ya salen de esa limitacion porque usan paginacion real; el resto sigue dependiendo del costo de carga inicial de sus endpoints actuales
+- `ClientsPage` tambien sale parcialmente de esa limitacion en modo sin búsqueda, pero mantiene fallback full cuando la semántica de UI depende de datos locales todavía no resueltos por el backend
 
 Validacion parcial:
 
-- `npx eslint "app/companies/index.tsx" "app/clients/index.tsx" "app/providers/index.tsx" "app/invoices/index.tsx" "app/payments/index.tsx" "app/receipts/index.tsx" "hooks/useIncrementalList.ts"` en `sisa.ui` -> PASS
-- `npx eslint "app/cash_boxes/index.tsx" "app/products_services/index.tsx" "app/tariffs/index.tsx" "app/quotes/index.tsx" "app/folders/index.tsx" "app/reports/index.tsx"` en `sisa.ui` -> PASS
-- `npx eslint "app/accounts/index.tsx" "app/transfers/index.tsx" "app/notifications/index.tsx"` en `sisa.ui` -> PASS
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+- `npm run lint` en `sisa.web` -> PASS tras extender paginacion incremental a `JobsPage` y catalog pages web
+- `npm run build` en `sisa.web` -> PASS tras extender paginacion incremental a `JobsPage` y catalog pages web
+- `npm run lint` en `sisa.web` -> PASS tras conectar paginacion real en `JournalPage` y `AppointmentsPage`
+- `npm run build` en `sisa.web` -> PASS tras conectar paginacion real en `JournalPage` y `AppointmentsPage`
+- `php -l src/Controllers/ClientsController.php` y `php -l src/Models/Clients.php` en `sisa.api` -> PASS
+- `npm run lint` en `sisa.web` -> PASS tras conectar paginacion real híbrida en `ClientsPage`
+- `npm run build` en `sisa.web` -> PASS tras conectar paginacion real híbrida en `ClientsPage`
 
 ## Avance parcial - catalogos comerciales operables en `sisa.web`
 
