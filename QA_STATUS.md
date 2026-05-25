@@ -1,5 +1,52 @@
 # Estado QA
 
+## Correccion - robustez de usage en categorias contables
+
+Estado: completado
+
+Que cambio:
+
+- `sisa.api/src/Models/Categories.php` ahora verifica existencia de tablas/columnas antes de calcular usage de `payments` y `products_services`, limita las consultas a las categorias visibles y registra `error_log` si una query de usage falla
+- `sisa.api/src/Controllers/CategoriesController.php` protege `include_usage` y el bloqueo de delete con `try/catch`, devolviendo usage vacio en vez de HTTP 500 cuando la base no permite calcular referencias
+- `sisa.api/tests/Controllers/CategoriesControllerOfflineFirstTest.php` agrega cobertura para usage sin tablas auxiliares, listado robusto cuando usage falla y delete robusto cuando usage falla
+- `sisa.web/src/services/referenceCatalogsService.ts` mantiene `include_usage=1`; no se deshabilito porque la API queda blindada
+
+Validacion parcial:
+
+- reproduccion HTTP local contra `localhost:8080/categories?...` no fue posible porque no habia API escuchando en ese puerto
+- `php -l src/Controllers/CategoriesController.php` en `sisa.api` -> PASS
+- `php -l src/Models/Categories.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Controllers/CategoriesControllerOfflineFirstTest.php` en `sisa.api` -> PASS (11 tests, 31 assertions)
+- `npm run build` en `sisa.web` -> PASS
+
+## Avance parcial - categorias contables operables en `sisa.api` y `sisa.web`
+
+Estado: completado focalizado
+
+Que cambio:
+
+- `sisa.api/src/Models/Categories.php` agrega calculo opt-in de uso real para categorias por empresa, agregando pagos activos por `category_id` y productos/servicios activos por coincidencia normalizada de nombre, sin N+1 por categoria
+- `sisa.api/src/Controllers/CategoriesController.php` expone `include_usage=1` en `GET /categories` y `GET /categories/{id}` y bloquea `DELETE /categories/{id}` con HTTP 409 cuando hay referencias activas salvo `force=true`
+- `sisa.api/tests/Controllers/CategoriesControllerOfflineFirstTest.php` cubre usage, estructura compatible sin usage, bloqueo 409 y borrado forzado, preservando los tests offline-first existentes
+- `sisa.web/src/services/referenceCatalogsService.ts` normaliza metadata/usage de categorias y agrega `createCategory`, `updateCategory` y `deleteCategory`
+- `sisa.web/src/pages/ReferenceCatalogsPages.tsx` reemplaza `CategoriesPage` generico por administracion real: busqueda, filtros ingreso/egreso, contadores, cards con uso real, modal CRUD y flujo de eliminacion segura
+- `sisa.web/src/app/globals.css` agrega estilos scoped para el modulo visual de categorias
+
+Riesgo cubierto:
+
+- evitar borrados silenciosos de categorias ya usadas en pagos o referencias comerciales, manteniendo soft delete, historial y sync existentes
+
+Puntos ciegos conocidos:
+
+- `products_services` sigue relacionado por texto (`category`) y no por `category_id`; el usage web/API refleja esa realidad con match normalizado por nombre hasta que exista una migracion especifica
+
+Validacion parcial:
+
+- `php -l src/Controllers/CategoriesController.php` en `sisa.api` -> PASS
+- `php -l src/Models/Categories.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Controllers/CategoriesControllerOfflineFirstTest.php` en `sisa.api` -> PASS (8 tests, 23 assertions)
+- `npm run build` en `sisa.web` -> PASS
+
 ## Avance parcial - paginacion incremental por scroll en `sisa.web`
 
 Estado: en progreso
