@@ -20,6 +20,7 @@ Que cambio:
 - `sisa.api/src/Controllers/InvoicesController.php`, `sisa.web/src/services/invoicesService.ts` y `sisa.web/src/pages/InvoicesPage.tsx` agregan paginación híbrida para facturas: la API ya puede devolver `pagination` y la web usa append real sin búsqueda, manteniendo fallback full cuando la búsqueda local debe conservar total filtrado exacto
 - `sisa.api/src/Controllers/PaymentsController.php`, `sisa.web/src/services/invoicesService.ts` y `sisa.web/src/pages/PaymentsPage.tsx` agregan paginación híbrida para pagos, con el mismo criterio de búsqueda local exacta
 - `sisa.api/src/Controllers/ReceiptsController.php`, `sisa.web/src/services/receiptsService.ts` y `sisa.web/src/pages/ReceiptsPage.tsx` agregan paginación híbrida para recibos; además de la búsqueda local, la web vuelve a colección completa cuando el usuario activa filtros locales por `settlement_status` o por estado de instrumentos
+- `sisa.api/src/Models/Jobs.php` (nuevo `listPage()` con SQL real LIMIT/OFFSET+COUNT) + `sisa.api/src/Controllers/JobsController.php` + `sisa.web/src/services/jobsService.ts` + `sisa.web/src/pages/JobsPage.tsx` completan paginación híbrida real eficiente para la pantalla más crítica. Ya no usa slicing en memoria; backend filtra y pagina en SQL cuando no hay filtros locales. Frontend mantiene fallback completo + `useIncrementalRows(jobsToShow)` para filtros. Baseline sigue pasando.
 - `sisa.web/docs/web-incremental-pagination-rollout.md` deja registro puntual de los lugares cubiertos y de la deuda restante hacia paginacion real de API
 
 Riesgo cubierto:
@@ -51,8 +52,10 @@ Validacion parcial:
 - `npm run lint` en `sisa.web` -> PASS tras conectar paginacion real híbrida en `ProvidersPage` y `CompaniesPage`
 - `npm run build` en `sisa.web` -> PASS tras conectar paginacion real híbrida en `ProvidersPage` y `CompaniesPage`
 - `php -l src/Controllers/PaymentsController.php`, `php -l src/Controllers/ReceiptsController.php` y `php -l src/Controllers/InvoicesController.php` en `sisa.api` -> PASS
-- `npm run lint` en `sisa.web` -> PASS tras conectar paginacion real híbrida en `InvoicesPage`, `PaymentsPage` y `ReceiptsPage`
-- `npm run build` en `sisa.web` -> PASS tras conectar paginacion real híbrida en `InvoicesPage`, `PaymentsPage` y `ReceiptsPage`
+- `php -l src/Controllers/JobsController.php` y `php -l src/Models/Jobs.php` en `sisa.api` -> PASS
+- `npm run lint` y `npm run build` en `sisa.web` -> PASS
+- `powershell -ExecutionPolicy Bypass -File .\qa\run-baseline.ps1` -> PASS (sin regresiones)
+- `sisa.api/src/Models/Jobs.php::listPage()` + controlador completan el hito de paginación real eficiente para Jobs (prioridad Tier A)
 
 ## Avance parcial - catalogos comerciales operables en `sisa.web`
 
