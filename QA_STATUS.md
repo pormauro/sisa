@@ -15,6 +15,8 @@ Que cambio:
 - `sisa.web/src/pages/ReferenceCatalogsPages.tsx`, `sisa.web/src/pages/FinanceCatalogsPages.tsx`, `sisa.web/src/pages/OperationsCatalogsPages.tsx` y `sisa.web/src/pages/TrackingCatalogsPages.tsx` adoptan el mismo patron en listados catalogo/genericos para evitar render completo cuando crezcan referencias o historiales
 - `sisa.web/src/services/financeCatalogsService.ts` y `sisa.web/src/services/operationsCatalogsService.ts` ahora exponen variantes paginadas reales (`listAccountingEntriesPage`, `listAppointmentsPage`) y `JournalPage` / `AppointmentsPage` consumen `page/perPage/totalEntries/totalPages` directamente desde backend para anexar paginas al hacer scroll
 - `sisa.api/src/Models/Clients.php`, `sisa.api/src/Controllers/ClientsController.php`, `sisa.web/src/services/clientsService.ts` y `sisa.web/src/pages/ClientsPage.tsx` agregan el primer contrato híbrido de alto volumen para una entidad comercial real: `GET /clients` ahora puede devolver `pagination`, la web consume páginas reales cuando no hay búsqueda y vuelve a carga completa cuando necesita preservar total filtrado correcto por búsqueda local o por orden `unbilledCount`
+- `sisa.api/src/Controllers/ProvidersController.php`, `sisa.web/src/services/providersService.ts` y `sisa.web/src/pages/ProvidersPage.tsx` agregan paginación híbrida para proveedores: la API ya puede devolver `pagination` y la web usa append real sin búsqueda, manteniendo fallback full cuando la búsqueda local debe conservar total filtrado exacto
+- `sisa.api/src/Controllers/CompaniesController.php`, `sisa.web/src/services/companiesService.ts` y `sisa.web/src/pages/CompaniesPage.tsx` aplican el mismo patrón híbrido sobre empresas, reutilizando `page/per_page/total` desde web sin romper el flujo actual de búsqueda local
 - `sisa.web/docs/web-incremental-pagination-rollout.md` deja registro puntual de los lugares cubiertos y de la deuda restante hacia paginacion real de API
 
 Riesgo cubierto:
@@ -28,6 +30,7 @@ Puntos ciegos conocidos:
 - algunos listados tipo tabla comparten el mismo dataset completo desde servicios genericos; si el volumen real sigue creciendo, el siguiente paso debe ser soporte de pagina/filtro desde servicio/backend y no solo append visual
 - `JournalPage` y `AppointmentsPage` ya salen de esa limitacion porque usan paginacion real; el resto sigue dependiendo del costo de carga inicial de sus endpoints actuales
 - `ClientsPage` tambien sale parcialmente de esa limitacion en modo sin búsqueda, pero mantiene fallback full cuando la semántica de UI depende de datos locales todavía no resueltos por el backend
+- `ProvidersPage` y `CompaniesPage` quedan en la misma categoría híbrida: mejoran costo inicial en modo sin búsqueda, pero todavía requieren colección completa cuando el filtro textual se resuelve localmente
 
 Validacion parcial:
 
@@ -40,6 +43,9 @@ Validacion parcial:
 - `php -l src/Controllers/ClientsController.php` y `php -l src/Models/Clients.php` en `sisa.api` -> PASS
 - `npm run lint` en `sisa.web` -> PASS tras conectar paginacion real híbrida en `ClientsPage`
 - `npm run build` en `sisa.web` -> PASS tras conectar paginacion real híbrida en `ClientsPage`
+- `php -l src/Controllers/ProvidersController.php` y `php -l src/Controllers/CompaniesController.php` en `sisa.api` -> PASS
+- `npm run lint` en `sisa.web` -> PASS tras conectar paginacion real híbrida en `ProvidersPage` y `CompaniesPage`
+- `npm run build` en `sisa.web` -> PASS tras conectar paginacion real híbrida en `ProvidersPage` y `CompaniesPage`
 
 ## Avance parcial - catalogos comerciales operables en `sisa.web`
 
