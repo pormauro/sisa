@@ -1,5 +1,35 @@
 # Estado QA
 
+## Avance parcial - Libro diario visual agrupado en `sisa.api` y `sisa.web`
+
+Estado: completado focalizado
+
+Que cambio:
+
+- `sisa.api/src/Models/AccountingEntries.php` agrega `listLedgerPage()` con JOIN a `accounts`, filtros reales por empresa activa/scope, cuenta, fechas, origen, tipo de asiento y `q`, paginacion SQL, totales globales y agrupados
+- `sisa.api/src/Controllers/AccountingEntriesController.php` usa la nueva lectura paginada, valida `X-Company-Id`/`company_id` contra el scope del usuario y devuelve cada asiento con `account` enriquecida sin cambiar el contrato `entries/pagination/totals/sort`
+- `sisa.api/tests/Controllers/AccountingLedgerIntegrationTest.php` cubre filtro por empresa seleccionada, paginacion real, totales, busqueda por descripcion/cuenta y presencia de `account.name/code/type`
+- `sisa.web/src/services/financeCatalogsService.ts` normaliza `account`, `totals`, `totalsByOriginType`, `totalsByEntryType`, `sort` y envia filtros de libro diario a la API
+- `sisa.web/src/pages/FinanceCatalogsPages.tsx` rediseña `JournalPage` como vista de movimientos: resumen visual, filtros aplicados por boton, scroll incremental con deduplicacion, agrupacion por origen, cards expandibles y vista tecnica opcional de solo lectura
+- `sisa.web/src/app/globals.css` agrega estilos `ledger-*` para resumen, filtros, barra Debe/Haber, cards de movimientos, chips de estado y tabla tecnica, respetando variables de tema
+
+Riesgo cubierto:
+
+- evitar que el Libro diario mezcle empresas o pagine en PHP despues de filtrar, y reemplazar la tabla tecnica de asientos sueltos por movimientos contables entendibles sin permitir mutaciones desde la pantalla
+
+Puntos ciegos conocidos:
+
+- cuando un movimiento queda partido por paginacion, la web lo marca como `Grupo parcial` si solo llego un asiento con origen; la API todavia pagina asientos, no movimientos completos
+- el filtro `manual/otros` depende de que la API reciba `origin_type=manual`; asientos legacy con `origin_type` nulo quedan visibles en la vista general pero no tienen un filtro dedicado de nulos
+
+Validacion parcial:
+
+- `php -l src/Controllers/AccountingEntriesController.php` en `sisa.api` -> PASS
+- `php -l src/Models/AccountingEntries.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Controllers/AccountingLedgerIntegrationTest.php` en `sisa.api` -> PASS (15 tests, 60 assertions)
+- `vendor/bin/phpunit` en `sisa.api` -> vuelve a emitir `Error de conexión: SQLSTATE[HY000] [2002] ...`, consistente con la deuda de baseline ya documentada
+- `npm run build` en `sisa.web` -> PASS
+
 ## Correccion - robustez de usage en categorias contables
 
 Estado: completado
