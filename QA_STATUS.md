@@ -1,5 +1,36 @@
 # Estado QA
 
+## Implementacion P1 - timeline read-only desde raw tracking
+
+Estado: avance parcial implementado, validacion focalizada con bloqueo de baseline backend
+
+Que cambio:
+
+- `sisa.api/src/Routes/api.php` expone `GET /tracking/timeline` protegido con permiso administrativo existente de tracking (`listTrackingAssignments`)
+- `sisa.api/src/Controllers/TrackingController.php` agrega `getTimeline()` para devolver timeline diario por `date`, `timezone`, `user_id` y `company_id` opcional, calculado desde `gps_points` raw sin persistir derivados todavia
+- el timeline devuelve `points_count`, `first_point_at`, `last_point_at`, `quality_score`, `gaps`, `suspicious_points`, `anomalies`, y placeholders vacios para `stays`, `trips` y `labels`
+- se agrego heuristica inicial no destructiva: gap cuando pasan mas de 300 segundos entre puntos, punto sospechoso cuando `accuracy_m > 100` o `is_mock`, y score de calidad derivado de gaps + ratio de puntos sospechosos
+- `sisa.api/tests/Controllers/TrackingControllerTest.php` agrega cobertura esperada para gaps, baja precision y quality score del endpoint
+- `docs/tracking-backlog.md` y `docs/tracking-decision-checklist.md` reflejan el primer corte read-only
+
+Riesgo cubierto:
+
+- permitir inspeccion operativa temprana de jornadas GPS sin esperar al worker ni a tablas derivadas, manteniendo el raw como fuente de verdad y dejando visibles gaps/calidad antes de construir stays/trips persistidos
+
+Puntos ciegos conocidos:
+
+- `stays`, `trips` y `labels` siguen como placeholders vacios hasta el siguiente hito
+- el endpoint calcula sobre raw en tiempo de request; si el volumen crece, debe moverse a derivados reconstruibles (`tracking_days`, `tracking_stays`, `tracking_trips`)
+- el permiso reutiliza `listTrackingAssignments`; queda pendiente decidir permiso granular para timeline/ubicacion sensible
+- la consola web avanzada todavia no consume `/tracking/timeline`
+
+Validacion parcial:
+
+- `php -l src/Controllers/TrackingController.php` en `sisa.api` -> PASS
+- `php -l src/Routes/api.php` en `sisa.api` -> PASS
+- `php -l tests/Controllers/TrackingControllerTest.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Controllers/TrackingControllerTest.php` en `sisa.api` -> bloqueado por `Error de conexión: SQLSTATE[HY000] [2002] ...`, consistente con deuda de baseline de conexion ya documentada
+
 ## Implementacion P0 - hardening raw de tracking
 
 Estado: avance parcial implementado, validacion focalizada con bloqueo de baseline backend

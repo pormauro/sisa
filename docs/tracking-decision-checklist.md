@@ -50,7 +50,7 @@ Estas decisiones deben cerrarse antes de implementar el primer PR de tracking. S
 
 ## Procesamiento y timeline
 
-- [ ] Definir umbrales iniciales de accuracy, stay, trip, gap y salto imposible.
+- [ ] Definir umbrales iniciales completos de accuracy, stay, trip, gap y salto imposible; primer corte read-only usa gap > 5 min y baja confiabilidad por `accuracy_m > 100`.
 - [ ] Definir como se versionan reglas y reprocesos.
 - [ ] Definir frecuencia de rebuild: inmediato por batch, cron o manual.
 - [ ] Definir formato de polyline o geometria simplificada para mapa.
