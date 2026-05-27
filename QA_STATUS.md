@@ -1,5 +1,48 @@
 # Estado QA
 
+## Implementacion P1 - vista web read-only de timeline tracking
+
+Estado: completado focalizado
+
+Que cambio:
+
+- `sisa.api/src/Controllers/TrackingController.php` completa el contrato de `GET /tracking/timeline` devolviendo tambien `date`, `users`, `selected_user_id` y `points` localizados para que web pueda renderizar selector y tabla raw
+- `sisa.web/src/services/trackingCatalogsService.ts` agrega `getTrackingTimeline()` y tipos normalizados para usuarios, puntos, gaps, suspicious points y anomalias
+- `sisa.web/src/pages/TrackingCatalogsPages.tsx` agrega `TrackingTimelinePage`, una vista read-only con selector de fecha, selector de usuario, resumen de calidad, placeholder tecnico de mapa, tabla de puntos con links Google Maps, gaps y observaciones tecnicas
+- `sisa.web/src/App.tsx` registra la ruta `/tracking-timeline`
+- `sisa.web/src/navigation/app-navigation.ts` agrega `Timeline GPS` al grupo Tracking
+- `sisa.web/src/app/globals.css` agrega estilos scoped `tracking-*` para resumen, flags, gaps, observaciones y fallback de mapa
+- `docs/tracking-backlog.md` marca el timeline read-only como implementado y deja `stays/trips v1` como proximo paso recomendado
+
+Riesgo cubierto:
+
+- permitir validacion visual del raw tracking por empresa, fecha y usuario antes de persistir stays/trips o avanzar a IA, evitando construir automatizacion sobre datos que no se pueden inspeccionar
+
+Puntos ciegos conocidos:
+
+- no se agrego libreria de mapas; la vista deja placeholder tecnico y links Google Maps por punto
+- no hay edicion de labels, geocercas nuevas, stays/trips persistidos, IA ni dashboards de productividad
+- el permiso backend sigue reutilizando `listTrackingAssignments`; queda pendiente permiso granular para timeline/ubicacion sensible
+- `npm run build` en `sisa.web` actualiza artefactos `dist/` porque el repo los versiona actualmente
+
+Validacion manual sugerida:
+
+- abrir `/tracking-timeline` en `sisa.web`
+- elegir fecha con datos GPS
+- elegir usuario si el endpoint devuelve varios usuarios
+- confirmar resumen de puntos, primer/ultimo punto y quality score
+- revisar tabla raw y links Google Maps
+- revisar gaps y puntos sospechosos
+- confirmar que una fecha sin datos muestra estado vacio sin inventar datos
+- confirmar que un 403 muestra mensaje de permiso y no datos parciales
+
+Validacion parcial:
+
+- `php -l src/Controllers/TrackingController.php` en `sisa.api` -> PASS
+- `php -l src/Routes/api.php` en `sisa.api` -> PASS
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS
+
 ## Implementacion P1 - timeline read-only desde raw tracking
 
 Estado: avance parcial implementado, validacion focalizada con bloqueo de baseline backend

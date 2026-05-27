@@ -18,9 +18,9 @@ Este backlog traduce la arquitectura de `docs/tracking-architecture.md` en ticke
 | Ticket | Repos probables | Resultado esperado |
 |---|---|---|
 | `tracking-day-route-readonly` | `sisa.api`, web target | Consulta de dias y ruta simplificada para mapa |
-| `tracking-timeline-readonly` | `sisa.api`, web target | Primer corte backend implementado: `/tracking/timeline` calcula gaps, puntos dudosos y quality score desde raw; falta consola web avanzada |
+| `tracking-timeline-readonly` | `sisa.api`, `sisa.web` | Implementado: `/tracking/timeline` calcula gaps, puntos dudosos y quality score desde raw; `sisa.web` expone vista read-only para fecha, usuario, resumen, puntos, gaps y anomalias |
 | `tracking-rebuild-worker` | `sisa.api` | Worker CLI/cron para reconstruir dias por miembro/dispositivo |
-| `tracking-stays-trips-gaps-v1` | `sisa.api` | Deteccion inicial de stays, trips, gaps y anomalias |
+| `tracking-stays-trips-gaps-v1` | `sisa.api` | Proximo paso recomendado: deteccion inicial de stays/trips v1 desde raw validado, sin IA ni scoring laboral |
 | `tracking-processing-runs-audit` | `sisa.api` | Registro de corridas, versiones de reglas y estadisticas de reproceso |
 
 ## P2 - operacion humana
