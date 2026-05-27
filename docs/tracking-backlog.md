@@ -15,6 +15,8 @@ Este backlog traduce la arquitectura de `docs/tracking-architecture.md` en ticke
 
 ## P1 - lectura y reconstruccion
 
+Nota de estabilizacion: no avanzar a `tracking-stays-trips-gaps-v1` hasta validar `/tracking-timeline` con datos reales o con el seed controlado `qa/tracking-timeline-seed.sql`.
+
 | Ticket | Repos probables | Resultado esperado |
 |---|---|---|
 | `tracking-day-route-readonly` | `sisa.api`, web target | Consulta de dias y ruta simplificada para mapa |

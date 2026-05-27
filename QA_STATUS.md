@@ -1,5 +1,47 @@
 # Estado QA
 
+## Estabilizacion - validacion real de `/tracking-timeline`
+
+Estado: pendiente de validacion con datos reales o seed controlado
+
+Que cambio:
+
+- se reviso el estado de workspace: `sisa.api` y `sisa.web` no tienen cambios internos pendientes en este corte; la raiz mantiene cambios documentales y marca `sisa.web` como repo anidado modificado desde la perspectiva raiz
+- se verifico que `sisa.web/dist` esta versionado en el repo web (`git ls-files dist` devuelve archivos), por lo que no se borra ni limpia en este corte
+- se verifico el contrato real de `GET /tracking/timeline`: acepta `company_id`, `date`, `user_id` y `timezone`; devuelve `date`, `day`, `timezone`, `company_id`, `users`, `user_id`, `selected_user_id`, `points`, `quality_score`, `points_count`, `first_point_at`, `last_point_at`, `gaps`, `suspicious_points`, `stays`, `trips`, `labels` y `anomalies`
+- se verifico que una fecha sin puntos devuelve estructura usable: `points = []`, `points_count = 0`, `quality_score = 0`, `gaps = []`, `suspicious_points = []`, `anomalies = []`, `stays/trips/labels = []`
+- se verifico que el 403 por empresa fuera de scope ocurre antes de listar usuarios o puntos, mediante `resolveOptionalCompanyId()`, y el permiso de ruta pasa por `PermissionsMiddleware('listTrackingAssignments')`
+- `qa/tracking-timeline-seed.sql` agrega un seed manual, parametrizable y no destructivo para insertar una jornada minima de prueba en `gps_upload_batches`, `gps_points` y `user_last_locations`
+
+Riesgo cubierto:
+
+- evitar avanzar a stays/trips persistidos sin haber validado visualmente la calidad del raw tracking y del contrato consumido por `/tracking-timeline`
+
+Puntos ciegos conocidos:
+
+- no se pudo confirmar existencia de puntos reales desde esta sesion porque la conexion MySQL baseline sigue inaccesible
+- el seed no se ejecuta automaticamente; requiere reemplazar `@company_id`, `@user_id` y opcionalmente `@day` por valores reales y correrlo manualmente contra MySQL
+- el endpoint todavia no marca anomalias por velocidad; el seed incluye un punto de velocidad alta solo para inspeccion visual
+
+Validacion manual preparada:
+
+- iniciar sesion en `sisa.web`
+- seleccionar empresa activa
+- abrir `/tracking-timeline`
+- elegir fecha con datos reales o la fecha configurada en `qa/tracking-timeline-seed.sql`
+- elegir usuario si el endpoint devuelve varios usuarios
+- revisar resumen, puntos raw, links Google Maps, gaps, puntos sospechosos y anomalias
+- confirmar que una fecha sin datos muestra estado vacio sin inventar datos
+- confirmar que un 403 muestra mensaje de permiso y no datos parciales
+
+Validacion parcial:
+
+- revision de contrato por lectura de `sisa.api/src/Controllers/TrackingController.php`, `sisa.api/src/Routes/api.php` y `sisa.web/src/services/trackingCatalogsService.ts`
+- `php -l src/Controllers/TrackingController.php` en `sisa.api` -> PASS
+- `php -l src/Routes/api.php` en `sisa.api` -> PASS
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> no ejecutado en este corte porque no se tocaron archivos frontend
+
 ## Implementacion P1 - vista web read-only de timeline tracking
 
 Estado: completado focalizado
