@@ -1,5 +1,43 @@
 # Estado QA
 
+## Implementacion P0 - hardening raw de tracking
+
+Estado: avance parcial implementado, validacion focalizada con bloqueo de baseline backend
+
+Que cambio:
+
+- `sisa.api/scripts/migrations/tracking-raw-hardening-phase37.php` agrega hardening aditivo para tracking raw: `company_id`, `batch_uuid`, `point_uuid`, indices por empresa/fecha y claves unicas por device+batch/device+point
+- `sisa.api/install.php` y `sisa.api/update_install.php` registran la fase 37 para instalaciones y updates
+- `sisa.api/src/Models/GpsPoints.php` persiste `company_id` y `point_uuid`, devuelve `point_uuid` en accepted, filtra rutas diarias por empresa cuando se informa y propaga `company_id` a `user_last_locations`
+- `sisa.api/src/Models/GpsUploadBatches.php` persiste `company_id` y `batch_uuid`
+- `sisa.api/src/Controllers/TrackingController.php` acepta `company_id` desde body/query/header, valida scope cuando viene informado, acepta `batch_uuid`/`point_uuid` y mantiene fallback legacy por `sequence_no`
+- `sisa.ui/database/schema.ts`, `database/migrations.ts`, `database/tracking.ts`, `src/tracking/types.ts` y `contexts/TrackingContext.tsx` agregan `point_uuid` local, migracion SQLite v3, `batch_uuid` por subida y envio de `company_id`/`X-Company-Id`
+- `docs/tracking-backlog.md` y `docs/tracking-decision-checklist.md` reflejan el primer corte P0 implementado
+
+Riesgo cubierto:
+
+- reducir duplicados y mezcla multi-tenant en tracking raw, dejando el carril de ingesta preparado para reconstruccion posterior por empresa, lote y punto estable
+
+Puntos ciegos conocidos:
+
+- `company_id` todavia es opcional por compatibilidad; el siguiente endurecimiento debe decidir cuando hacerlo obligatorio para tracking operativo
+- las tablas derivadas (`tracking_days`, stays, trips, labels, runs) siguen sin implementarse
+- la idempotencia de lote registra `batch_uuid`, pero el reintento movil genera un lote nuevo; la deduplicacion fuerte queda garantizada por `point_uuid`
+- no se resolvio todavia retencion, masking fuera de horario ni auditoria de consultas sensibles
+
+Validacion parcial:
+
+- `php -l src/Controllers/TrackingController.php` en `sisa.api` -> PASS
+- `php -l src/Models/GpsPoints.php` en `sisa.api` -> PASS
+- `php -l src/Models/GpsUploadBatches.php` en `sisa.api` -> PASS
+- `php -l scripts/migrations/tracking-raw-hardening-phase37.php` en `sisa.api` -> PASS
+- `php -l install.php` y `php -l update_install.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Controllers/TrackingControllerTest.php` en `sisa.api` -> bloqueado por `Error de conexión: SQLSTATE[HY000] [2002] ...`, consistente con deuda de baseline de conexion ya documentada
+- `npm run lint` en `sisa.ui` -> PASS
+- `npm run check:cache` en `sisa.ui` -> PASS
+- `npm run check:sync-smoke` en `sisa.ui` -> PASS
+- `npx tsc --noEmit` en `sisa.ui` -> FAIL por errores TypeScript preexistentes distribuidos en clients/jobs/invoices/receipts/tracking contexts; se registra como deuda de baseline, no como validacion bloqueante de este corte
+
 ## Avance discovery - baseline real de tracking existente
 
 Estado: avance documental, decisiones parcialmente cerradas sin implementar codigo

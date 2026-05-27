@@ -7,8 +7,8 @@ Este backlog traduce la arquitectura de `docs/tracking-architecture.md` en ticke
 | Ticket | Repos probables | Resultado esperado |
 |---|---|---|
 | `tracking-current-baseline-contract` | `sisa.api`, `sisa.ui`, `sisa.web` | Documentar contrato real de endpoints, payloads, tablas `gps_*`, permisos y pantallas existentes |
-| `tracking-raw-company-scope` | `sisa.api` | Agregar/garantizar `company_id` en raw, batches, last location y queries administrativas |
-| `tracking-batch-point-uuid-idempotency` | `sisa.api`, `sisa.ui` | Incorporar `batch_uuid` y `point_uuid` sin depender solo de `device_id + sequence_no` |
+| `tracking-raw-company-scope` | `sisa.api` | Primer corte implementado: `company_id` en raw, batches, last location e ingesta; falta exigirlo como contrato estricto |
+| `tracking-batch-point-uuid-idempotency` | `sisa.api`, `sisa.ui` | Primer corte implementado: `batch_uuid` y `point_uuid` con fallback legacy por `device_id + sequence_no` |
 | `tracking-policy-hardening` | `sisa.api` | `GET /tracking/policy` con scope por empresa, miembro, device, permiso, horario y versionado explicito |
 | `tracking-mobile-queue-limits` | `sisa.ui` | Limites de cola local, descarte controlado, metadata de app/permisos/app state y ack parcial robusto |
 | `tracking-docs-postman` | `sisa.api`, `sisa.ui` | Contratos documentados, ejemplos y coleccion Postman actualizada |

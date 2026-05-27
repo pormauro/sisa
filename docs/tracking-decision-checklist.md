@@ -25,7 +25,7 @@ Estas decisiones deben cerrarse antes de implementar el primer PR de tracking. S
 - [ ] Definir `device_id`: origen, estabilidad, rotacion, reset y relacion con usuario/miembro.
 - [x] Definir baseline actual de identidad servidor: los puntos se asocian a `user_id` derivado del token y `device_id` del request/payload.
 - [ ] Decidir si el modelo futuro usa `member_id` explicito o mantiene `user_id` con resolucion de membresia/company server-side.
-- [ ] Definir politica de idempotencia futura: `batch_uuid`, `point_uuid`, ack parcial y reintentos; hoy existe `device_id + sequence_no`.
+- [x] Definir primera politica de idempotencia raw: `batch_uuid` por lote y `point_uuid` por punto, manteniendo fallback legacy por `device_id + sequence_no`.
 - [ ] Definir indices minimos y estrategia ante volumen alto.
 
 ## Permisos y privacidad
@@ -72,4 +72,4 @@ Estas decisiones deben cerrarse antes de implementar el primer PR de tracking. S
 - [ ] Hay contrato de captura movil confirmado.
 - [ ] Hay retencion definida.
 - [ ] Hay alcance de piloto y rollback definido.
-- [ ] Hay backlog P0 aceptado.
+- [x] Hay primer corte P0 implementado para hardening raw: `company_id`, `batch_uuid`, `point_uuid`, scope opcional y payload movil.
