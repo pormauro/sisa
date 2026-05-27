@@ -1,5 +1,57 @@
 # Estado QA
 
+## Avance discovery - baseline real de tracking existente
+
+Estado: avance documental, decisiones parcialmente cerradas sin implementar codigo
+
+Que cambio:
+
+- se verifico que `sisa.web` existe y ya es un target web real Vite/React 19 con rutas live de tracking administrativo (`tracking-policies`, `tracking-assignments`, `tracking-routes`, `tracking-points`, `tracking-proximity`)
+- se verifico que no existe directorio raiz `sisa/` en el workspace revisado, por lo que no debe tratarse como repo de implementacion pendiente
+- se verifico que `sisa.api` ya tiene tracking parcial: `TrackingController`, rutas `/tracking/policy`, `/tracking/points/batch`, `/tracking/status`, `/tracking/admin/*`, modelos `TrackingPolicies`, `UserTrackingAssignments`, `GpsPoints`, `GpsUploadBatches` y `TrackingControllerTest`
+- se verifico que `sisa.ui` ya tiene Expo 54, `expo-location`, `expo-task-manager`, permisos background/foreground declarados, `TrackingContext`, `src/tracking/location.ts`, cola local `database/tracking.ts` y pantallas `app/tracking/*`
+- `docs/tracking-architecture.md`, `docs/tracking-backlog.md` y `docs/tracking-decision-checklist.md` se ajustan para reflejar que el primer trabajo es endurecer la base existente, no crear tracking desde cero
+
+Riesgo cubierto:
+
+- evitar duplicar modulos de tracking o planificar tablas/endpoints como si no existiera nada, y enfocar el P0 en brechas reales: `company_id`, idempotencia por UUID, derivados reconstruibles, auditoria y privacidad
+
+Puntos ciegos conocidos:
+
+- el motor SQL esta confirmado como MySQL por PDO, pero no hay evidencia de uso geoespacial nativo; por ahora el diseno debe asumir `lat/lng` numericos e indices basicos
+- la estrategia final de migraciones para tracking sigue abierta porque la base actual usa `ensureTable()` en modelos y el repo tambien usa `scripts/migrations/*`
+- el modelo actual asocia puntos a `user_id` + `device_id`; queda abierta la decision de `member_id`/membresia/company para multi-tenant fuerte
+- la implementacion movil ya existe tecnicamente, pero falta cerrar UX de permisos, limites de cola, retencion local y piloto Android
+
+Validacion parcial:
+
+- discovery documental con lectura de estructura, rutas, modelos, package/app config y archivos de tracking existentes
+
+## Discovery - arquitectura minima para tracking e IA
+
+Estado: completado documental, pendiente de decisiones bloqueantes antes de codigo
+
+Que cambio:
+
+- `docs/tracking-architecture.md` documenta una arquitectura minima y extensible para tracking: modulo dentro del monolito, ingesta dedicada, raw append-only, worker/rebuild, derivados reconstruibles, labels manuales e IA futura no destructiva
+- `docs/tracking-backlog.md` descompone el trabajo en tickets P0-P4, separando captura/ingesta, reconstruccion, operacion humana, privacidad/escala e IA futura
+- `docs/tracking-decision-checklist.md` deja las decisiones que deben cerrarse antes de implementar: repo web objetivo, motor SQL, policy de permisos/privacidad, device_id, retencion, captura movil, thresholds y piloto
+
+Riesgo cubierto:
+
+- evitar iniciar tracking como una extension improvisada de `/sync/batch` o como IA prematura sin raw confiable, idempotencia, auditoria, retencion y correccion humana
+
+Puntos ciegos conocidos:
+
+- no se implemento codigo ni migraciones; esta etapa es intencionalmente documental
+- `sisa.web` y `sisa` siguen pendientes de verificacion estructural antes de decidir donde vive la consola de tracking
+- la capacidad geoespacial real del motor SQL actual todavia debe confirmarse antes del primer PR
+- la promesa movil queda limitada a foreground fiable y background opt-in; no se debe vender tracking garantizado con la app terminada sin cambiar estrategia tecnologica
+
+Validacion parcial:
+
+- revision documental local de los nuevos archivos
+
 ## Avance parcial - Libro diario visual agrupado en `sisa.api` y `sisa.web`
 
 Estado: completado focalizado
