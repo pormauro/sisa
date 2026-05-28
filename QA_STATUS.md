@@ -1,5 +1,45 @@
 # Estado QA
 
+## Reparacion P0 - secuencia local mobile de tracking
+
+Estado: implementado focalizado, pendiente de validacion en dispositivo
+
+Causa exacta:
+
+- `sisa.ui/database/tracking.ts` calculaba `sequence_no` desde `MAX(sequence_no)` en `gps_points_queue`
+- `gps_points_queue` se borra al confirmar ACK, por lo que la secuencia podia volver a `1/2/3` despues de sincronizar
+- `sequence_no` ya tiene duplicados reales en backend y no puede usarse como identidad fuerte ni como ACK exacto
+
+Que cambio:
+
+- `tracking_sequence_counters` persiste `next_sequence_no` por `device_id` fuera de la cola borrable
+- `reserveNextTrackingSequence()` reserva e incrementa el contador en transaccion SQLite y nunca depende de `gps_points_queue` salvo inicializacion legacy
+- `point_uuid` pasa a ser identidad fuerte local/remota del punto
+- `/tracking/points/batch` envia `batch_uuid` por lote y `point_uuid` por punto
+- ACK y rejected usan `point_uuid` cuando existe; `sequence_no` queda solo como fallback legacy
+- `saveTrackingSyncState()` no permite bajar `last_uploaded_sequence_no` ni persistir `last_server_point_id = 0`
+- `qa/tracking-sequence-diagnostics.sql` agrega consultas para detectar duplicados y revisar progresion por device
+
+Validacion manual requerida:
+
+- capturar 5 puntos
+- sincronizar
+- capturar 5 mas
+- sincronizar
+- reiniciar app
+- capturar otro punto
+- verificar que la secuencia sea `1..11` y no vuelva a `1`
+
+Validacion automatizada:
+
+- `npm run lint` en `sisa.ui` -> PASS
+- `npx tsc --noEmit` en `sisa.ui` -> FAIL por deuda TypeScript preexistente en clients/jobs/invoices/receipts/contextos; no se observan errores nuevos en `database/tracking.ts`, `database/schema.ts`, `database/migrations.ts`, `database/Database.ts`, `src/tracking/types.ts` ni `contexts/TrackingContext.tsx` asociados a este cambio
+- `git status --short` y `git diff --stat` revisados en raiz y `sisa.ui`
+
+Bloqueos preservados:
+
+- no se avanzo a IA, timeline, stays/trips ni mapas
+
 ## Reparacion P0 - tracking raw schema e idempotencia
 
 Estado: implementado focalizado, pendiente de ejecucion contra DB afectada
