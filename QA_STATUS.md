@@ -1,5 +1,48 @@
 # Estado QA
 
+## Reparacion P0 - tracking raw schema e idempotencia
+
+Estado: implementado focalizado, pendiente de ejecucion contra DB afectada
+
+Problema confirmado:
+
+- `gps_points` tiene `id = 0` repetido y `SHOW INDEX` no muestra `PRIMARY`
+- `gps_upload_batches` tiene `id = 0` repetido y `SHOW INDEX` no muestra `PRIMARY`
+- `gps_points` tiene duplicados reales en `device_id + sequence_no`, por lo que `sequence_no` no puede ser idempotencia fuerte
+- `/tracking-timeline` queda bloqueado hasta reparar raw schema; stays/trips e IA siguen bloqueados
+
+Que cambio:
+
+- `qa/tracking-schema-diagnostics.sql` agrega diagnostico SQL del schema, columnas, indices, ids duplicados, UUIDs duplicados y referencias `point_id = 0`
+- `qa/tracking-raw-repair-preview.sql` agrega preview no destructivo de filas afectadas y conteos de reparacion
+- `sisa.api/scripts/migrations/tracking-raw-schema-repair-phase38.php` repara tablas existentes preservando datos: ids unicos, `PRIMARY KEY`, `AUTO_INCREMENT`, backfill de UUIDs legacy y unicidad `device_id + point_uuid` / `device_id + batch_uuid`
+- backend rechaza `server_point_id = 0`, no guarda `user_last_locations.point_id = 0`, normaliza `last_known_server_point_id = 0` como `null` y elimina catches vacios criticos en tracking raw
+- mobile asegura `point_uuid` en el schema inicial/migrado, no borra cola si el backend devuelve `server_point_id` invalido y no persiste `last_server_point_id = 0`
+- `install.php` y `update_install.php` registran la fase 38
+
+Riesgo cubierto:
+
+- evitar que `lastInsertId()` devuelva `0` y que el ACK movil borre puntos locales sin un id real del servidor
+- separar idempotencia fuerte (`point_uuid`/`batch_uuid`) de `sequence_no`, que ya esta confirmado duplicado en datos reales
+
+Puntos ciegos conocidos:
+
+- la migracion preserva las tablas originales renombradas como backup `*_phase38_backup_*`; requiere correr update/install contra la DB afectada y revisar el diagnostico posterior
+- si `user_last_locations.point_id = 0` no tiene ningun punto valido del usuario para reasignar, no se puede inferir un punto real sin decision manual
+- no se avanzo a timeline, stays/trips, IA ni mapas
+
+Validacion de esta sesion:
+
+- `php -l scripts/migrations/tracking-raw-schema-repair-phase38.php` en `sisa.api` -> PASS
+- `php -l src/Models/GpsPoints.php` en `sisa.api` -> PASS
+- `php -l src/Models/GpsUploadBatches.php` en `sisa.api` -> PASS
+- `php -l src/Controllers/TrackingController.php` en `sisa.api` -> PASS
+- `php -l install.php` en `sisa.api` -> PASS
+- `php -l update_install.php` en `sisa.api` -> PASS
+- `npm run lint` en `sisa.ui` -> PASS
+- `npm run build` en `sisa.ui` -> no ejecutado: no existe script `build`
+- `git status --short` y `git diff --stat` revisados en raiz, `sisa.api` y `sisa.ui`
+
 ## Estabilizacion - validacion real de `/tracking-timeline`
 
 Estado: pendiente de validacion con datos reales o seed controlado

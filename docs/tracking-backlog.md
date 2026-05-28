@@ -6,6 +6,7 @@ Este backlog traduce la arquitectura de `docs/tracking-architecture.md` en ticke
 
 | Ticket | Repos probables | Resultado esperado |
 |---|---|---|
+| `tracking-raw-schema-idempotency-repair` | `sisa.api`, `sisa.ui` | P0 urgente: reparar ids `0`/duplicados, restaurar `PRIMARY KEY AUTO_INCREMENT`, backfill unico de `point_uuid`/`batch_uuid`, rechazar ACKs con `server_point_id=0` y bloquear timeline/stays/trips/IA hasta validar raw |
 | `tracking-current-baseline-contract` | `sisa.api`, `sisa.ui`, `sisa.web` | Documentar contrato real de endpoints, payloads, tablas `gps_*`, permisos y pantallas existentes |
 | `tracking-raw-company-scope` | `sisa.api` | Primer corte implementado: `company_id` en raw, batches, last location e ingesta; falta exigirlo como contrato estricto |
 | `tracking-batch-point-uuid-idempotency` | `sisa.api`, `sisa.ui` | Primer corte implementado: `batch_uuid` y `point_uuid` con fallback legacy por `device_id + sequence_no` |
