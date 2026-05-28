@@ -1,5 +1,40 @@
 # Estado QA
 
+## Replanteo GPS audit/facturacion futura
+
+Estado: implementado focalizado, sin stays/trips ni cobro
+
+Que cambio:
+
+- `sisa.api` agrega `gps_point_metrics` como tabla derivada/versionada separada de `gps_points`, con `algorithm_version`, velocidades provider/computed/effective, distancia, elapsed, estado de movimiento y `quality_flags`
+- `/tracking/points/batch` conserva `gps_points` como raw e invoca calculo server-side para los puntos aceptados sin cambiar el contrato de ACK
+- `/tracking/timeline` devuelve raw + metricas derivadas y calcula metricas faltantes con `gps_metrics_v1` para puntos legacy consultados
+- se agrega `POST /tracking/metrics/recalculate` para recalcular por rango con filtros opcionales de usuario, device y empresa, sin borrar raw
+- `sisa.ui` mantiene `expo-location` background, guarda `location.coords.speed` como raw (`provider_speed_mps` alias y `speed_mps` compat), y usa `state/local_tracking_hint` solo como hint operativo
+- `sisa.ui` introduce perfiles adaptativos `standby`, `suspected_moving` y `high_precision_burst` con histeresis basica y reinicio de task limitado a una vez por minuto
+- `sisa.web` muestra en timeline columnas raw vs calculadas: provider speed, computed/effective speed, distancia/elapsed, movement state, flags y algoritmo
+
+Riesgo cubierto:
+
+- si Android/Expo reporta `speed=0` pero hay desplazamiento real, el backend puede derivar `computed_speed_mps` por Haversine y marcar `provider_speed_zero_but_moved` sin sobrescribir el raw
+- las metricas usadas por auditoria/reportes futuros quedan reproducibles y separadas de la evidencia capturada por el dispositivo
+
+Puntos ciegos conocidos:
+
+- `speed_mps` sigue existiendo en `gps_points` por contrato legacy, pero ahora se trata como velocidad raw del provider y se expone tambien como `provider_speed_mps`
+- el cambio no implementa billing, stays, trips ni privacidad/retencion avanzada
+- el comportamiento adaptativo debe validarse en Android real porque Expo puede variar como aplica cambios de `startLocationUpdatesAsync` en background
+
+Validacion:
+
+- `php -l src/Models/GpsPointMetrics.php` en `sisa.api` -> PASS
+- `php -l src/Controllers/TrackingController.php` en `sisa.api` -> PASS
+- `php -l src/Routes/api.php` en `sisa.api` -> PASS
+- `php -l tests/Controllers/TrackingControllerTest.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Controllers/TrackingControllerTest.php` en `sisa.api` -> PASS, con ruido baseline de conexion `SQLSTATE[HY000] [2002]` ya documentado
+- `npm run lint` en `sisa.ui` -> PASS
+- `npm run build` en `sisa.web` -> PASS con warning existente de chunk grande de Vite
+
 ## Implementacion web - mapa read-only de tracking timeline
 
 Estado: completado focalizado
