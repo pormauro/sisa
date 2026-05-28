@@ -1,5 +1,29 @@
 # Estado QA
 
+## Retoque GPS - precision mala y timeline compacto
+
+Estado: implementado focalizado
+
+Que cambio:
+
+- `GpsPointMetrics` endurece el calculo: `accuracy_m > 80` marca baja calidad, `accuracy_m > 120` invalida movimiento, y puntos previos con mala precision no disparan movimiento confiable
+- la metrica suma `is_valid_for_movement`, `is_valid_for_route` e `ignored_reason`, con migracion defensiva por `ensureTable()` para bases existentes
+- el ruido GPS ahora usa `max(25, previous_accuracy + current_accuracy, current_accuracy * 1.5)` y no se clasifica `moving` solo por distancia cuando algun punto tiene mala precision
+- `/tracking/timeline` expone los nuevos campos derivados sin romper el payload anterior
+- `sisa.web` dibuja la ruta valida con halo blanco + linea principal naranja, separa tramos dudosos con linea punteada y muestra leyenda
+- la tabla de puntos raw + metricas queda compacta con columnas cortas, simbolos/chips y tooltips en espanol para estados, flags, fuente y algoritmo
+
+Riesgo cubierto:
+
+- evitar movimiento falso y lineas falsas cuando hay saltos grandes causados por mala precision GPS
+- mantener visibles los puntos raw malos sin contaminarlos en movimiento ni recorrido valido
+
+Validacion:
+
+- `php -l src/Models/GpsPointMetrics.php` en `sisa.api` -> PASS
+- `php -l src/Controllers/TrackingController.php` en `sisa.api` -> PASS
+- `npm run build` en `sisa.web` -> PASS con warning existente de chunk grande de Vite
+
 ## Replanteo GPS audit/facturacion futura
 
 Estado: implementado focalizado, sin stays/trips ni cobro
