@@ -1,8 +1,41 @@
 # Estado QA
 
+## Implementacion web - mapa read-only de tracking timeline
+
+Estado: completado focalizado
+
+Actualizacion de interaccion:
+
+- la tabla de puntos raw ahora queda en un contenedor escroleable y permite seleccionar cualquier punto
+- al seleccionar un punto, el mapa lo resalta con marcador/color diferencial y remarca el tramo hacia el punto anterior y el tramo hacia el punto siguiente
+- el globo de posicion actual permanece en el ultimo punto del recorrido y usa `profile_file_id` del usuario cuando `/tracking/timeline` lo informa, con fallback a iniciales
+- cambio backend minimo: `GpsPoints::listUsersWithPointsForRange()` suma `user_profile.profile_file_id` al payload de usuarios del timeline
+
+Que cambio:
+
+- `sisa.web` agrega Leaflet/React-Leaflet para renderizar `/tracking-timeline` con mapa del recorrido diario
+- el mapa dibuja polyline con los puntos validos de `/tracking/timeline` y ubica un globo del usuario en el ultimo punto recibido
+- la vista conserva selector de fecha y usuario, y refresca automaticamente cada 10 segundos ademas del boton manual
+- no se tocaron app movil, backend, IA, stays/trips ni mapas nativos moviles
+
+Validacion:
+
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS con warning de chunk grande de Vite; `dist/` se actualizo porque el repo web versiona artefactos build
+- `php -l src/Models/GpsPoints.php` en `sisa.api` -> PASS
+
 ## Reparacion P0 - secuencia local mobile de tracking
 
 Estado: implementado focalizado, pendiente de validacion en dispositivo
+
+Correccion urgente posterior:
+
+- se reprodujo por reporte operativo que la app podia fallar en captura con `no such table: tracking_sequence_counters`
+- causa exacta: el codigo ya consultaba `tracking_sequence_counters`, pero en telefonos con SQLite existente la migracion mobile podia no haber creado la tabla antes del primer uso de tracking
+- `database/tracking.ts` agrega `ensureTrackingSequenceCounterSchema()` como defensa runtime idempotente antes de `getNextTrackingSequence()`, `reserveNextTrackingSequence()` y `enqueueTrackingPointAuto()`
+- la defensa crea `gps_points_queue` si faltara, crea `tracking_sequence_counters`, verifica `point_uuid` con `PRAGMA table_info`, agrega la columna solo si falta, rellena `point_uuid` legacy y crea el indice unico
+- `database/migrations.ts` mantiene la migracion v3 segura creando `tracking_sequence_counters` antes del seed y usando backfill legacy por `local_id`
+- validacion: `npm run lint` en `sisa.ui` -> PASS; `npx tsc --noEmit` -> FAIL por deuda TypeScript preexistente ya registrada
 
 Causa exacta:
 
