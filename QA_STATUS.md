@@ -1,5 +1,28 @@
 # Estado QA
 
+## Analytics mobile - fechas AR y panel operativo
+
+Estado: implementado focalizado
+
+Que cambio:
+
+- `sisa.ui` agrega helpers reutilizables en `src/utils/dateFormat.ts` para mostrar fechas `DD/MM/AAAA`, fechas-hora `DD/MM/AAAA HH:mm` y normalizar rangos a ISO `YYYY-MM-DD` antes de llamar API
+- `/analytics` reutiliza el endpoint agregado existente `/accounting/summary` y mantiene `/accounting/summary` operativo para enlaces internos previos
+- la pantalla de analytics muestra inputs visibles en formato argentino, valida estrictamente el rango y envia `start_date/end_date` en ISO al servidor
+- se modernizo el panel con hero, KPI cards, barras livianas por cajas/clientes/proveedores, empty state y skeleton sin agregar librerias pesadas ni calcular estadisticas desde listas completas
+- el centro de reportes reutiliza los helpers para rangos visibles y para preparar fechas ISO al generar/reportar
+
+Riesgo cubierto:
+
+- evitar mezclar fechas visibles `YYYY-MM-DD` con UX local argentina y prevenir envios ambiguos a API
+- conservar performance consumiendo un endpoint agregado existente en lugar de descargar worklogs, facturas, pagos o trabajos para sumar en frontend
+
+Validacion:
+
+- `npm run lint` en `sisa.ui` -> PASS
+- `npm run check:cache` en `sisa.ui` -> PASS
+- `npx tsc --noEmit` en `sisa.ui` -> FAIL por deuda TypeScript baseline en clients/jobs/invoices/receipts/contextos/tracking ya documentada; no reporto errores nuevos en `app/accounting/summary.tsx`, `app/reports/index.tsx`, `app/analytics.tsx`, `constants/menuSections.ts` ni `src/utils/dateFormat.ts`
+
 ## Retoque GPS - precision mala y timeline compacto
 
 Estado: implementado focalizado
