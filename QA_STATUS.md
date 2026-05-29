@@ -1,8 +1,48 @@
 # Estado QA
 
+## Periodos de facturacion por empresa y Analytics web
+
+Estado: implementado base funcional, con endpoints principales y UI web operativa
+
+Que cambio:
+
+- `sisa.api` agrega `company_accounting_settings` para `billing_period_close_day` por empresa, con modelo `CompanyAccountingSettings`, migracion phase 39 y endpoints `GET/PUT /company-accounting-settings`
+- la escritura valida pertenencia y rol `owner` en `empresas_usuarios`; si no es dueño devuelve `Solo el dueño de la empresa puede modificar el período de facturación.`
+- `BillingPeriodService` resuelve periodos puros ISO, maneja cierre 1..31 y ajusta cierre 31 al ultimo dia real del mes; devuelve `period_key`, `period_start`, `period_end`, `period_label` y `billing_period_close_day`
+- `accounting_closings` queda preparado con `billing_period_key`, `billing_period_start`, `billing_period_end` y `billing_period_close_day`; al crear cierre guarda el periodo usado en ese momento para no reescribir historicos si cambia el cierre futuro
+- `/analytics/worklogs` ahora usa `group_by=billing_period` por defecto y devuelve periodos completos de facturacion; `month`, `day`, `week` y `year` siguen disponibles como agrupaciones calendario
+- se preserva la separacion critica: `worklog_clock_hours` cuenta duracion real una vez y `technician_hours` cuenta duracion por participante para costo empresa
+- `sisa.web` agrega ruta `/analytics`, menu Analytics, helpers de fecha `DD/MM/AAAA` <-> `YYYY-MM-DD`, KPIs de horas, barras por periodo y rankings de usuarios/clientes/trabajos sin descargar listas completas
+- `sisa.web` agrega configuracion contable de empresa en Settings y en Analytics: los no-owner ven el valor deshabilitado; owner puede guardar
+
+Riesgo cubierto:
+
+- evitar analisis por mes calendario cuando la empresa cierra por periodos reales de facturacion
+- dejar cierres historicos con snapshot de `billing_period_close_day` usado al cerrar
+- preparar costos y rentabilidad futura sobre `technician_hours`, no sobre horas reloj
+
+Puntos ciegos conocidos:
+
+- en este corte solo `/analytics/worklogs` queda implementado con metricas reales; los endpoints analiticos adicionales (`overview`, `jobs`, `finance`, `clients`, `users`, `profitability`) quedan como siguiente hito para no inventar calculos financieros incompletos
+- no se ejecuto prueba HTTP real owner/no-owner por no tener credenciales/DB disponible en esta sesion
+
+Validacion:
+
+- `php -l src/Models/CompanyAccountingSettings.php` en `sisa.api` -> PASS
+- `php -l src/Services/BillingPeriodService.php` en `sisa.api` -> PASS
+- `php -l src/Controllers/CompanyAccountingSettingsController.php` en `sisa.api` -> PASS
+- `php -l src/Controllers/AnalyticsController.php` en `sisa.api` -> PASS
+- `php -l src/Models/AccountingClosings.php` en `sisa.api` -> PASS
+- `php -l src/Controllers/AccountingClosingsController.php` en `sisa.api` -> PASS
+- `php -l src/Routes/api.php` en `sisa.api` -> PASS
+- `php -l scripts/migrations/company-accounting-settings-phase39.php` en `sisa.api` -> PASS
+- `php -l update_install.php` en `sisa.api` -> PASS
+- `npm run lint` en `sisa.web` -> PASS
+- `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite; `dist/` se actualizo porque el repo web versiona artefactos build
+
 ## Analytics mobile - fechas AR y panel operativo
 
-Estado: implementado focalizado
+Estado: implementado focalizado; ampliado con horas operativas de worklogs
 
 Que cambio:
 
@@ -11,17 +51,25 @@ Que cambio:
 - la pantalla de analytics muestra inputs visibles en formato argentino, valida estrictamente el rango y envia `start_date/end_date` en ISO al servidor
 - se modernizo el panel con hero, KPI cards, barras livianas por cajas/clientes/proveedores, empty state y skeleton sin agregar librerias pesadas ni calcular estadisticas desde listas completas
 - el centro de reportes reutiliza los helpers para rangos visibles y para preparar fechas ISO al generar/reportar
+- `sisa.api` agrega `GET /analytics/worklogs` con filtros `company_id`, `from`, `to`, `group_by`, `client_company_id`, `user_id`, `job_id` y `status_id`
+- el endpoint calcula en SQL agregado horas reloj (`worklog_clock_hours`) separadas de horas tecnico (`technician_hours = duracion x participantes`), sin duplicar horas reloj por joins
+- la agrupacion cubre empresa via summary, periodo, usuario desde `work_log_participants.user_id`, cliente desde `jobs -> clients -> empresas`, y trabajo
+- si hay worklogs sin participantes, la respuesta informa warning y no inventa tecnico principal
+- `/analytics` suma la seccion “Horas de worklogs” con KPIs, barras por periodo y rankings de usuarios, clientes y trabajos; Analytics queda como entrada principal fuera de Gestion financiera
 
 Riesgo cubierto:
 
 - evitar mezclar fechas visibles `YYYY-MM-DD` con UX local argentina y prevenir envios ambiguos a API
 - conservar performance consumiendo un endpoint agregado existente en lugar de descargar worklogs, facturas, pagos o trabajos para sumar en frontend
+- preservar la diferencia critica para costos: horas reloj miden duracion real y horas tecnico miden horas-hombre/costo empresa
 
 Validacion:
 
+- `php -l src/Controllers/AnalyticsController.php` en `sisa.api` -> PASS
+- `php -l src/Routes/api.php` en `sisa.api` -> PASS
 - `npm run lint` en `sisa.ui` -> PASS
 - `npm run check:cache` en `sisa.ui` -> PASS
-- `npx tsc --noEmit` en `sisa.ui` -> FAIL por deuda TypeScript baseline en clients/jobs/invoices/receipts/contextos/tracking ya documentada; no reporto errores nuevos en `app/accounting/summary.tsx`, `app/reports/index.tsx`, `app/analytics.tsx`, `constants/menuSections.ts` ni `src/utils/dateFormat.ts`
+- `npx tsc --noEmit` en `sisa.ui` -> FAIL por deuda TypeScript baseline en clients/jobs/invoices/receipts/contextos/tracking ya documentada; no reporto errores nuevos en `app/accounting/summary.tsx`, `app/reports/index.tsx`, `app/analytics.tsx`, `app/Home.tsx`, `constants/menuSections.ts` ni `src/utils/dateFormat.ts`
 
 ## Retoque GPS - precision mala y timeline compacto
 
