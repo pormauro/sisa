@@ -1,5 +1,39 @@
 # Estado QA
 
+## Replanteo tracking GPS mobile - perfiles y rechazados
+
+Estado: implementado focalizado en `sisa.ui`
+
+Que cambio:
+
+- `database/tracking.ts` separa rechazo permanente de fallo temporal: los `rejected` del backend ahora quedan con `sync_status='rejected'`, `error_message`, `rejected_at` y `updated_at`
+- `listRetryableTrackingPoints()` sigue tomando solo `pending` y `failed`; `rejected` y `discarded` no entran en reintentos automaticos
+- se agregan acciones locales para listar rechazados, descartar uno, descartar varios/todos y reintentar manualmente un rechazado pasando a `pending`
+- la migracion SQLite sube a version 4 con `rejected_at` y `ensureTrackingSequenceCounterSchema()` agrega la columna de forma idempotente para bases existentes
+- `TrackingContext` agrega perfiles locales `trackingUploadProfile` y `trackingAcquisitionProfile`, contador/listado de rechazados y watchdog periodico de task GPS
+- el perfil de envio `manual` bloquea la subida automatica pero no la captura; `wifi_only` acumula cola y solo sube en WiFi; la accion manual de sincronizacion fuerza el intento permitido por perfil
+- `src/tracking/location.ts` aplica perfiles de adquisicion a `expo-location`, asegura schema antes de iniciar tracking y mantiene la tarea viva aunque falle un insert individual de SQLite
+- `/tracking/gps-config` y `/tracking/queue` muestran perfiles, estados de cola, rechazados, motivo del servidor y acciones de eliminar/reintentar con confirmacion
+
+Riesgo cubierto:
+
+- evita loops infinitos de reintento para puntos rechazados por validacion de servidor
+- permite operar offline/acumular cola aunque fallen internet, token, servidor o subida batch
+- da al usuario una salida local para limpiar puntos que el servidor no aceptara
+
+Puntos ciegos conocidos:
+
+- no se agrego buffer alternativo fuera de SQLite porque no hay mecanismo seguro existente para persistir puntos GPS completos; se registra `lastError` y se reintenta reparar schema/conexion
+- `automatic` de envio queda como comportamiento base balanceado con gating por red/bateria pendiente de refinamiento real; no bloquea captura
+- los perfiles deben validarse en Android real por comportamiento especifico de `expo-location` en background
+
+Validacion:
+
+- `npm run lint` en `sisa.ui` -> PASS
+- `npm run check:cache` en `sisa.ui` -> PASS
+- `npm run check:sync-smoke` en `sisa.ui` -> PASS
+- `npx tsc --noEmit` en `sisa.ui` -> FAIL por deuda TypeScript baseline existente en clients/jobs/invoices/receipts/contextos; luego de corregir los errores nuevos de `TrackingContext`, no quedan errores reportados en los archivos modificados de tracking
+
 ## Periodos de facturacion por empresa y Analytics web
 
 Estado: implementado base funcional, con endpoints principales y UI web operativa
