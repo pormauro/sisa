@@ -39,6 +39,22 @@ Correccion visual de edicion de lapsos:
 - el magnetismo excluye los bordes del propio bloque activo para evitar que quede pegado a su posicion anterior durante move/resize
 - validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
 
+Estabilizacion del gesto de lapsos:
+
+- el editor de lapsos deja de depender de `mousemove/mouseup/mouseleave` locales del rail y ahora usa Pointer Events con listeners globales `window.pointermove/pointerup/pointercancel`
+- el drag sigue activo aunque el puntero salga del rail, pase sobre el SVG o haya scroll horizontal
+- el drag horizontal del timeline no inicia si el evento nace dentro del rail, y queda bloqueado mientras hay un gesto de lapso activo
+- se mantiene una sola fuente de coordenadas: `clientX` contra `railTrackRef.getBoundingClientRect()` para calcular porcentaje y hora
+- se agrego `touch-action: none` y `user-select: none` al track/bloques para evitar seleccion o drag nativo durante el gesto
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
+Unificacion de rango visual/final:
+
+- se agrego `resolveRailDragRange(drag, clientPercent)` como unica funcion que resuelve create/move/resize-start/resize-end, snap, limites, duracion minima e ignorar el propio bloque activo
+- `pointermove` guarda en `draftRailRange` exactamente el rango devuelto por esa funcion
+- `pointerup` usa la misma funcion con el ultimo `clientX`/percent del puntero y envia ese mismo rango a create/move, eliminando la normalizacion secundaria que podia mover el bloque al soltar
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
 Correccion editor de barra:
 
 - el calculo de posicion del mouse en la pista ahora usa una referencia fija al track, evitando que resize/move calcule coordenadas contra el contenedor equivocado y mande el bloque a 00:00
