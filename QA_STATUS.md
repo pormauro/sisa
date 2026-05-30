@@ -18,6 +18,39 @@ Correccion de rango temporal:
 - al elegir `Punto inicio` o `Punto fin` desde el formulario se sincronizan automaticamente hora, lat/lng y metricas; esto evita enviar `ended_at <= started_at` aunque el selector visual muestre un punto final posterior
 - validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
 
+Actualizacion editor de barra:
+
+- la barra superior deja de mostrar puntos GPS derivados; ahora es una pista exclusiva de lapsos de tiempo
+- crear un lapso se hace arrastrando sobre espacio libre de la pista; al soltar abre el formulario con inicio/fin precargados para ajuste fino
+- los bloques existentes se mueven arrastrando el centro y se redimensionan con handles laterales, con magnetismo a marcas de 15 minutos y bordes de otros lapsos
+- al mover/redimensionar desde la barra se persiste el nuevo rango sin asociarlo automaticamente a puntos GPS raw
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
+Unificacion timeline/lapsos:
+
+- se elimino la barra superior separada de 24h; el editor de lapsos ahora vive dentro del timeline scrolleable/zoomeable de velocidad
+- se quitaron las bandas SVG duplicadas de lapsos para dejar una sola representacion editable, alineada al mismo ancho del grafico y adaptable al zoom
+- la pista de lapsos conserva crear por drag, mover por centro y redimensionar por bordes, sin mezclar puntos GPS como marcadores de la barra
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
+Correccion visual de edicion de lapsos:
+
+- al mover o redimensionar un bloque ya no se renderiza una segunda barra temporal naranja; se actualiza visualmente el mismo bloque que se esta editando
+- el magnetismo excluye los bordes del propio bloque activo para evitar que quede pegado a su posicion anterior durante move/resize
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
+Correccion editor de barra:
+
+- el calculo de posicion del mouse en la pista ahora usa una referencia fija al track, evitando que resize/move calcule coordenadas contra el contenedor equivocado y mande el bloque a 00:00
+- un click simple sobre la pista ya no crea un lapso; se requiere arrastrar una distancia real para abrir el formulario
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
+Correccion direccion de creacion:
+
+- al crear un lapso arrastrando en la barra, el punto donde empieza el drag queda como ancla fija de inicio y el rango solo crece hacia la derecha
+- si se arrastra hacia la izquierda del ancla no se invierte el lapso ni se crea un bloque hacia atras; se debe volver a la derecha para confirmar rango
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
 Actualizacion fullscreen:
 
 - la barra de pantalla completa del Timeline GPS ahora tambien muestra `Nuevo lapso`, `Nuevo desde punto seleccionado`, `Editar lapso` y `Eliminar lapso`, reutilizando el mismo modal/flujo de guardado sin salir del modo fullscreen
