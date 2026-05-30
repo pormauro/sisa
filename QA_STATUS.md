@@ -63,11 +63,12 @@ Correccion editor de barra:
 
 Reparacion final del editor de lapsos:
 
-- `TrackingVelocityTimeline` centraliza create/move/resize en `resolveRailDragRange(kind, block, lastPercent)` y convierte a fechas con `percentToDateRange`, evitando una normalizacion distinta al soltar
+- `TrackingVelocityTimeline` centraliza create/move/resize en `resolveRailDragRange(drag, clientPercent)` y convierte a fechas con `percentToDateRange`, evitando una normalizacion distinta al soltar
 - se agregaron clamps contra vecinos (`getNeighborBounds`, `clampCreateRange`, `clampMoveRange`, `clampResizeStart`, `clampResizeEnd`) con snap de 15 minutos y bordes ajenos, ignorando el bloque activo
 - move conserva duracion, resize-start solo mueve inicio, resize-end solo mueve fin, y create queda limitado al espacio libre de la pista para evitar solapes
 - el pan horizontal del timeline migro de handlers mouse locales a Pointer Events con capture; mientras hay `railDrag`, el timeline queda en estado `rail-editing` y no compite con el gesto del rail
 - la edicion manual sigue persistiendo `start_gps_point_id`/`end_gps_point_id = null` desde los flujos de create/move existentes
+- `finishRailDrag` persiste el ultimo `draftRailRange` calculado durante `pointermove`; solo usa `resolveRailDragRange` como fallback defensivo si no existe draft
 - validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
 
 Correccion direccion de creacion:
