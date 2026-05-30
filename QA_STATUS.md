@@ -1,5 +1,56 @@
 # Estado QA
 
+## Tracking time blocks - edicion web y drag timeline
+
+Estado: implementado en `sisa.web`, sin cambios funcionales requeridos en API
+
+Actualizacion visual/editor:
+
+- el modal de lapsos ahora se renderiza dentro del contenedor fullscreen cuando el Timeline GPS esta en pantalla completa, para quedar por encima del mapa/grafico sin salir de esa vista
+- se mejoro el aspecto del modal con superficie oscura, inputs integrados y foco visible
+- el timeline agrega una barra superior tipo editor: muestra bloques existentes, puntos disponibles y permite seleccionar dos puntos consecutivos/no consecutivos para abrir un nuevo lapso precargado
+- los bloques existentes en la barra se pueden arrastrar para ajustarlos con magnetismo al punto GPS mas cercano de inicio/fin y persistir el cambio
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
+Correccion de rango temporal:
+
+- los inputs `datetime-local` de inicio/fin ahora conservan segundos (`step=1`) para no truncar dos puntos cercanos al mismo minuto
+- al elegir `Punto inicio` o `Punto fin` desde el formulario se sincronizan automaticamente hora, lat/lng y metricas; esto evita enviar `ended_at <= started_at` aunque el selector visual muestre un punto final posterior
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
+Actualizacion fullscreen:
+
+- la barra de pantalla completa del Timeline GPS ahora tambien muestra `Nuevo lapso`, `Nuevo desde punto seleccionado`, `Editar lapso` y `Eliminar lapso`, reutilizando el mismo modal/flujo de guardado sin salir del modo fullscreen
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
+Que cambio:
+
+- `trackingCatalogsService` agrega `createTrackingTimeBlock`, `updateTrackingTimeBlock` y `deleteTrackingTimeBlock`, limpiando `undefined` antes de enviar payloads
+- `TrackingTimelinePage` agrega acciones reales para “Nuevo lapso”, “Nuevo desde punto seleccionado”, “Editar lapso” y “Eliminar lapso”
+- se implementa `TrackingTimeBlockModal` con campos basicos, rango temporal, puntos GPS, metricas opcionales, notas y editor simple de links
+- el modal permite usar el punto seleccionado como inicio o fin y recalcular metricas disponibles desde los puntos del rango sin inventar precision cuando no hay datos
+- guardar/editar/eliminar refresca `/tracking/timeline`, mantiene fecha/usuario y selecciona el bloque guardado o limpia seleccion al borrar
+- las bandas del grafico soportan doble click para editar, resaltado fuerte y etiqueta visible cuando el zoom/ancho lo permite
+- `TrackingVelocityTimeline` agrega pan horizontal con mouse sobre el contenedor scrolleable, preservando click en puntos/bloques, zoom, teclado y scroll actual
+- `TrackingTimeBlocksPanel` reemplaza el placeholder por boton real, agrega acciones por fila y doble click de fila mediante extension minima de `DataTable`
+
+Riesgo cubierto:
+
+- permite operar bloques interpretativos desde la pantalla GPS sin tocar puntos raw ni metricas tecnicas
+- mejora la usabilidad del timeline con zoom alto sin cambiar el contrato de `/tracking/timeline`
+
+Puntos ciegos conocidos:
+
+- los links siguen usando `entity_id` numerico manual hasta incorporar buscadores reales por entidad
+- para bloques `locked/billed` la UI bloquea campos operativos y deja notas/links; la regla final de negocio puede endurecerse en backend cuando se definan permisos especificos
+
+Validacion:
+
+- `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite; `dist/` se actualizo porque el repo web versiona artefactos build
+- `php -l src/Controllers/TrackingController.php` en `sisa.api` -> PASS
+- `php -l src/Models/TrackingTimeBlocks.php` en `sisa.api` -> PASS
+- `php -l src/Models/TrackingTimeBlockLinks.php` en `sisa.api` -> PASS
+
 ## Tracking time blocks backend + visualizacion web
 
 Estado: implementado base, sin etiquetado avanzado
