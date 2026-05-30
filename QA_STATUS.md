@@ -1,5 +1,40 @@
 # Estado QA
 
+## Tracking time blocks backend + visualizacion web
+
+Estado: implementado base, sin etiquetado avanzado
+
+Que cambio:
+
+- `sisa.api` agrega modelos `TrackingTimeBlocks` y `TrackingTimeBlockLinks` con `ensureTable()` para crear `tracking_time_blocks` y `tracking_time_block_links`, indices operativos y soft delete
+- se agregan endpoints base bajo `/tracking/time-blocks` para listar, crear, leer, actualizar y borrar logicamente bloques con links opcionales
+- las validaciones cubren rango temporal, calculo de `duration_seconds`, enums de modo/estado/origen, existencia de usuario, existencia de puntos GPS vinculados y validacion de links
+- `/tracking/timeline` conserva el payload existente y suma `time_blocks`, devolviendo `[]` cuando no hay bloques
+- permisos: se dejo fallback temporal comentado a `listTrackingAssignments` porque los permisos dedicados de time blocks aun no estan sembrados
+- `sisa.web` agrega tipos `TrackingTimeBlock`/`TrackingTimeBlockLink`, normaliza `time_blocks` como array seguro y muestra la seccion “Bloques de tiempo” en Timeline GPS
+- el grafico 24h ahora dibuja bandas superiores por bloque, con color por `mode`, estilo por `status`, tooltip y seleccion visual sin mover al usuario a la tabla de puntos
+- se agrega una lista colapsable “Bloques de tiempo detectados/manuales” y un boton deshabilitado de proxima etapa; no se implementa edicion/etiquetado avanzado
+
+Riesgo cubierto:
+
+- separa evidencia cruda (`gps_points`), calculo tecnico (`gps_point_metrics`) e interpretacion operativa (`tracking_time_blocks`) sin romper contratos existentes del timeline
+- permite visualizar bloques operativos aunque el backend no tenga datos todavia, manteniendo compatibilidad con `time_blocks: []`
+
+Puntos ciegos conocidos:
+
+- los permisos dedicados `list/create/update/deleteTrackingTimeBlocks` deben sembrarse antes de retirar el fallback temporal a `listTrackingAssignments`
+- PHPUnit focalizado no llego a emitir resultados porque el setup mantiene la deuda baseline de conexion DB `SQLSTATE[HY000] [2002]` ya documentada
+
+Validacion:
+
+- `php -l src/Models/TrackingTimeBlocks.php` en `sisa.api` -> PASS
+- `php -l src/Models/TrackingTimeBlockLinks.php` en `sisa.api` -> PASS
+- `php -l src/Controllers/TrackingController.php` en `sisa.api` -> PASS
+- `php -l src/Routes/api.php` en `sisa.api` -> PASS
+- `php -l tests/Controllers/TrackingControllerTest.php` en `sisa.api` -> PASS
+- `vendor/bin/phpunit tests/Controllers/TrackingControllerTest.php` en `sisa.api` -> BLOQUEADO por deuda baseline de conexion DB `SQLSTATE[HY000] [2002]`
+- `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite; `dist/` se actualizo porque el repo web versiona artefactos build
+
 ## Replanteo tracking GPS mobile - perfiles y rechazados
 
 Estado: implementado focalizado en `sisa.ui`
