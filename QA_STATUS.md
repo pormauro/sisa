@@ -1,5 +1,39 @@
 # Estado QA
 
+## SISA Mobile bootstrap - instrumentacion Etapa 1
+
+Estado: implementado en `sisa.ui` sin cambios funcionales intencionales
+
+- se agrego `utils/startupTrace.ts` con `startupId` por arranque, spans, eventos, registro de endpoints, cache reads/writes y resumen por consola; sanitiza URLs y no registra tokens, passwords, headers ni bodies.
+- `STARTUP_TRACE_ENABLED` permite apagar la traza desde `config/Index.ts`.
+- `utils/networkSniffer.ts` reporta a StartupTrace cada fetch/XHR con metodo, path sanitizado, status, duracion y tamano aproximado de respuesta.
+- `utils/cache.ts` y `hooks/useCachedState.ts` registran lecturas HIT/MISS, escrituras, removals, priming de memoria e inicializacion desde cache en memoria.
+- `AuthContext` mide `auth.autoLogin`, `auth.restoreSession`, `auth.login` y `auth.applySession`, incluyendo restauracion offline y reintentos sin exponer credenciales.
+- `BootstrapContext` mide `bootstrap.total`, `bootstrap.critical`, cada `bootstrap.section.*`, lectura de checkpoint SQLite, `jobs.bootstrap`, `jobs.pullSync`, `bootstrap.startupReferences`, `shell.ready` y resumen de endpoints/cache al quedar usable.
+- `PermissionsContext`, `CompaniesContext`, `MemberCompaniesContext` y `ConfigContext` agregan spans livianos para detectar providers que disparan fetch temprano o duplicado.
+- `useBootstrapJobsFromApi` y `usePullJobsSync` agregan eventos/spans para in-flight compartido, bootstrap interno y checkpoint usado por pull sync.
+- `app/_layout.tsx` mide inicializacion de app y emite `shell.usable` cuando el layout ya permite usar la shell autenticada.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+
+## SISA Mobile bootstrap - Etapa 2A guards de cargas tempranas
+
+Estado: implementado en `sisa.ui` con cambios minimos y sin redisenar bootstrap
+
+- se agrego `utils/startupRemoteGate.ts` para marcar cuando la shell ya esta usable y permitir que providers globales distingan montaje temprano de carga explicita por pantalla.
+- `app/_layout.tsx` marca la shell usable junto al evento `shell.usable` de StartupTrace.
+- `QuotesContext` ahora deduplica requests por `company_id`, aplica TTL simple de 60s y no refresca remoto desde su auto-effect antes de shell usable; las pantallas siguen pudiendo llamar `loadQuotes(true)` explicitamente.
+- se frenaron callbacks remotos tempranos de `subscribeToReferenceCacheUpdates` antes de shell usable en `CashBoxesContext`, `PaymentsContext`, `InvoicesContext`, `ReceiptsContext`, `ProductsServicesContext`, `PaymentTemplatesContext` y `CategoriesContext`.
+- `CategoriesContext` ya no intenta asegurar categorias default durante startup antes de shell usable.
+- `useCachedState` evita volver a leer AsyncStorage si la key ya fue precargada en memoria por `primeMemoryCacheFromStorage`, reduciendo lecturas repetidas como `selected-company-id`.
+- `deviceUid` evita reescribir en cada `ensureDeviceUid()` los mirrors legacy `tracking-device-id` y `jobs-sync-device-id` si ya se espejaron en el runtime.
+- `NetworkLogContext` debounced la persistencia de `networkLogs` y ya no reescribe el cache inmediatamente despues de hidratar logs persistidos.
+- no se capturo una nueva traza runtime en dispositivo desde esta sesion; queda pendiente medir con StartupTrace en la app para comparar contra baseline (`shell.ready ~29289ms`, `shell.usable ~29675ms`, `apiCalls=25`, `cacheReads=136`, `cacheWrites=115`, `GET /quotes?company_id=45 count=12`).
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+
 ## sisa.ui tracking GPS - decision engine local
 
 Estado: implementado con validacion parcial por deuda TypeScript baseline
