@@ -71,6 +71,29 @@ Reparacion final del editor de lapsos:
 - `finishRailDrag` persiste el ultimo `draftRailRange` calculado durante `pointermove`; solo usa `resolveRailDragRange` como fallback defensivo si no existe draft
 - validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
 
+Correccion de sesgo al soltar/mover lapsos:
+
+- `draftRailRangeRef` guarda sincronicamente el ultimo rango resuelto, sin depender de que React haya renderizado `setDraftRailRange` antes del `pointerup`
+- `pointerup` actualiza el draft con su `clientX` final usando la misma `resolveRailDragRange` antes de persistir, evitando que el bloque confirme un frame anterior hacia la izquierda
+- `finishRailDrag` limpia el ref junto con el estado visual para que el siguiente gesto no herede un draft viejo
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
+HUD de diagnostico de lapsos:
+
+- durante create/move/resize se muestra un globito sobre la pista con accion, bloque, hora inicio/fin, duracion, estado/modo, delta de movimiento, rango porcentual y puntero
+- el globito lee el mismo `draftRailRange` que se renderiza/persiste y no captura eventos (`pointer-events: none`), para diagnosticar preview vs commit sin interferir con el drag
+- las horas del globito y tooltips del timeline usan `Intl.DateTimeFormat('es-AR', { timeZone })` cuando `/tracking/timeline` informa timezone, evitando diagnosticos en zona horaria del navegador
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
+Normalizacion temporal Argentina/UTC:
+
+- se fijo `TRACKING_TIMEZONE = America/Argentina/Buenos_Aires` y se agregaron helpers explicitos para parsear fechas servidor como UTC, formatear tracking en `es-AR` con timezone, convertir server->`datetime-local` y `datetime-local`->UTC ISO
+- `positionInDayPercent` y el rail calculan porcentajes contra las 00:00 de la fecha seleccionada en Argentina (`03:00Z`), por lo que `2026-05-29T03:00:00Z` cae en 0% del dia 29/05
+- crear/mover/redimensionar convierte percent->instante servidor con la misma base Argentina, evitando mandar hora local como si fuera UTC
+- modal, selects de puntos, tabla de bloques, resumen, mapa, tabla raw, gaps/anomalias, tooltips y globito usan el mismo criterio horario Argentina/UTC-3
+- si el API devuelve strings sin `Z` ni offset, el frontend los interpreta como UTC para evitar depender de la zona horaria del navegador
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
 Correccion direccion de creacion:
 
 - al crear un lapso arrastrando en la barra, el punto donde empieza el drag queda como ancla fija de inicio y el rango solo crece hacia la derecha
