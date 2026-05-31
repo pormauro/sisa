@@ -108,6 +108,13 @@ Correccion de strings servidor sin zona:
 - los ISO con `Z` u offset se siguen interpretando como instantes reales del servidor sin alterar
 - validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
 
+Persistencia visual optimista al soltar:
+
+- al mover/redimensionar un lapso, `TrackingTimelinePage` guarda un override local por `block.id` con `started_at`/`ended_at` apenas se suelta el bloque
+- la barra, tabla y seleccion usan ese rango optimista hasta que `refresh()` trae datos nuevos del servidor, momento en el que se limpian los overrides
+- si falla el update, se elimina el override del bloque y se muestra el error existente
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
 Correccion direccion de creacion:
 
 - al crear un lapso arrastrando en la barra, el punto donde empieza el drag queda como ancla fija de inicio y el rango solo crece hacia la derecha
