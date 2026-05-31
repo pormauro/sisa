@@ -50,6 +50,41 @@ Estado: implementado en `sisa.ui` con validacion automatizada; falta traza runti
 - validacion: `npm run check:cache` en `sisa.ui` -> PASS.
 - validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
 
+## SISA Mobile bootstrap - Etapa 2C medicion layout y shell real
+
+Estado: implementado en `sisa.ui` con validacion automatizada; falta nueva traza runtime en dispositivo
+
+- la traza real post-2B mostro que jobs y startup references ya no entran antes de `shell.ready`, pero tambien mostro una brecha aparente entre `bootstrap.total durationMs=4130` y `shell.ready durationMs=15282`.
+- se detecto que `shell.ready` estaba ubicado conceptualmente en el lugar equivocado: se emitia desde `BootstrapContext` al terminar el bootstrap critico, no desde el layout cuando la navegacion principal ya podia renderizar. Ese evento ahora se llama `bootstrap.critical.ready`.
+- `shell.ready` se movio a `RootLayoutContent`, cuando ya hay usuario, `BootstrapContext.isReady=true`, la ruta no es login/root y se puede montar navegacion principal con bottom nav. `shell.usable` queda tambien emitido desde ese gate real de layout.
+- `StartupTrace` ahora guarda tiempos de spans/eventos y agrega `summary.layout appInitializeMs=... authMs=... criticalBootstrapMs=... postCriticalToShellReadyMs=... shellReadyToUsableMs=... providersMountMs=... splashHideMs=...`.
+- se agregaron eventos de layout/gates: `layout.render.start`, `layout.providers.mount.start/finish`, `rootLayoutContent.render.start`, `rootLayoutContent.authGate`, `rootLayoutContent.bootstrapGate`, `rootLayoutContent.navigation.ready`, `rootLayoutContent.home.route.ready`, `bottomNavigation.ready`, `splash.hide.start/finish` y `router.ready`.
+- se agrego medicion de cambios de estado clave: `auth.isLoading`, `auth.user`, `bootstrap.isReady`, `bootstrap.isBootstrapping`, `bootstrap.isDeferredBootstrapping`, `permissions.hydrated`, `permissions.loading`, `permissions.count`, `companies.hydrated`, `selectedCompanyId.resolved` y `config.hydrated`.
+- se redujo la duplicacion de `/companies/member`: `BootstrapContext` ahora crea una sola promesa de `loadMemberCompanies()` para la seccion critica `memberCompanies` y para resolver la empresa activa, evitando el segundo fetch secuencial que producia `count=2` antes de shell.
+- se difirieron trabajos globales que podian competir con el primer render: `ExpoPushTokenLogger` espera `isReady` para inicializar device uid/listeners push, `PendingMediaSyncAutoRunner` espera `isReady` antes de listar/procesar cola de media, y `JobsSyncAutoRunner` no consulta la cola SQLite desde NetInfo antes de `isReady`.
+- se mantiene fuera del gate de shell todo lo diferido de Etapa 2B: `jobs.pullSync`, checkpoint jobs, `/sync/v3/events`, `/bootstrap?include=...` y startup references.
+- warning require cycle documentado: `PermissionsContext.tsx` importa `MemberCompaniesContext`, `MemberCompaniesContext.tsx` importa tipos/constantes desde `CompanyMembershipsContext.tsx`, y `CompanyMembershipsContext.tsx` importa `PermissionsContext`. El riesgo principal es inicializacion parcial de modulos y defaults de contexto si se agrega logica top-level; hoy no se cambio porque requiere extraer tipos/constantes de membership a un modulo sin providers. Propuesta minima posterior: mover `MEMBERSHIP_STATUSES` y `CompanyMembershipStatus` a `contexts/companyMembershipTypes.ts` para cortar `MemberCompaniesContext -> CompanyMembershipsContext`.
+- no se capturo una nueva traza runtime en dispositivo desde esta sesion; queda pendiente comparar `summary.layout`, confirmar `GET /companies/member count<=1` antes de `shell.ready`, y medir si la brecha real esta antes del bootstrap critico, en montaje de providers o en navegacion/Home.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+- validacion: `git diff --check` en raiz y `sisa.ui` -> PASS.
+
+## Fix urgente - Etapa 2C crash por instrumentacion de layout
+
+Estado: implementado en `sisa.ui` con validacion automatizada; pendiente confirmacion runtime en dispositivo
+
+- crash detectado: `ReferenceError: Property 'MemberCompaniesContext' doesn't exist` durante `RootLayoutContentComponent` en `app/_layout.tsx`.
+- causa: la instrumentacion de Etapa 2C agrego `useContext(MemberCompaniesContext)` desde `_layout.tsx`, pero el archivo solo importaba `MemberCompaniesProvider`; el simbolo del contexto no estaba disponible en ese scope. Ademas esa lectura directa sumaba dependencia interna innecesaria al layout.
+- fix aplicado: `_layout.tsx` ya no lee `MemberCompaniesContext`, `CompaniesContext`, `PermissionsContext`, `ConfigContext` ni `selected-company-id` para telemetria. La instrumentacion del layout queda limitada a Auth/Bootstrap y eventos seguros de gate/render.
+- se reviso duplicacion obvia del arbol: `_layout.tsx` mantiene un solo `BootstrapProvider`, un solo `RootLayoutContent`, una sola llamada a `primeMemoryCacheFromStorage()` y un solo `ProvidersMountTrace`. La repeticion de `cache.memory.init` puede venir de multiples hooks `useCachedState` montados o de remount dev, pero no de un provider duplicado agregado por este fix.
+- no se tocaron backend, navegacion, orden de providers, bootstrap critico/deferred ni logica de permisos/empresas.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+- validacion: `git diff --check` en raiz y `sisa.ui` -> PASS.
+- runtime pendiente: no se ejecuto Expo/dispositivo desde esta sesion; queda por confirmar visualmente que la app llega a Home y emite `shell.ready`/`shell.usable` sin el `ReferenceError`.
+
 ## sisa.ui tracking GPS - decision engine local
 
 Estado: implementado con validacion parcial por deuda TypeScript baseline
