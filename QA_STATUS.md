@@ -85,6 +85,42 @@ Estado: implementado en `sisa.ui` con validacion automatizada; pendiente confirm
 - validacion: `git diff --check` en raiz y `sisa.ui` -> PASS.
 - runtime pendiente: no se ejecuto Expo/dispositivo desde esta sesion; queda por confirmar visualmente que la app llega a Home y emite `shell.ready`/`shell.usable` sin el `ReferenceError`.
 
+## SISA Mobile bootstrap - Etapa 2D pre-provider gap
+
+Estado: instrumentacion implementada en `sisa.ui`; pendiente nueva traza runtime para confirmar causa y medir reduccion real
+
+- traza de entrada reporto `app.initialize durationMs=418` y `layout.providers.mount.start elapsedMs=10075`, pero esa comparacion mezclaba duracion de span con timestamp absoluto. No habia timestamp visible de `span.finish app.initialize`, por lo que el gap real entre finish de init y montaje de providers no estaba medido.
+- no se encontro otro gate pre-provider en `_layout.tsx`: la unica condicion que impide montar providers es `appReady=false`, que se setea al terminar `primeMemoryCacheFromStorage()` + `Font.loadAsync()` + `SplashScreen.hideAsync()`.
+- se agrego instrumentacion segura antes de providers: `layout.module.loaded`, `layout.render.start elapsedMs=...`, `layout.gate.check`, `layout.gate.wait`, `layout.gate.pass`, `layout.appReady.set`, `layout.return.loading` y `layout.return.providers`.
+- se separo la medicion de init en `cache.load.start/finish`, `cache.primeMemory.appInit`, `fonts.load.start/finish`, `fonts.load` y `assets.load.start/finish`, sin cambiar el gate ni mover providers.
+- `summary.layout` ahora calcula `preProviderGapMs` usando el timestamp real de `span.finish app.initialize` y `layout.providers.mount.start`, no la duracion de `app.initialize`.
+- se mantiene sin tocar backend, navegacion, deferred bootstrap, jobs, orden de providers ni acceso a contextos internos desde `_layout.tsx`.
+- hipotesis actual hasta capturar traza: el supuesto gap de ~9.6s probablemente era una lectura incorrecta de la traza o tiempo previo al primer render del layout/dev runtime, no necesariamente un bloqueo entre `setAppReady(true)` y providers. La nueva traza debe confirmar si `layout.render.start elapsedMs` ya llega alto, si cache/fonts consumen el tiempo, o si existe un bloqueo real tras `layout.appReady.set`.
+- no se capturo una nueva traza runtime en dispositivo desde esta sesion; queda pendiente comparar `preProviderGapMs`, `layout.render.start elapsedMs`, `layout.appReady.set`, `layout.return.providers` y `summary.layout` contra baseline.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+- validacion: `git diff --check` en raiz y `sisa.ui` -> PASS.
+
+## SISA Mobile bootstrap - Etapa 2E imports pre-render
+
+Estado: implementado en `sisa.ui` con validacion automatizada; falta nueva traza runtime para medir impacto real
+
+- auditoria de `_layout.tsx`: se clasificaron como criticos para primer render `networkSniffer`, config de push usada por listeners, Expo Router/Stack, React/RN base, SafeArea/Gesture, fonts/splash, providers globales criticos, `BootstrapProvider`, `AuthProvider`, `RootLayoutContent` y `BottomNavigationBar`.
+- candidatos no criticos detectados antes del primer render: `JobsSyncAutoRunner` (hooks de sync/SQLite), `PendingMediaSyncAutoRunner` (cola media), `SyncErrorAlertObserver`/`useSyncStatus`, `LogOverlay`, `NetworkTrafficOverlay`. Estos no son necesarios para mostrar loading/auth gate ni para completar bootstrap critico.
+- candidatos pesados que se dejaron igual por riesgo funcional: `TrackingProvider` y `AppUpdatesProvider` siguen en `DeferredFeatureProviders` con `enabled=false` hasta despues de bootstrap; diferir el provider completo podria remountar el arbol de navegacion al insertarlo. Queda como posible etapa posterior si la traza sigue mostrando alto costo de imports.
+- side effects top-level relevantes: `networkSniffer` se mantiene top-level a proposito para instrumentar fetch/XHR antes de auth/bootstrap; `SplashScreen.preventAutoHideAsync()` se mantiene top-level por requerimiento de Expo; no se agregaron lecturas de cache/SQLite top-level nuevas.
+- se difirieron imports no criticos con `React.lazy` y un `PostReadyUtilities` que no renderiza hasta `BootstrapContext.isReady=true` y ruta no login/root. Esto evita importar runners/overlays antes de la shell principal.
+- `SyncErrorAlertObserver` se movio a `components/SyncErrorAlertObserver.tsx`, evitando que `_layout.tsx` importe `useSyncStatus` y sus dependencias de sync antes del primer render.
+- se rompio el require cycle pequeño `PermissionsContext -> MemberCompaniesContext -> CompanyMembershipsContext -> PermissionsContext`: `MEMBERSHIP_STATUSES`, `CompanyMembershipStatus` y `MembershipStatusFilter` ahora viven en `contexts/companyMembershipTypes.ts`, por lo que `MemberCompaniesContext` ya no importa el provider completo de memberships.
+- `summary.layout` ahora reporta `preRenderMs` e `importToRenderMs` ademas de `preProviderGapMs`, para medir el tramo `layout.module.loaded -> layout.render.start` y distinguir costo de imports/top-level vs primer render.
+- no se tocaron backend, endpoints, navegacion funcional, bootstrap critico/deferred ni orden masivo de providers.
+- no se capturo una nueva traza runtime en dispositivo desde esta sesion; queda pendiente comparar contra baseline `layout.module.loaded ~4862`, `layout.render.start ~8421`, `shell.usable ~16271`.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+- validacion: `git diff --check` en raiz y `sisa.ui` -> PASS.
+
 ## sisa.ui tracking GPS - decision engine local
 
 Estado: implementado con validacion parcial por deuda TypeScript baseline
