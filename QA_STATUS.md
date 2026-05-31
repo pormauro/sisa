@@ -12,6 +12,55 @@ Estado: implementado en `sisa.api` y `sisa.web`
 - validacion: `npm run lint` en `sisa.web` -> PASS.
 - validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite.
 
+## Tracking time blocks - modal actions y delete por teclado
+
+Estado: implementado en `sisa.web`
+
+- el modal de lapsos compacta las acciones de punto seleccionado con iconos/textos cortos y mueve `Agregar link` al mismo grupo de acciones.
+- la botonera inferior queda separada visualmente, alineada y con accion primaria clara; eliminar queda destacado a la izquierda.
+- al seleccionar un lapso fuera del formulario, `Suprimir/Delete` o `Backspace` dispara eliminacion con la confirmacion existente.
+- la confirmacion de eliminacion ya no usa `window.confirm`; se muestra como modal web para no cerrar pantalla completa.
+- la confirmacion de eliminacion usa overlay especifico por encima del formulario incluso dentro de pantalla completa.
+- el filtro `Fecha` de Jornada queda alineado como `Usuario`, con la fecha y mes en una sola linea dentro del selector.
+- validacion: `npm run lint` en `sisa.web` -> PASS.
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite.
+
+## Tracking time blocks - anclas GPS y metricas calculadas
+
+Estado: implementado en `sisa.web`
+
+- si un lapso tiene `start_gps_point_id` o `end_gps_point_id`, el extremo queda anclado al punto GPS y se muestra con borde/handle azul en la barra.
+- los extremos anclados no se pueden redimensionar y un bloque con cualquier ancla no se puede mover completo; para desbloquear hay que quitar la cruz del punto en el formulario.
+- el formulario agrega boton `×` para quitar ancla de inicio/fin, y deshabilita la fecha/hora del extremo mientras este anclado.
+- distancia, duracion, velocidad promedio, velocidad maxima y calidad se muestran como metricas calculadas no editables; las velocidades se muestran en km/h con indicadores visuales.
+- al ajustar el extremo libre desde la barra se preservan los IDs/lat/lng de anclas existentes en el payload.
+- despues de guardar, borrar o ajustar un lapso, `refresh()` fuerza reemplazo del timeline para evitar que la guardia anti-render deje datos visuales viejos.
+- validacion: `npm run lint` en `sisa.web` -> PASS.
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite.
+
+## Tracking time blocks - speedometer reutilizable
+
+Estado: implementado en `sisa.web`
+
+- se agrego componente reusable `Speedometer` en `src/components/speedometer.tsx`, con SVG parametrizable por velocidad, maximo, tamano y valor visible.
+- el formulario de lapsos usa velocimetros compactos para velocidad promedio y maxima, convirtiendo m/s a km/h para lectura operativa.
+- se agregaron estilos compartidos para el gauge y layout compacto dentro de las tarjetas calculadas.
+- validacion: `npm run lint` en `sisa.web` -> PASS.
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite.
+
+## Tracking time blocks - layout modal editar lapso
+
+Estado: implementado en `sisa.web`
+
+- el modal `Editar lapso` se reorganizo visualmente sin cambiar handlers, endpoints ni calculos existentes.
+- header agrega chips de resumen para estado, modo, distancia y duracion usando los valores actuales del formulario.
+- cuerpo desktop usa dos columnas: datos del lapso a la izquierda y metricas del lapso a la derecha.
+- puntos inicio/fin quedan en selectores compactos con boton `x` alineado para limpiar ancla.
+- notas y links quedan debajo del layout principal ocupando el ancho completo, y el footer conserva eliminar a la izquierda y cancelar/guardar a la derecha.
+- en mobile el modal apila secciones en una columna.
+- validacion: `npm run lint` en `sisa.web` -> PASS.
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite.
+
 ## Tracking time blocks - edicion web y drag timeline
 
 Estado: implementado en `sisa.web`, sin cambios funcionales requeridos en API
