@@ -1,5 +1,17 @@
 # Estado QA
 
+## Tracking timeline - performance request/render
+
+Estado: implementado en `sisa.api` y `sisa.web`
+
+- `/tracking/timeline` dejo de recalcular metricas faltantes dentro del GET normal; ahora adjunta solo metricas existentes y conserva el recalculo en el endpoint/proceso dedicado.
+- se agrego modo liviano (`lightweight=1`/`mode=summary`) con `max_points`, `returned_points_count`, `is_downsampled` y conteo real para limitar la muestra que dibuja web.
+- `sisa.web` pide el timeline en modo liviano con maximo 1000 puntos, pausa auto-refresh si la pestana no esta visible, hay modal/calendario o hubo interaccion reciente, y evita `setTimeline` si la firma de la respuesta no cambio.
+- mapa/grafico reducen marcadores visuales cuando hay muchos puntos, la tabla raw carga filas incrementalmente y se agrego instrumentacion `console.time`/stats para fetch, normalize, renderPoints, graphBuild y mapBuild.
+- validacion: `vendor/bin/phpunit tests/Controllers/TrackingControllerTest.php --filter GetTimeline` en `sisa.api` -> PASS; mantiene ruido baseline de conexion DB ya documentado.
+- validacion: `npm run lint` en `sisa.web` -> PASS.
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite.
+
 ## Tracking time blocks - edicion web y drag timeline
 
 Estado: implementado en `sisa.web`, sin cambios funcionales requeridos en API
