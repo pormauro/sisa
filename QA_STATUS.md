@@ -34,6 +34,22 @@ Estado: implementado en `sisa.ui` con cambios minimos y sin redisenar bootstrap
 - validacion: `npm run check:cache` en `sisa.ui` -> PASS.
 - validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
 
+## SISA Mobile bootstrap - Etapa 2B gate critico y diferidos
+
+Estado: implementado en `sisa.ui` con validacion automatizada; falta traza runtime en dispositivo
+
+- `BootstrapContext` separa el tramo critico de sesion (`profile`, `config`, `companies`, `memberCompanies`, `selectedCompany`, `permissions`) del tramo diferido de jobs/referencias.
+- `isReady` y `shell.ready` se emiten al terminar el tramo critico exitoso, sin esperar lectura de checkpoint SQLite, `jobsBootstrap`, `jobsCheckpoint`, `jobs.pullSync` ni `/bootstrap?include=...`.
+- se agregaron estados publicos `isDeferredBootstrapping`, `deferredBootstrapError` y `lastDeferredBootstrapAt` para observar el trabajo posterior sin convertirlo en error fatal de arranque.
+- los pasos diferidos usan `runSection(..., { fatal: false })`: sus fallas actualizan status/error diferido, pero no mandan a login ni bloquean Home.
+- StartupTrace ahora delimita `bootstrap.deferred`, `bootstrap.deferred.jobsCheckpoint` y `bootstrap.deferred.startupReferences` para medir que el trabajo pesado ocurre despues de `shell.ready`.
+- se premarca el request diferido de startup references como in-flight para evitar que el efecto post-ready dispare otro `/bootstrap?include=...` mientras jobs/checkpoint siguen corriendo.
+- `refreshBootstrap({ forceBlocking: true })` mantiene el refresh dirigido por empresa y espera el tramo diferido cuando se invoca explicitamente con esa opcion.
+- no se capturo una nueva traza runtime en dispositivo desde esta sesion; queda pendiente comprobar que antes de `shell.ready` ya no aparezcan `GET /sync/v3/events` ni `GET /bootstrap?company_id=...&include=...`, y comparar `shell.ready`/`shell.usable` contra el objetivo de 8s/9s.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+
 ## sisa.ui tracking GPS - decision engine local
 
 Estado: implementado con validacion parcial por deuda TypeScript baseline
