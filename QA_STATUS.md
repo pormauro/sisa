@@ -1,5 +1,19 @@
 # Estado QA
 
+## sisa.ui tracking GPS - decision engine local
+
+Estado: implementado con validacion parcial por deuda TypeScript baseline
+
+- se agrego `src/tracking/decisionEngine.ts` para decidir si un punto GPS se acepta antes de encolarlo, calculando distancia Haversine, segundos transcurridos, velocidad computada, `movement_state` y flags de calidad.
+- `enqueueLocationSamples` ahora compara contra el ultimo punto local aceptado del device, descarta puntos de precision muy baja recientes, throttling de jitter/parado repetido a 60s, conserva el primer punto estacionario despues de movimiento para no ocultar semaforos y mantiene `speed_mps` como velocidad cruda del proveedor.
+- `gps_points_queue.state` guarda el estado local decidido (`stationary`, `moving`, `vehicle_like`, `low_quality`, `suspicious`, `unknown`) sin cambiar el esquema ni el payload base de sync.
+- se ajustaron opciones de captura: standby balanceado cada ~300s/75m, moving high accuracy cada ~15s/15m y high precision BestForNavigation cada ~7s/7m; `disabled` corta el tracking en `startTrackingTask`/`restartTrackingTaskIfActive`.
+- la telemetria local reconoce `vehicle_like` y muestra movimiento detectado cuando el provider reporta `0 m/s` pero el estado local indica desplazamiento.
+- se agrego log dev corto `[tracking:gps]` con accepted/discarded/jitter/stationary.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npx eslint "src/tracking/location.ts" "src/tracking/decisionEngine.ts" "database/tracking.ts" "src/tracking/types.ts" "app/tracking/gps-config.tsx"` en `sisa.ui` -> PASS.
+- validacion: `npx tsc --noEmit` en `sisa.ui` -> FAIL por deuda TypeScript preexistente en pantallas/contextos no relacionados; la salida no reporto errores en los archivos de tracking modificados.
+
 ## Tracking timeline - performance request/render
 
 Estado: implementado en `sisa.api` y `sisa.web`
