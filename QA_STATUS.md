@@ -1,5 +1,16 @@
 # Estado QA
 
+## SISA Mobile bootstrap - imports post shell usable
+
+Estado: implementado en `sisa.ui`; pendiente medicion runtime en dispositivo
+
+- `app/_layout.tsx` ya no importa al top-level el runtime de push notifications/device; `ExpoPushTokenLogger` se movio a `components/ExpoPushTokenLogger.tsx` y se carga lazy despues de shell usable.
+- `PostReadyUtilities` espera un render posterior al gate usable antes de montar runners automaticos y observadores no criticos; overlays de debug quedan solo en dev y post usable.
+- micro ajuste posterior: `app/_layout.tsx` dejo de importar `database/Database` al top-level; el warmup preventivo de `getDatabase()` ahora carga el modulo via import dinamico solo desde el gate post shell usable, evitando arrastrar `expo-sqlite`/migraciones antes del primer render por el warmup.
+- micro ajuste posterior revertido parcialmente: `OperationGuardModal` y `OperationGuardStatusIndicator` volvieron al import/render directo porque el lazy post shell empeoro la traza y genero bundles pesados post Home; `_layout.tsx` mantiene removido el helper debug de jobs para trazas de render no funcionales.
+- `scripts/sync-smoke.js` ahora valida los handlers de sync hint en el layout y en el componente lazy de push, manteniendo la cobertura tras mover el codigo fuera del import inicial.
+- no se tocaron backend, bootstrap critical/deferred, rutas, permisos/companies ni orden masivo de providers.
+
 ## SISA Mobile bootstrap - instrumentacion Etapa 1
 
 Estado: implementado en `sisa.ui` sin cambios funcionales intencionales
