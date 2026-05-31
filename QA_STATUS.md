@@ -94,6 +94,20 @@ Normalizacion temporal Argentina/UTC:
 - si el API devuelve strings sin `Z` ni offset, el frontend los interpreta como UTC para evitar depender de la zona horaria del navegador
 - validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
 
+Revision final de normalizacion temporal:
+
+- la constante quedo alineada como `TRACKING_TIME_ZONE = 'America/Argentina/Buenos_Aires'`
+- el calculo de posicion usa `trackingDateTimeToPercent(value, date)` en puntos, bloques y drag inicial; ya no depende de un `dayStartFor(date)` local del navegador
+- se retiraron los usos de `positionInDayPercent`/`dayStartFor` del timeline para evitar ambiguedad de timezone
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
+Correccion de strings servidor sin zona:
+
+- se verifico por pantalla que el backend puede devolver `started_at`/`ended_at` sin `Z` ni offset y que esos strings representan hora de pared Argentina, no UTC
+- `parseTrackingServerDateTime` ahora interpreta strings sin zona como `America/Argentina/Buenos_Aires` y los convierte internamente a instante UTC sumando 3 horas
+- los ISO con `Z` u offset se siguen interpretando como instantes reales del servidor sin alterar
+- validacion: `npm run build` en `sisa.web` -> PASS con warning baseline de chunk grande de Vite
+
 Correccion direccion de creacion:
 
 - al crear un lapso arrastrando en la barra, el punto donde empieza el drag queda como ancla fija de inicio y el rango solo crece hacia la derecha
