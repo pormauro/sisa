@@ -1,5 +1,20 @@
 # Estado QA
 
+## Jobs - archivado operativo e historico incremental
+
+Estado: implementado parcialmente en `sisa.api` y `sisa.ui`; validacion automatizada pendiente en esta sesion
+
+- objetivo: sacar del sync activo operativo los jobs cerrados antiguos sin hard delete y cargarlos bajo demanda desde `/jobs/history` al final de la lista.
+- backend: se agrego migracion `jobs-archive-visibility-phase40.php` con `archived_at`, `archived_reason`, `local_prunable_at`, `sync_visibility` e indice de visibilidad; tambien expande `sync_operations.action` para `job_archived`.
+- backend: `Jobs::archiveEligibleJobs(companyId)` archiva jobs activos con estado cerrado y `completed_at` mayor a 30 dias, excluyendo sync local pendiente/conflicto si esas columnas existen y respetando `keep_local`/`pinned` si existen.
+- backend: `GET /jobs` y bootstrap jobs filtran `sync_visibility=active`; `GET /jobs` reporta metricas livianas de activos, archivados excluidos y tiempo de entrada.
+- backend: nuevo `GET /jobs/history?company_id=...&client_id=...&before=...&limit=20` devuelve historico paginado mas nuevo primero con cursor estable.
+- sync: al archivar se emite evento `job_archived`; el cliente lo maneja removiendo el job del SQLite/cache activo sin reinsertarlo como job activo.
+- mobile: `/jobs` mantiene la lista activa desde cache/memoria y al llegar al final pide `/jobs/history`, agrega los resultados abajo como `historical=true` y muestra footer inline `loading`, `noMore` o `error` con `Reintentar`.
+- mobile: los historicos bajo demanda quedan solo en memoria de la pantalla y no se mezclan con `jobsRepository` activo; al intentar abrir/accionar se advierte que es historico y no operativo.
+- puntos ciegos actuales: el criterio de fecha usa `completed_at` porque el esquema actual de jobs no expone `finalized_at`, `billed_at`, `paid_at` ni `cancelled_at`; si esas columnas aparecen se debe ampliar el selector de fecha por estado.
+- metricas runtime pendientes: cantidad de `GET /jobs` en primeros 10s, cantidad de `GET /jobs/history` al scrollear, confirmacion de que historico no carga antes del final y ausencia de error global.
+
 ## SISA Mobile /jobs - cache-first y dedupe de arranque
 
 Estado: implementado en `sisa.ui` con validacion automatizada; pendiente traza runtime en dispositivo
