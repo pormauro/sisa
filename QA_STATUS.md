@@ -9,6 +9,7 @@ Estado: ajuste robusto implementado en `sisa.api` y `sisa.ui`; validacion automa
 - backend: `Jobs::archiveEligibleJobs(companyId)` primero completa `local_prunable_at` para jobs cerrados (`completed_at + 30 dias`) y archiva cuando ese cursor vence, excluyendo sync local pendiente/conflicto si esas columnas existen y respetando `keep_local`/`pinned` si existen.
 - correccion posterior: la elegibilidad vuelve a exigir `completed_at`; no se usa fallback `updated_at/created_at` para evitar archivado prematuro de jobs sin cierre operativo confirmado.
 - correccion posterior: la deteccion de estados finales/cerrados usa solo `statuses.status_attribute` como fuente funcional; no infiere desde texto visible (`code/name/label`) ni desde labels legacy. Se aceptan atributos finales canonicos/legados: `completed`, `invoiced`, `paid`, `cancelled`, `finalizado`, `facturado`, `pagado`, `cancelado` y variantes femeninas.
+- correccion posterior: los jobs finales que lleguen o existan sin `completed_at` se reparan con la mejor fecha disponible del job (`started_at`, `scheduled_end_at`, `scheduled_start_at`, `updated_at`, `created_at`), dejando `updated_at` como fallback operativo antes de `created_at`.
 - backend: `updateJob`, `changeStatus` y push sync de jobs completan automaticamente `completed_at` cuando el nuevo `status_attribute` es final y el job no tenia fecha; al volver a atributo no final se limpian flags de pruning/visibilidad solo si el job aun no fue archivado.
 - backend: `GET /jobs`, `/sync/v3/pull`, `/sync/v3/state`, `/sync/v3/events` y `/sync/v3/bootstrap/jobs` ejecutan el chequeo de archivado cuando hay `company_id` explicito o scope univoco; con multiples empresas sin filtro no cruza datos.
 - backend: se agregaron metricas livianas de archivado (`evaluated`, `eligible`, `archived`, `skipped_missing_completed_at`, `skipped_missing_company_id`) y logs solo cuando hay archivados o faltan `completed_at`.
@@ -18,10 +19,11 @@ Estado: ajuste robusto implementado en `sisa.api` y `sisa.ui`; validacion automa
 - backend: nuevo `GET /jobs/history?company_id=...&client_id=...&before=...&limit=20` devuelve historico paginado mas nuevo primero con cursor estable.
 - sync: al archivar se emite evento `job_archived`; el cliente lo maneja removiendo el job del SQLite/cache activo sin reinsertarlo como job activo.
 - mobile: `removeFromActiveCache` conserva el `DELETE FROM jobs` local protegido por `sync_state NOT IN ('pending','syncing','conflict')`; se documento que es solo eliminacion del cache activo local, no hard delete del servidor ni del historico.
+- mobile: bootstrap/pull/backfill local completan `jobs.completed_at` en SQLite para jobs con `status_attribute` final y fecha vacia, usando el mismo orden de fallback; no toca jobs `pending`, `syncing` ni `conflict`.
 - mobile: `/jobs` mantiene la lista activa desde cache/memoria y al llegar al final pide `/jobs/history`, agrega los resultados abajo como `historical=true` y muestra footer inline `loading`, `noMore` o `error` con `Reintentar`.
 - mobile: los historicos bajo demanda quedan solo en memoria de la pantalla y no se mezclan con `jobsRepository` activo; al intentar abrir/accionar se advierte que es historico y no operativo.
 - puntos ciegos actuales: la automatizacion focalizada cubre modelo/SQLite y lint; falta corrida completa de PHPUnit y verificacion runtime real del evento `job_archived` en dispositivo.
-- validacion: `vendor/bin/phpunit tests/Models/JobsArchiveTest.php` en `sisa.api` -> PASS.
+- validacion: `vendor/bin/phpunit tests/Models/JobsArchiveTest.php` en `sisa.api` -> PASS (3 tests, 17 assertions).
 - validacion: `npm run lint` en `sisa.ui` -> PASS.
 - validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
 - validacion parcial: `vendor/bin/phpunit` en `sisa.api` emitio la linea baseline `Error de conexion: SQLSTATE[HY000] [2002]...` y no entrego resumen util en esta corrida; queda como deuda de setup ya registrada.
