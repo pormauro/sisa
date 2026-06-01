@@ -1,5 +1,76 @@
 # Estado QA
 
+## SISA Mobile /jobs - cache-first y dedupe de arranque
+
+Estado: implementado en `sisa.ui` con validacion automatizada; pendiente traza runtime en dispositivo
+
+- objetivo: abrir `/jobs` con datos cacheados/memoria y refrescar en background sin bloquear el primer render de la lista.
+- `app/jobs/index.tsx` ahora usa defaults sincronicos para filtros (`showBilledJobs=false`, `selectedSort=updatedAt`, `sortDirection=desc`) y lee/persiste esos valores despues del primer render, evitando que misses de cache de filtros bloqueen la vista.
+- la lista de Jobs puede seedearse desde `JobsContext`/cache legacy mientras `useJobsList` termina de leer SQLite; si hay cache, se muestra inmediatamente con nombres de cliente fallback (`Cliente #id`) hasta que `ClientsContext` refresque.
+- se agrego indicador discreto `Actualizando...` cuando hay datos visibles y un refresh local sigue corriendo; si no hay cache, se mantiene estado de carga normal.
+- se agregaron eventos livianos de StartupTrace: `jobs.screen.mount`, `jobs.filters.defaults.ready`, `jobs.firstCachedRender`, `jobs.refresh.start`, `jobs.refresh.finish` y `jobs.api.deduped`.
+- `JobsContext` mantiene TTL/in-flight por provider y ahora emite dedupe/refresh trace para evitar tormenta de `GET /jobs?company_id=...` al navegar.
+- `ClientsContext` deduplica requests concurrentes de carga normal de clientes y conserva TTL existente, reduciendo duplicados de `GET /clients?company_id=...`.
+- `JobPrioritiesContext` agrega in-flight y TTL corto de 60s; la pantalla puede pintar con prioridades default/cacheadas y refrescar despues.
+- `CategoriesContext` agrega in-flight/TTL y evita refresh/ensure defaults mientras el pathname esta en `/jobs`, para que categories no compita con la apertura de la lista.
+- `_layout.tsx` retrasa utilidades post-ready y warmup de DB unos segundos si el pathname esta en `/jobs`; la hidratacion contable por idle post-shell pasa a 30s en `/jobs` y sigue siendo inmediata al entrar a ruta contable.
+- no se tocaron backend, rutas, permisos/companies/memberCompanies, default exports ni se eliminaron providers.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+- validacion: `git diff --check` en raiz -> PASS.
+- runtime pendiente: falta capturar traza en dispositivo para medir tiempo pathname `/jobs` -> primera lista visible, cache vs skeleton, conteos `GET /jobs` y `GET /clients` en los primeros 10s, orden de categories, diferimiento contable, llegada a Home y `/jobs`, y ausencia de `missing default export`/`ReferenceError`.
+
+## SISA Mobile bootstrap - contabilidad diferida
+
+Estado: implementado en `sisa.ui` con validacion automatizada; pendiente traza runtime en dispositivo
+
+- objetivo: priorizar carga operativa de jobs/clientes/proveedores/referencias y diferir datos contables pesados sin tocar backend ni rutas.
+- se agrego `utils/accountingDeferred.ts` como compuerta liviana con `isAccountingDeferred`, `isAccountingReady`, `hydrateAccounting` y deteccion de rutas contables.
+- `_layout.tsx` hidrata contabilidad solo al entrar a rutas contables (`/accounting`, `/accounts`, `/invoices`, `/receipts`, `/payments`, `/quotes`, `/reports`, `/cash_boxes`, `/closings`, `/transfers`) o por idle delay post `shell.usable`.
+- `useCachedState` y `primeMemoryCacheFromStorage` omiten caches contables mientras la compuerta esta diferida, evitando leer al inicio `accounts`, `invoices`, `payments`, `receipts`, `quotes`, `reports`, `cash_boxes`, `closings` y caches relacionadas.
+- los providers contables permanecen montados para no romper hooks/default exports, pero `CashBoxesContext`, `PaymentsContext`, `ReceiptsContext`, `InvoicesContext` y `QuotesContext` no hacen cargas remotas antes de hidratar contabilidad.
+- `Home` y detalle de Job ya no llaman `loadInvoices()` para pintar la vista operativa; si hay informacion contable cacheada en memoria se puede mostrar, pero Jobs no fuerza la carga de facturas completas.
+- el bootstrap inicial de jobs references deja de pedir `cash_boxes`, `payments`, `receipts`, `invoices` e items/links contables; mantiene referencias operativas como statuses, priorities, tariffs, providers, categories, products/services, clients, folders, users, permissions, memberships y member_companies.
+- se agregaron guardas in-flight/TTL en cargas legacy de `JobsContext` y `ClientsContext` para reducir duplicados `GET /jobs` y `GET /clients` sin introducir arquitectura nueva.
+- no se tocaron backend, rutas, permisos/companies/memberCompanies, datos falsos contables ni default exports.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+- validacion: `git diff --check` en `sisa.ui` -> PASS con warnings CRLF/LF del checkout.
+- runtime pendiente: falta capturar nueva traza en dispositivo para reportar `shell.ready`, `shell.usable`, `preRenderMs`, `importToRenderMs`, `apiCalls` antes de shell, llegada a Home, Jobs antes de contabilidad, ausencia de cargas contables antes de rutas contables e hidratacion correcta al abrir ruta contable.
+
+## Fix urgente - crash membershipsHydrated en BootstrapProvider
+
+Estado: implementado en `sisa.ui` con validacion automatizada; runtime completo en dispositivo pendiente
+
+- crash corregido: `BootstrapProvider` usaba `membershipsHydrated` sin declararlo en `contexts/BootstrapContext.tsx`.
+- fix minimo: se extrae `membershipsHydrated` del `MemberCompaniesContext` junto con `loadMemberCompanies`, `memberships` y `memberCompanies`; no se cambio la logica de startup, rutas, backend, providers de dominio ni jobs gate.
+- revision de duplicacion accidental: `_layout.tsx` mantiene una sola llamada a `primeMemoryCacheFromStorage()`, un solo `MemberCompaniesProvider`, un solo `PermissionsProvider`, un solo `BootstrapProvider`, un solo `ProvidersMountTrace` y un solo `RootLayoutContent`. `BootstrapContext.tsx` mantiene una sola declaracion de `BootstrapProvider` y un solo `BootstrapContext.Provider`.
+- intento runtime: `npx expo start --web --non-interactive` no pudo continuar porque el puerto 8081 ya estaba ocupado y Expo pidio input; `npx expo start --web --port 8082` inicio Metro y compilo parcialmente hasta timeout de 45s, sin llegar a abrir `/Home` ni capturar metricas de StartupTrace desde esta sesion.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+- validacion: `git diff --check` en `sisa.ui` -> PASS con warnings CRLF/LF del checkout.
+- validacion: `git diff --check` en raiz -> PASS.
+
+## SISA Mobile bootstrap - startup optimista seguro
+
+Estado: implementado en `sisa.ui`; pendiente validacion runtime en dispositivo
+
+- `BootstrapContext` ahora solo habilita Home optimista si ya existen token/sesion, perfil cacheado, `selectedCompanyId`, companies, memberCompanies/memberships, permisos no vacios para el scope activo y config cacheada.
+- antes de decidir modo optimista/completo espera la hidratacion local de `selectedCompanyId`, memberships y permisos para no perder el segundo boot rapido por timing de effects.
+- si falta cualquier pieza del snapshot local, se conserva el flujo completo actual: auth/login, bootstrap critico, companies/memberCompanies, permisos y recien despues Home.
+- en startup optimista se marca el shell como listo desde cache, `onlineValidated=false`, se muestra un indicador de sesion local pendiente y se corre la validacion critica online en background.
+- mientras `onlineValidated=false`, `PermissionsContext` filtra permisos sensibles (`add/create/update/delete/generate/upload/mark/set`) para bloquear acciones de mutacion sin ocultar lectura/Home cacheado.
+- al validar online correctamente se vuelve a habilitar permisos sensibles; si token, empresa o permisos fallan, queda pendiente/no validado y se conserva la correccion existente por refresh/auth guard.
+- device registration se mantiene diferido por efecto de `AuthContext` y no participa en la decision de empresa/permisos ni en el gate de Home cacheado.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+- validacion: `git diff --check` en `sisa.ui` -> PASS con warnings CRLF/LF baseline del checkout.
+- validacion: `git diff --check` en raiz -> PASS.
+
 ## SISA Mobile bootstrap - imports post shell usable
 
 Estado: implementado en `sisa.ui`; pendiente medicion runtime en dispositivo
