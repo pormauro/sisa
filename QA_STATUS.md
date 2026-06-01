@@ -2,12 +2,14 @@
 
 ## Jobs - archivado operativo e historico incremental
 
-Estado: implementado parcialmente en `sisa.api` y `sisa.ui`; validacion automatizada pendiente en esta sesion
+Estado: implementado en `sisa.api` y `sisa.ui`; validacion automatizada en curso
 
 - objetivo: sacar del sync activo operativo los jobs cerrados antiguos sin hard delete y cargarlos bajo demanda desde `/jobs/history` al final de la lista.
-- backend: se agrego migracion `jobs-archive-visibility-phase40.php` con `archived_at`, `archived_reason`, `local_prunable_at`, `sync_visibility` e indice de visibilidad; tambien expande `sync_operations.action` para `job_archived`.
-- backend: `Jobs::archiveEligibleJobs(companyId)` archiva jobs activos con estado cerrado y `completed_at` mayor a 30 dias, excluyendo sync local pendiente/conflicto si esas columnas existen y respetando `keep_local`/`pinned` si existen.
-- backend: `GET /jobs` y bootstrap jobs filtran `sync_visibility=active`; `GET /jobs` reporta metricas livianas de activos, archivados excluidos y tiempo de entrada.
+- backend: se agrego migracion `jobs-archive-visibility-phase40.php` con `archived_at`, `archived_reason`, `local_prunable_at`, `sync_visibility`, `jobs_archive_checks` e indices de visibilidad; tambien expande `sync_operations.action` para `job_archived`.
+- backend: `Jobs::archiveEligibleJobs(companyId)` primero completa `local_prunable_at` para jobs cerrados (`completed_at + 30 dias`) y archiva cuando ese cursor vence, excluyendo sync local pendiente/conflicto si esas columnas existen y respetando `keep_local`/`pinned` si existen.
+- backend: `GET /jobs`, `/sync/v3/bootstrap/jobs`, `/sync/v3/events` y `/sync/v3/status` corren safety archive con throttle por `jobs_archive_checks.company_id`; `GET /jobs` reporta metricas livianas de activos, archivados excluidos y tiempo de entrada.
+- backend: los cambios directos de job (`PUT /jobs`, `/jobs/{id}/status`), push sync de jobs, facturacion de jobs desde invoices y liberacion por anulacion/eliminacion de factura disparan archivado no throttled para la company afectada.
+- backend: se agrego tarea CLI `php scripts/jobs-archive-eligible.php [--company_id=ID]` para cron periodico del servidor; emite `job_archived` por cada archivado.
 - backend: nuevo `GET /jobs/history?company_id=...&client_id=...&before=...&limit=20` devuelve historico paginado mas nuevo primero con cursor estable.
 - sync: al archivar se emite evento `job_archived`; el cliente lo maneja removiendo el job del SQLite/cache activo sin reinsertarlo como job activo.
 - mobile: `/jobs` mantiene la lista activa desde cache/memoria y al llegar al final pide `/jobs/history`, agrega los resultados abajo como `historical=true` y muestra footer inline `loading`, `noMore` o `error` con `Reintentar`.
