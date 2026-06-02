@@ -1,5 +1,22 @@
 # Estado QA
 
+## SISA Mobile bootstrap - referencias sync v3 canonicas
+
+Estado: implementado en `sisa.ui` con validacion automatizada; pendiente traza runtime en dispositivo
+
+- objetivo: evitar doble descarga de referencias operativas durante el arranque, usando `/sync/v3/bootstrap/references` como fuente principal y dejando `/bootstrap?include=...` como fallback no obligatorio.
+- `utils/startupBootstrap.ts` centraliza `STARTUP_REFERENCE_INCLUDE`, define colecciones requeridas y permite hidratar incrementalmente el payload `startup-bootstrap:{companyId}` desde referencias sync v3.
+- `useBootstrapJobsFromApi` deriva su include de la constante compartida, mantiene la carga de caches existentes de jobs/referenceCache y ademas hidrata el payload que consumen `getStartupBootstrapPayload()` y los contextos de referencias.
+- `BootstrapContext.requestStartupBootstrap()` primero valida cache local suficiente; si el payload viene de `sync_v3_references` devuelve `skipped` y no llama `/bootstrap`; si viene de cache local suficiente devuelve `cache`; solo hace fetch a `/bootstrap` como fallback.
+- `runDeferredBootstrap()` ya no marca artificialmente una request de startup en vuelo antes de llamar al fallback, preservando dedupe real sin bloquear la evaluacion de cache.
+- `usePullJobsSync` aplica `reference_refreshes` al mismo payload de startup de forma incremental para que arranques con checkpoint no fuercen una descarga completa si el cache ya es usable.
+- diagnostico agregado: trazas para `sync_v3_references`, cache suficiente, fallback `/bootstrap`, request en vuelo y payload hidratado desde eventos sync v3, con duraciones de span.
+- seguridad offline-first: las referencias sync v3 son best-effort dentro del bootstrap de jobs; un fallo de esa llamada no borra caches ni fuerza logout, y el shell sigue dependiendo del cache local/flujo diferido existente.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+- punto ciego: falta capturar runtime real para confirmar conteos de requests en primer inicio limpio, inicio con checkpoint e inicio offline con cache local.
+
 ## Jobs - archivado operativo e historico incremental
 
 Estado: ajuste robusto implementado en `sisa.api` y `sisa.ui`; validacion automatizada focalizada OK
@@ -16,9 +33,12 @@ Estado: ajuste robusto implementado en `sisa.api` y `sisa.ui`; validacion automa
 - backend: `GET /jobs`, `/sync/v3/bootstrap/jobs`, `/sync/v3/events` y `/sync/v3/status` corren safety archive con throttle por `jobs_archive_checks.company_id`; `GET /jobs` reporta metricas livianas de activos, archivados excluidos y tiempo de entrada.
 - backend: los cambios directos de job (`PUT /jobs`, `/jobs/{id}/status`), push sync de jobs, facturacion de jobs desde invoices y liberacion por anulacion/eliminacion de factura disparan archivado no throttled para la company afectada.
 - backend: se agrego tarea CLI `php scripts/jobs-archive-eligible.php [--company_id=ID]` para cron periodico del servidor; emite `job_archived` por cada archivado.
+- backend: se agrego script one-off `php scripts/migraciones-unicas/2026-06-backfill-completed-at-for-archivable-jobs.php --company_id=ID [--apply]` para rellenar `completed_at = updated_at` en jobs finales historicos que aun no pueden entrar al flujo normal de archivado.
 - backend: nuevo `GET /jobs/history?company_id=...&client_id=...&before=...&limit=20` devuelve historico paginado mas nuevo primero con cursor estable.
 - sync: al archivar se emite evento `job_archived`; el cliente lo maneja removiendo el job del SQLite/cache activo sin reinsertarlo como job activo.
+- sync: `/sync/v3/events` y `/sync/v3/bootstrap/jobs` ahora devuelven `archived_job_uuids` para limpiar filas activas locales que quedaron viejas cuando el evento `job_archived` ya habia pasado o el checkpoint/bootstrap lo salteo.
 - mobile: `removeFromActiveCache` conserva el `DELETE FROM jobs` local protegido por `sync_state NOT IN ('pending','syncing','conflict')`; se documento que es solo eliminacion del cache activo local, no hard delete del servidor ni del historico.
+- mobile: pull y bootstrap procesan `archived_job_uuids` y ejecutan `removeFromActiveCache` para eliminar esas filas del SQLite activo del telefono, manteniendo snapshots con `sync_visibility='archived'`.
 - mobile: bootstrap/pull/backfill local completan `jobs.completed_at` en SQLite para jobs con `status_attribute` final y fecha vacia, usando el mismo orden de fallback; no toca jobs `pending`, `syncing` ni `conflict`.
 - mobile: `/jobs` mantiene la lista activa desde cache/memoria y al llegar al final pide `/jobs/history`, agrega los resultados abajo como `historical=true` y muestra footer inline `loading`, `noMore` o `error` con `Reintentar`.
 - mobile: los historicos bajo demanda quedan solo en memoria de la pantalla y no se mezclan con `jobsRepository` activo; al intentar abrir/accionar se advierte que es historico y no operativo.
