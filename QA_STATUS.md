@@ -1,16 +1,34 @@
 # Estado QA
 
+## SISA API - reparacion AUTO_INCREMENT contable de facturacion
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente corrida en base MySQL productiva/staging
+
+- objetivo: corregir instalaciones viejas donde `accounting_entries.id` y `accounting_entry_lines.id` quedaron sin `AUTO_INCREMENT`, rompiendo la generacion del asiento contable posterior a la factura.
+- se agrego la migracion permanente `scripts/migrations/accounting-auto-increment-repair-phase42.php` con `ensureAccountingAutoIncrementRepairPhaseFortyTwo(PDO $pdo): void`.
+- la migracion verifica existencia de tabla y columna, lee `SHOW COLUMNS`, valida tipo entero, nulos, duplicados e indice compatible antes de reparar, aplica `MODIFY COLUMN id INT(11) NOT NULL AUTO_INCREMENT` y ajusta `AUTO_INCREMENT = MAX(id)+1` o `1` si la tabla esta vacia.
+- tablas cubiertas: `accounting_entries.id` y `accounting_entry_lines.id`.
+- se registro la migracion en `install.php` y `update_install.php` al final de las migraciones actuales, despues de las migraciones contables y de las reparaciones phase41 de facturas.
+- no se tocaron frontend, `InvoicesController`, modelos ni servicios contables.
+- validacion: `php -l scripts/migrations/accounting-auto-increment-repair-phase42.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `git diff --check` en raiz -> PASS.
+- pendiente: ejecutar `update_install.php` contra MySQL y confirmar `SHOW COLUMNS ...` e `information_schema.COLUMNS` con `Extra=auto_increment` antes de probar alta real de factura con asiento contable.
+
 ## SISA API - reparacion AUTO_INCREMENT en facturas
 
 Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente corrida en base MySQL productiva/staging
 
 - objetivo: corregir instalaciones viejas donde `invoices.id` y claves tecnicas relacionadas quedaron sin `AUTO_INCREMENT`, provocando `Error creating invoice` al crear facturas.
 - se agrego la migracion permanente `scripts/migrations/invoices-auto-increment-repair-phase41.php` con `ensureInvoicesAutoIncrementRepairPhaseFortyOne(PDO $pdo): void`.
+- se agrego ademas la migracion dedicada `scripts/migrations/invoice-items-auto-increment-repair-phase41.php` con `ensureInvoiceItemsAutoIncrementRepairPhaseFortyOne(PDO $pdo): void` para dejar explicita la reparacion de `invoice_items.id`.
 - la migracion verifica existencia de tabla y columna, lee `SHOW COLUMNS`, valida nulos/duplicados antes de reparar, agrega clave primaria o indice compatible si falta, aplica `MODIFY COLUMN ... NOT NULL AUTO_INCREMENT` y ajusta `AUTO_INCREMENT = MAX(id)+1`.
 - tablas cubiertas: `invoices.id`, `invoice_items.id`, `invoices_history.history_id`, `invoice_items_history.history_id` e `invoice_receipt_payments.id`.
 - se registro la migracion en `install.php` y `update_install.php` al final de las migraciones actuales, despues de las fases de facturas existentes.
 - `BaseModel::create()` ahora registra internamente tabla, columnas, `errorInfo()`, SQL y causa cuando falla el insert o `lastInsertId()` vuelve vacio inesperadamente; no cambia la respuesta al cliente ni la logica de facturacion.
 - validacion: `php -l scripts/migrations/invoices-auto-increment-repair-phase41.php` en `sisa.api` -> PASS.
+- validacion: `php -l scripts/migrations/invoice-items-auto-increment-repair-phase41.php` en `sisa.api` -> PASS.
 - validacion: `php -l src/Models/BaseModel.php` en `sisa.api` -> PASS.
 - validacion: `php -l install.php` en `sisa.api` -> PASS.
 - validacion: `php -l update_install.php` en `sisa.api` -> PASS.
