@@ -1,5 +1,36 @@
 # Estado QA
 
+## SISA API - reparacion AUTO_INCREMENT en facturas
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente corrida en base MySQL productiva/staging
+
+- objetivo: corregir instalaciones viejas donde `invoices.id` y claves tecnicas relacionadas quedaron sin `AUTO_INCREMENT`, provocando `Error creating invoice` al crear facturas.
+- se agrego la migracion permanente `scripts/migrations/invoices-auto-increment-repair-phase41.php` con `ensureInvoicesAutoIncrementRepairPhaseFortyOne(PDO $pdo): void`.
+- la migracion verifica existencia de tabla y columna, lee `SHOW COLUMNS`, valida nulos/duplicados antes de reparar, agrega clave primaria o indice compatible si falta, aplica `MODIFY COLUMN ... NOT NULL AUTO_INCREMENT` y ajusta `AUTO_INCREMENT = MAX(id)+1`.
+- tablas cubiertas: `invoices.id`, `invoice_items.id`, `invoices_history.history_id`, `invoice_items_history.history_id` e `invoice_receipt_payments.id`.
+- se registro la migracion en `install.php` y `update_install.php` al final de las migraciones actuales, despues de las fases de facturas existentes.
+- `BaseModel::create()` ahora registra internamente tabla, columnas, `errorInfo()`, SQL y causa cuando falla el insert o `lastInsertId()` vuelve vacio inesperadamente; no cambia la respuesta al cliente ni la logica de facturacion.
+- validacion: `php -l scripts/migrations/invoices-auto-increment-repair-phase41.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Models/BaseModel.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- pendiente: ejecutar `update_install.php` contra MySQL y confirmar `SHOW COLUMNS ...` con `Extra=auto_increment` antes de probar alta real de factura.
+
+## SISA Mobile/Web - Dashboard temporalmente deshabilitado
+
+Estado: implementado en `sisa.ui` con validacion automatizada basica
+
+- objetivo: aislar temporalmente el modulo Dashboard sin eliminar componentes ni archivos, para poder reactivarlo despues con una bandera central.
+- se agrego `constants/featureFlags.ts` con `DASHBOARD_MODULE_ENABLED=false` como compuerta explicita del modulo.
+- `Home` ya no monta `HomeDashboard` mientras la bandera esta apagada, evitando sus queries, metricas, graficos y cargas automaticas; el panel de citas de Home sigue operativo.
+- `constants/menuSections.ts` marca la seccion `Analytics`/`Panel general` como `moduleId='dashboard'`, `disabled` y `hidden`, por lo que no aparece en el menu principal ni en submenus.
+- las rutas manuales `/analytics` y `/accounting/summary` redirigen a `/Home` antes de disparar cargas de summary/analytics; se agrego `/dashboard` como alias protegido con redireccion a `/Home`.
+- no se borraron componentes ni pantallas existentes; el codigo del dashboard queda aislado para reactivacion futura cambiando la bandera.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+- punto ciego: falta verificacion runtime en dispositivo/web autenticado para confirmar ausencia de requests de dashboard en los primeros segundos post-login y redireccion manual de `/analytics`/`/dashboard`.
+
 ## SISA Mobile bootstrap - referencias sync v3 canonicas
 
 Estado: implementado en `sisa.ui` con validacion automatizada; pendiente traza runtime en dispositivo
