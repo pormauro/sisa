@@ -1,5 +1,91 @@
 # Estado QA
 
+## SISA API - compatibilidad MariaDB SHOW INDEX phase44/45/46
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente rerun de `update_install.php` en Hostinger/MySQL
+
+- problema real observado: phase44 fallaba en `Checking accounting_accounts.id...` con `SQLSTATE[42000]: Syntax error or access violation: 1064 near 'ORDER BY Seq_in_index'` porque MariaDB no acepta `ORDER BY` en `SHOW INDEX`.
+- se reemplazo el uso de `SHOW INDEX FROM ... ORDER BY Seq_in_index` por consultas a `information_schema.STATISTICS` con prepared statements en `financial-auto-increment-repair-phase44.php`.
+- se aplico la misma correccion preventiva en `global-auto-increment-integrity-repair-phase45.php` y `activity-log-id-repair-phase46.php`, que tenian el mismo patron invalido.
+- no se cambio la lista de tablas reparadas, ni frontend, modelos, endpoints ni payloads.
+- se mantienen los echoes de diagnostico de phase44 (`Checking`, `Repairing`, `Done`, `Error repairing`).
+- validacion: `php -l scripts/migrations/financial-auto-increment-repair-phase44.php` en `sisa.api` -> PASS.
+- validacion: `php -l scripts/migrations/global-auto-increment-integrity-repair-phase45.php` en `sisa.api` -> PASS.
+- validacion: `php -l scripts/migrations/activity-log-id-repair-phase46.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- pendiente: correr nuevamente `update_install.php` y confirmar que phase44 avanza despues de `Checking accounting_accounts.id...` sin error SQL 1064.
+
+## SISA API - observabilidad phase44 financiera
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente rerun de `update_install.php` en Hostinger/MySQL
+
+- objetivo: hacer observable `financial-auto-increment-repair-phase44.php` porque `update_install.php` quedaba o moria en `Applying 2026-06-financial-auto-increment-repair-phase-44...` sin indicar tabla exacta.
+- la migracion phase44 ahora imprime por cada columna: `Checking tabla.columna...`, skips de tabla/columna ausente, `Already AUTO_INCREMENT`, `Repairing tabla.columna...`, `Done tabla.columna` y error exacto si falla.
+- cada reparacion individual esta envuelta en `try/catch`; si falla, imprime tabla, columna y mensaje, registra `error_log` con tipo/key/extra/causa y relanza `RuntimeException` con contexto.
+- se preserva `COLUMN_TYPE` real via `SHOW COLUMNS`, se agrega primary key solo cuando no existe ninguna, se aborta si hay otra primary key distinta y no se tocan datos, frontend, endpoints ni otras fases.
+- se ajusto la validacion de nulos para usar `COALESCE(SUM(columna IS NULL), 0)` y tratar tablas vacias como cero nulos.
+- validacion: `php -l scripts/migrations/financial-auto-increment-repair-phase44.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- pendiente: correr nuevamente `update_install.php` y observar en pantalla la ultima linea `Checking/Repairing/Done/Error` para identificar la tabla exacta si vuelve a fallar.
+
+## SISA API - reparacion activity_log.id phase46
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente corrida en base MySQL test/staging y verificacion SQL
+
+- objetivo: sanear `activity_log.id` cuando una base vieja tiene duplicados, preservando todas las filas y regenerando solo el ID tecnico.
+- se agrego la migracion permanente `scripts/migrations/activity-log-id-repair-phase46.php` con `ensureActivityLogIdRepairPhaseFortySix(PDO $pdo): void`.
+- la migracion ignora `activity_log` o `id` ausentes, verifica primero foreign keys entrantes contra `activity_log.id` en `information_schema.KEY_COLUMN_USAGE` y aborta con tablas/columnas referenciantes si existen.
+- si no hay FKs, la reparacion agrega `new_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST`, elimina una primary key vieja solo si era exactamente `id`, elimina la columna vieja `id`, renombra `new_id` a `id` y ajusta `AUTO_INCREMENT = MAX(id)+1`.
+- la migracion no trunca, no borra logs, no recrea `activity_log`, no toca otras columnas, frontend, endpoints ni modelos.
+- la migracion contempla reparacion parcial con `new_id`: la completa si `new_id` es `PRIMARY KEY AUTO_INCREMENT` y aborta con mensaje claro si no es seguro.
+- se registro la migracion al final de `install.php` y `update_install.php` con label `2026-06-activity-log-id-repair-phase-46`.
+- se ajusto `global-auto-increment-integrity-repair-phase45.php` para omitir `activity_log.id` y delegar ese caso especial a phase46, evitando que phase45 aborte antes por duplicados.
+- validacion: `php -l scripts/migrations/activity-log-id-repair-phase46.php` en `sisa.api` -> PASS.
+- validacion: `php -l scripts/migrations/global-auto-increment-integrity-repair-phase45.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- pendiente: ejecutar `update_install.php`, confirmar `SHOW COLUMNS FROM activity_log LIKE 'id'` con `COLUMN_KEY=PRI` y `EXTRA=auto_increment`, y validar duplicados/nulos en cero.
+
+## SISA API - reparacion global AUTO_INCREMENT phase45
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente corrida en base MySQL test/staging y verificacion SQL
+
+- objetivo: corregir instalaciones viejas donde columnas tecnicas `id` o `history_id` numericas quedaron sin `AUTO_INCREMENT`, provocando `lastInsertId() = 0`, duplicados en clave primaria y fallas como `Unable to create receipt from invoice`.
+- se agrego la migracion permanente `scripts/migrations/global-auto-increment-integrity-repair-phase45.php` con `ensureGlobalAutoIncrementIntegrityRepairPhaseFortyFive(PDO $pdo): void`.
+- la migracion revisa solo el listado global solicitado de tablas core, empresas/clientes/contactos, categorias, agenda, contabilidad/cajas, facturas, recibos/cobros, pagos, transferencias/bancos/sucursales.
+- la migracion ignora tablas/columnas ausentes, lee definicion con `SHOW COLUMNS FROM tabla LIKE columna`, preserva el tipo real `INT`/`BIGINT` incluyendo `UNSIGNED`, valida nulos y duplicados, agrega primary key solo si no existe ninguna, y no repara a ciegas si existe otra primary key distinta.
+- si la columna ya tiene `auto_increment`, solo ajusta `AUTO_INCREMENT = MAX(columna)+1`; si no lo tiene, aplica `ALTER TABLE ... MODIFY COLUMN ... NOT NULL AUTO_INCREMENT` y luego ajusta el proximo valor.
+- no se tocaron `jobs_archive_checks.company_id`, `notification_user_states.notification_id` ni `notification_user_states.user_id`; tampoco frontend, endpoints, payloads, UUIDs ni datos.
+- los fallos de reparacion registran en `error_log` tabla, columna, tipo, `column_key`, `extra` y causa antes de lanzar `RuntimeException`.
+- se registro la migracion al final de `install.php` y `update_install.php` con label `2026-06-global-auto-increment-integrity-repair-phase-45`.
+- `Appointments::create()` y `Clients::create()` ahora registran modelo/tabla, columnas insertadas, SQL con placeholders, `errorInfo()` y causa cuando falla el insert o `lastInsertId()` vuelve vacio; `Receipts`, `Payments` y `CashBoxes` ya estaban cubiertos, y `Transfers` usa `BaseModel::create()`.
+- validacion: `php -l scripts/migrations/global-auto-increment-integrity-repair-phase45.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion adicional: `php -l src/Models/Appointments.php` y `php -l src/Models/Clients.php` en `sisa.api` -> PASS.
+- pendiente: ejecutar `update_install.php` contra MySQL, correr la consulta de `information_schema.COLUMNS` indicada y confirmar que queda vacia o solo con tablas deliberadamente no autogeneradas.
+
+## SISA API - reparacion AUTO_INCREMENT financiera phase44
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente corrida en base MySQL test/staging y pruebas funcionales
+
+- objetivo: corregir instalaciones viejas donde tablas financieras de recibos, pagos, transferencias, cajas, sucursales y cierres contables quedaron con claves numericas sin `AUTO_INCREMENT`, rompiendo altas como `POST /invoices/{invoiceId}/receipts`.
+- se agrego la migracion permanente `scripts/migrations/financial-auto-increment-repair-phase44.php` con `ensureFinancialAutoIncrementRepairPhaseFortyFour(PDO $pdo): void`.
+- la migracion ignora tablas/columnas ausentes, lee definicion con `SHOW COLUMNS FROM tabla LIKE columna`, valida tipo `INT`/`BIGINT` real, nulos, duplicados y primary key antes de modificar, y ajusta `AUTO_INCREMENT = MAX(columna)+1` tambien cuando la columna ya tenia `auto_increment`.
+- si existe otra primary key distinta, la migracion no repara a ciegas y lanza `RuntimeException` con tabla, columna y clave primaria existente; los fallos registran tabla, columna, tipo, key, extra y causa en `error_log`.
+- tablas cubiertas: `accounting_accounts.id`, `accounting_closings.id`, `accounting_closings_history.history_id`, `cash_boxes.id`, `cash_boxes_history.history_id`, `invoice_receipt_payments_history.history_id`, `payments.id`, `payments_history.history_id`, `payment_templates.id`, `payment_templates_history.history_id`, `receipts.id`, `receipts_history.history_id`, `sucursales.id`, `sucursales_history.history_id` y `transfers.id`.
+- no se tocaron tablas de union/relacionales compuestas como `jobs_archive_checks.company_id` ni `notification_user_states.*`, ni frontend, endpoints o payloads.
+- se registro la migracion al final de `install.php` y `update_install.php` con label `2026-06-financial-auto-increment-repair-phase-44`.
+- `Receipts::create()`, `Payments::create()` y `CashBoxes::create()` ahora registran internamente tabla/modelo, columnas insertadas, SQL con placeholders, `errorInfo()` y causa cuando falla el insert o `lastInsertId()` vuelve vacio; `Transfers` usa `BaseModel::create()`, que ya tenia ese logging.
+- validacion: `php -l scripts/migrations/financial-auto-increment-repair-phase44.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Models/Receipts.php` en `sisa.api` -> PASS.
+- validacion adicional: `php -l src/Models/Payments.php` y `php -l src/Models/CashBoxes.php` en `sisa.api` -> PASS.
+- pendiente: ejecutar `update_install.php` contra MySQL, confirmar `information_schema.COLUMNS.EXTRA` con `auto_increment` para columnas existentes y probar crear recibo desde factura, pago, transferencia, caja y cierre contable si la app lo permite.
+
 ## SISA API - reparacion AUTO_INCREMENT contable de facturacion
 
 Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente corrida en base MySQL productiva/staging
