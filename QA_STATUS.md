@@ -1,5 +1,20 @@
 # Estado QA
 
+## SISA API - saneamiento IDs no positivos phase44
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente rerun de `update_install.php` en Hostinger/MySQL
+
+- problema real observado: `financial-auto-increment-repair-phase44.php` fallaba en `receipts.id` al convertir a `AUTO_INCREMENT` porque MariaDB intentaba resecuenciar `id=0` y chocaba con `id=13` (`Duplicate entry '13' for key 'PRIMARY'`).
+- phase44 ahora detecta valores `<= 0` antes del `ALTER ... AUTO_INCREMENT` y los reasigna a IDs positivos nuevos calculados como `MAX(columna)+1`.
+- para `receipts.id`, antes de actualizar la fila padre, actualiza referencias existentes en `receipt_items.receipt_id`, `invoice_receipt_payments.receipt_id`, `receipt_payments.receipt_id` y `receipt_instruments.receipt_id`; tablas/columnas ausentes se ignoran con log visible.
+- para las demas tablas reparadas por phase44, si aparecen `id/history_id <= 0`, se reasigna solo la columna tecnica de esa tabla.
+- se agregaron mensajes visibles con `oldId`, `newId` y cantidad de filas actualizadas por tabla para auditar la reparacion.
+- no se borran datos, no se truncan tablas, no se recrean tablas, no se tocan frontend, endpoints ni modelos.
+- validacion: `php -l scripts/migrations/financial-auto-increment-repair-phase44.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- pendiente: correr nuevamente `update_install.php` y confirmar que `receipts.id` no conserva `0`, que `SHOW COLUMNS FROM receipts LIKE 'id'` muestra `PRI`/`auto_increment`, y que las tablas hijas existentes no conservan `receipt_id=0`.
+
 ## SISA API - compatibilidad MariaDB SHOW INDEX phase44/45/46
 
 Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente rerun de `update_install.php` en Hostinger/MySQL
