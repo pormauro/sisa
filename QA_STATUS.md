@@ -1,5 +1,168 @@
 # Estado QA
 
+## SISA API - status Cotizar
+
+Estado: implementado en `sisa.api` con validacion focalizada; pendiente rerun de `update_install.php` contra base real.
+
+- se agrego el atributo semantico `quote` al registro permitido de `StatusAttributeRegistry` para representar el estado visible `Cotizar`, separado de `quoted`/`Cotizado`.
+- `scripts/migrations/statuses-phase3.php` ahora siembra idempotentemente el status global `Cotizar` (`scope=job`, `status_attribute=quote`) solo cuando no existe activo; contempla catalogos legacy con `scope NULL` y no reordena catalogos ya poblados.
+- `install.php` incluye `Cotizar` en el seed inicial antes de `Cotizado`; los ordenes posteriores se desplazaron solo para instalaciones nuevas.
+- validacion: `php -l src/Services/StatusAttributeRegistry.php` en `sisa.api` -> PASS.
+- validacion: `php -l scripts/migrations/statuses-phase3.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- validacion: `vendor/bin/phpunit tests/Services/StatusAttributeRegistryTest.php` en `sisa.api` -> PASS.
+- validacion: `vendor/bin/phpunit tests/Controllers/StatusControllerTest.php` en `sisa.api` -> PASS; mantiene el ruido conocido de conexion BD documentado en baseline.
+
+## SISA API - completar parcial new_id phase45
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente rerun de `update_install.php`
+
+- problema real observado: `tracking_policies` quedo parcialmente reparada con `new_id` como `PRIMARY KEY AUTO_INCREMENT` e `id` sano (`1`, `2`) sin key; intentar convertir `id` directo fallaba porque ya existia una columna auto_increment.
+- se agrego `completePartialNewIdRepairPreservingOldIdIfSafePhaseFortyFive()`: detecta `id + new_id`, `PRIMARY KEY(new_id)` y `new_id AUTO_INCREMENT`.
+- si `id` esta sano (sin nulos, ceros, negativos ni duplicados), preserva sus valores, quita `AUTO_INCREMENT` de `new_id`, elimina la primary key temporal, elimina `new_id`, agrega `PRIMARY KEY(id)`, convierte `id` a `AUTO_INCREMENT` y ajusta next value.
+- si `id` no esta sano y `new_id` es seguro, completa por el camino alternativo renombrando `new_id` a `id`.
+- para `tracking_policies`, antes de completar valida FKs entrantes a `id` y `new_id`, y loguea referencias semanticas encontradas para auditoria.
+- validacion: `php -l scripts/migrations/global-auto-increment-integrity-repair-phase45.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+
+## SISA API - PK previa a AUTO_INCREMENT phase45
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente rerun de `update_install.php`
+
+- problema real observado: `tracking_policies.id` ya no tenia nulos/ceros/duplicados, pero `MODIFY COLUMN ... AUTO_INCREMENT` fallaba con `Incorrect table definition; there can be only one auto column and it must be defined as a key`.
+- se reforzo `ensureGlobalAutoIncrementPrimaryKeyPhaseFortyFive()` para que antes de cualquier `AUTO_INCREMENT` agregue `PRIMARY KEY(columna)` cuando no exista PK, validando nulos, duplicados y valores no positivos.
+- el helper ahora verifica por `SHOW COLUMNS` que la columna queda con `Key=PRI` despues de agregar la primary key; si hay PK distinta, aborta con mensaje claro de incompatibilidad.
+- esto aplica de forma generica a `tracking_policies.id` y cualquier otra columna tecnica `id/history_id` reparada por phase45.
+- validacion: `php -l scripts/migrations/global-auto-increment-integrity-repair-phase45.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+
+## SISA API - ajuste final tracking_policies phase45
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente rerun de `update_install.php`
+
+- se verifico el `foreach` de `ensureGlobalAutoIncrementIntegrityRepairPhaseFortyFive()`: la llamada a `repairGlobalAutoIncrementColumnPhaseFortyFive()` queda una sola vez dentro del `try/catch`, despues del log `Checking table.column...`; no queda llamada suelta previa.
+- se ajusto la clave logica de deduplicacion de `tracking_policies` para usar exactamente `COALESCE(effective_from, '1000-01-01 00:00:00')` como valor fallback.
+- se mantiene el caso especial de `tracking_policies.id`: FKs entrantes y referencias semanticas peligrosas se validan antes de deduplicar; se conservan IDs positivos existentes y se reasignan solo IDs no positivos despues de eliminar duplicados exactos.
+- validacion: `php -l scripts/migrations/global-auto-increment-integrity-repair-phase45.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- validacion adicional: `php -l src/Models/TrackingPolicies.php` en `sisa.api` -> PASS.
+
+## SISA API - cierre phase45 tracking/restantes
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente rerun de `update_install.php` y validacion SQL global
+
+- problema real observado: phase45 se frenaba en `tracking_policies.id` con miles de filas `id=0`, sin primary key ni `AUTO_INCREMENT`, originadas por seed repetido no idempotente.
+- se agrego caso especial para `tracking_policies.id`: verifica FKs entrantes y referencias semanticas peligrosas con valor `0` (`tracking_policy_id`, `policy_id`, `tracking_policy`, `policy_uuid`) antes de deduplicar.
+- si es seguro, deduplica `tracking_policies` por clave logica exacta, conserva la fila mas nueva por grupo (`updated_at`, `created_at`) y elimina solo duplicados exactos; usa `new_id` temporal solo para identificar filas duplicadas, preservando IDs positivos existentes.
+- despues reasigna `id <= 0` a `MAX(id)+1`, elimina `new_id`, agrega `PRIMARY KEY(id)`, aplica `AUTO_INCREMENT` preservando tipo real y crea indices no unicos minimos: `idx_tracking_policies_name_version`, `idx_tracking_policies_enabled_profile`, `idx_tracking_policies_effective_from`.
+- se corrigio `TrackingPolicies::seedDefaults()` para no depender de `ON DUPLICATE KEY`: busca por `name + version`, actualiza si existe e inserta si no existe, nunca enviando `id`; el `CREATE TABLE` del modelo ya no crea unicos de negocio por `name` o `version`.
+- phase45 ahora incluye explicitamente columnas tecnicas restantes reportadas: `notification_user_states.id`, `users.id`, `user_configurations.id`, `user_configurations_history.history_id`, `user_devices.id`, `user_notifications.id`, `user_profile.id`, `user_profile_history.history_id`, `user_tracking_assignments.id`, `work_logs.id`, `work_logs_history.history_id` y `work_log_participants.id`.
+- para `users`, `user_profile` y `user_configurations`, phase45 no renumera: aborta si hay duplicados o IDs no positivos; si son unicos/positivos, agrega PK y `AUTO_INCREMENT`.
+- para IDs tecnicos operativos restantes sin FKs entrantes, phase45 aborta ante duplicados positivos y solo reasigna valores no positivos a `MAX(id)+1`; para historicos `*_history.history_id` aplica el flujo historico ya documentado.
+- se agrego log visible de estadisticas por columna: `nulos`, `ceros`, `negativos` y `duplicados` antes de reparar.
+- `activity_log.id` sigue delegado a phase46 para no bloquear phase45.
+- no se tocaron frontend, endpoints, payloads publicos, UUIDs ni datos de negocio no duplicados.
+- validacion: `php -l scripts/migrations/global-auto-increment-integrity-repair-phase45.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Models/TrackingPolicies.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- pendiente: ejecutar `update_install.php`, confirmar que `tracking_policies.id` queda `PRI`/`auto_increment`, sin ceros ni duplicados, con indices minimos, y repetir la consulta global de `information_schema.COLUMNS`.
+
+## SISA API - reparacion sync_operations.id phase45
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente rerun de `update_install.php` y validacion SQL de indices sync
+
+- problema real observado: phase45 se frenaba en `sync_operations.id` con 201 filas `id=0`, sin primary key, sin `AUTO_INCREMENT` y sin indices.
+- se agrego caso especial en `global-auto-increment-integrity-repair-phase45.php` para `sync_operations.id`: verifica FKs entrantes hacia `sync_operations.id` y aborta con tablas/columnas si existen.
+- si no hay FKs, aborta ante duplicados positivos reales, reasigna solo `id <= 0` a IDs nuevos `MAX(id)+1` fila por fila, revalida nulos/ceros/duplicados, agrega `PRIMARY KEY(id)`, aplica `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` y ajusta `AUTO_INCREMENT = MAX(id)+1`.
+- no toca `operation_uuid`, `idempotency_key`, `device_id`, `payload`, checkpoints ni datos de negocio; no borra operaciones de sync.
+- restaura indices esperados de forma idempotente: `uq_sync_operations_uuid`, `uq_sync_operations_idempotency`, `idx_sync_operations_company_id`, `idx_sync_operations_entity_uuid`, `idx_sync_operations_entity_type`, `idx_sync_operations_status_created_at` e `idx_sync_operations_device_created_at`.
+- antes de crear `uq_sync_operations_uuid`, valida que no haya `operation_uuid` duplicados; antes de crear `uq_sync_operations_idempotency`, valida duplicados por `(company_id, device_id, idempotency_key)` considerando `company_id NULL`; si hay conflictos, aborta con contexto en vez de deduplicar agresivamente.
+- `SyncOperations::$fillable` no incluye `id`; se agrego `SyncOperations::create()` defensivo para descartar cualquier `id` entrante, exigir ID positivo y registrar `sync_operation_create_failed` con `operation_uuid`, `entity_type`, `entity_uuid`, `idempotency_key`, `device_id`, causa e ID devuelto si falla.
+- se revisaron inserciones localizadas: `SyncOperationsController` y `SyncEventGenerator` crean via `SyncOperations::create()` y no envian `id` manual.
+- validacion: `php -l scripts/migrations/global-auto-increment-integrity-repair-phase45.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Models/SyncOperations.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- pendiente: ejecutar `update_install.php`, confirmar `sync_operations.id` con `PRI`/`auto_increment`, sin nulos, ceros ni duplicados, y validar los indices esperados con `SHOW INDEX FROM sync_operations`.
+
+## SISA API - reparacion history_id historicos phase45
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente rerun de `update_install.php` en Hostinger/MySQL
+
+- problema real observado: phase45 se frenaba en `jobs_history.history_id` con duplicados `history_id=0` en 8 snapshots, sin primary key ni auto_increment y sin FKs entrantes.
+- se agrego flujo especifico en `global-auto-increment-integrity-repair-phase45.php` para tablas `*_history.history_id`: verifica FKs entrantes y aborta si existen.
+- si no hay FKs, valida nulos, aborta ante duplicados positivos reales y repara solo valores `history_id <= 0` asignando IDs nuevos `MAX(history_id)+1` fila por fila con `UPDATE ... LIMIT 1`.
+- despues de sanear valores no positivos, revalida nulos/duplicados, agrega `PRIMARY KEY(history_id)` si no existe primary key, aplica `MODIFY COLUMN history_id TIPO_REAL NOT NULL AUTO_INCREMENT` y ajusta `AUTO_INCREMENT = MAX(history_id)+1`.
+- el flujo es generico para `jobs_history`, `job_items_history`, `work_logs_history`, `job_groups_history`, `job_group_members_history`, `root_causes_history`, `job_root_cause_links_history`, `file_attachments_history` y cualquier otra `*_history.history_id` incluida/detectada por phase45.
+- no borra snapshots, no trunca, no recrea tablas, no cambia UUIDs, frontend, endpoints ni payloads.
+- `BaseHistory::log()` ahora descarta defensivamente cualquier `history_id` entrante antes de insertar historicos, para que MySQL genere el ID tecnico.
+- validacion: `php -l scripts/migrations/global-auto-increment-integrity-repair-phase45.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- validacion adicional: `php -l src/History/BaseHistory.php` en `sisa.api` -> PASS.
+- pendiente: ejecutar `update_install.php`, confirmar `jobs_history.history_id` con `PRI`/`auto_increment`, sin nulos, ceros, negativos ni duplicados, y continuar con el resto de phase45.
+
+## SISA API - reparacion devices.id phase45
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente rerun de `update_install.php` y prueba funcional de dispositivo/login
+
+- problema real observado: phase45 se frenaba en `devices.id` con duplicados `id=0`; la tabla vieja permitia multiples filas del mismo `device_uid` porque faltaban `AUTO_INCREMENT` en `id` y `UNIQUE(device_uid)`.
+- se agrego caso especial en `global-auto-increment-integrity-repair-phase45.php` para `devices.id`: verifica FKs entrantes hacia `devices.id` y aborta con tablas/columnas si existen.
+- si no hay FKs, usa `new_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST` como identificador tecnico temporal, sanea duplicados por `device_uid`, elimina solo filas sobrantes del mismo `device_uid`, renombra `new_id` a `id` y ajusta `AUTO_INCREMENT = MAX(id)+1`.
+- el saneamiento de `devices` conserva una fila por `device_uid` segun `revoked_at IS NULL`, `last_seen_at`, `updated_at`, `created_at`; fusiona `last_seen_at` mayor, `updated_at` mayor, `first_seen_at` menor y ultimo `expo_push_token` no vacio si existe; conserva `metadata` de la fila elegida.
+- se asegura un indice unico equivalente a `UNIQUE(device_uid)`, agregando `uq_devices_device_uid` solo si no existe ya un unico equivalente.
+- se agrego log visible por `device_uid`, fila `new_id` conservada y cantidad eliminada; no se borran dispositivos unicos ni se borra un `device_uid` completo.
+- se agrego logica similar para `device_aliases.id` respetando `UNIQUE(alias_type, alias_value)` y para `device_sync_state.id` respetando `UNIQUE(device_uid, scope)`; ambas abortan si hay FKs entrantes hacia su `id`.
+- `Devices::upsertByDeviceUid()` ahora elimina cualquier `id` antes de crear, valida que `BaseModel::create()` devuelva ID positivo y registra `device_create_failed` si devuelve `false`, `0`, `"0"` o `null`; si encuentra una fila existente con `id <= 0`, registra warning `device_existing_non_positive_id`.
+- no se tocaron frontend, endpoints ni payloads publicos.
+- validacion: `php -l scripts/migrations/global-auto-increment-integrity-repair-phase45.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Models/Devices.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- pendiente: ejecutar `update_install.php`, confirmar `devices.id` con `PRI`/`auto_increment`, sin `id` duplicados, sin `id=0`, sin `device_uid` duplicados y con `UNIQUE` sobre `device_uid`; luego probar login/upsert de dispositivo.
+
+## SISA API - reparacion auth_sessions.id phase45
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente rerun de `update_install.php` y prueba funcional de login
+
+- problema real observado: phase45 se frenaba en `auth_sessions.id` con duplicados `id=0` en 38 sesiones reales; el insert de login no enviaba `id`, la causa era una tabla vieja sin `AUTO_INCREMENT`.
+- se agrego caso especial en `global-auto-increment-integrity-repair-phase45.php` para `auth_sessions.id`: verifica FKs entrantes a `auth_sessions.id` y aborta con tablas/columnas si existen.
+- si no hay FKs, regenera solo el ID tecnico preservando filas con `new_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY FIRST`, elimina la columna vieja `id`, renombra `new_id` a `id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` y ajusta `AUTO_INCREMENT = MAX(id)+1`.
+- la reparacion no toca `session_id`, `token_hash`, `user_id`, `device_uid`, fechas ni metadata; no trunca ni borra sesiones.
+- la reparacion es idempotente: si ya esta `PRIMARY KEY AUTO_INCREMENT` sin duplicados/valores no positivos solo ajusta next value; si queda `new_id` parcial lo completa si es seguro o aborta con mensaje claro.
+- `AuthSessions::createSession()` ahora elimina cualquier `id` entrante antes del insert, exige que `BaseModel::create()` devuelva ID positivo y registra `auth_session_create_failed` con tabla, `session_id`, `user_id`, `device_uid`, causa e ID devuelto si falla.
+- `AuthController::login()` mantiene el fallback legacy sin romper login, pero ahora registra `SESSION_CREATE_FAILED` con `user_id`, `session_id`, `device_uid` y causa antes del fallback; no expone errores internos al cliente.
+- `auth-sessions-standard.php` mantiene `id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY` y `UNIQUE session_id`.
+- validacion: `php -l scripts/migrations/global-auto-increment-integrity-repair-phase45.php` en `sisa.api` -> PASS.
+- validacion: `php -l scripts/migrations/auth-sessions-standard.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Models/AuthSessions.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Controllers/AuthController.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- pendiente: ejecutar `update_install.php`, confirmar `auth_sessions.id` con `PRI`/`auto_increment`, sin duplicados ni `id=0`, y probar login creando una fila nueva con ID positivo y `session_id` en respuesta.
+
+## SISA API - cobertura y observabilidad phase45 global
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente rerun de `update_install.php` en Hostinger/MySQL
+
+- problema observado: phase45 comenzo y reparo `accounts.id` y `app_updates.id`, pero no imprimio `Update ... completed`; la consulta general seguia mostrando multiples `id/history_id` tecnicas sin `AUTO_INCREMENT`.
+- phase45 ahora imprime progreso por columna con `Checking`, skips de tabla/columna ausente, `Already AUTO_INCREMENT`, `Primary key added`, `Repairing`, `Done` y `Error repairing ...` con mensaje real.
+- cada reparacion individual esta envuelta en `try/catch`; si falla, imprime tabla/columna/error, registra `error_log` con tipo/key/extra/causa y relanza `RuntimeException` con contexto.
+- se amplio el listado explicito con tablas pendientes reportadas: `empresas_direcciones_history`, `empresas_history`, `empresas_usuarios`, `empresas_usuarios_history`, `empresa_canales`, `empresa_canales_history`, `empresa_contactos` y `empresa_contactos_history`.
+- ademas phase45 incorpora dinamicamente desde `information_schema.COLUMNS` cualquier columna numerica `id/history_id` pendiente sin `auto_increment`, excluyendo `jobs_archive_checks` y `notification_user_states`, y sigue delegando `activity_log.id` a phase46.
+- antes del `ALTER ... AUTO_INCREMENT`, valida nulos, duplicados y sanea valores `<= 0` reasignandolos a `MAX(columna)+1`; si hay foreign keys entrantes sin mapeo conocido, aborta con error claro en vez de reparar a ciegas.
+- se preserva `COLUMN_TYPE` real y se sigue usando `information_schema.STATISTICS` para primary keys, compatible con MariaDB.
+- no se borran datos, no se truncan tablas, no se recrean tablas, no se tocan UUIDs, frontend, endpoints ni modelos.
+- validacion: `php -l scripts/migrations/global-auto-increment-integrity-repair-phase45.php` en `sisa.api` -> PASS.
+- validacion: `php -l scripts/migrations/activity-log-id-repair-phase46.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- pendiente: correr nuevamente `update_install.php` y confirmar `Update 2026-06-global-auto-increment-integrity-repair-phase-45 completed.` seguido de phase46; luego repetir la consulta general de `information_schema.COLUMNS`.
+
 ## SISA API - saneamiento IDs no positivos phase44
 
 Estado: implementado en `sisa.api` con validacion de sintaxis; pendiente rerun de `update_install.php` en Hostinger/MySQL
