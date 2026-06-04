@@ -1,5 +1,20 @@
 # Estado QA
 
+## SISA API - timeline diario de worklogs/tracking
+
+Estado: implementado en `sisa.api` con validacion focalizada; pendiente integrar pantalla grafica en el frontend web real o portar a Expo/RN.
+
+- se agrego `GET /work_logs/timeline` con permiso `listWorkLogs` para consultar una fecha (`date=YYYY-MM-DD`), empresa (`company_id`) y opcionalmente usuario (`user_id`).
+- la respuesta devuelve usuarios operativos, `tracking_blocks` existentes y `work_logs` del dia con participantes para que el cliente pueda renderizar worklogs compartidos por entidad unica.
+- se agrego `GET /work_logs/month-activity` para consultar `month=YYYY-MM` y obtener los dias con worklogs cargados, filtrable por usuario.
+- no se modifico el flujo de creacion/sync offline-first de worklogs; estos endpoints son de lectura para la vista grafica.
+- punto ciego: `client_name` queda nulo en la vista timeline hasta consolidar una fuente unica compatible con instalaciones legacy de `clients`; se devuelve `client_id` y `job_title`.
+- punto ciego: en este workspace no existe `sisa.web`; la UI disponible es Expo/RN, por lo que no se pego el componente Tailwind/DOM sin portarlo.
+- validacion: `php -l src/Models/WorkLogs.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Controllers/WorkLogsController.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Routes/api.php` en `sisa.api` -> PASS.
+- validacion: `vendor/bin/phpunit tests/Controllers/WorkLogsControllerTest.php` en `sisa.api` -> PASS.
+
 ## SISA API - status Cotizar
 
 Estado: implementado en `sisa.api` con validacion focalizada; pendiente rerun de `update_install.php` contra base real.
@@ -7,9 +22,11 @@ Estado: implementado en `sisa.api` con validacion focalizada; pendiente rerun de
 - se agrego el atributo semantico `quote` al registro permitido de `StatusAttributeRegistry` para representar el estado visible `Cotizar`, separado de `quoted`/`Cotizado`.
 - `scripts/migrations/statuses-phase3.php` ahora siembra idempotentemente el status global `Cotizar` (`scope=job`, `status_attribute=quote`) solo cuando no existe activo; contempla catalogos legacy con `scope NULL` y no reordena catalogos ya poblados.
 - `install.php` incluye `Cotizar` en el seed inicial antes de `Cotizado`; los ordenes posteriores se desplazaron solo para instalaciones nuevas.
+- `update_install.php` registra la migracion nueva `2026-06-statuses-cotizar` para ejecutar el seed aunque `2026-03-statuses-phase-3` ya este marcada como aplicada.
 - validacion: `php -l src/Services/StatusAttributeRegistry.php` en `sisa.api` -> PASS.
 - validacion: `php -l scripts/migrations/statuses-phase3.php` en `sisa.api` -> PASS.
 - validacion: `php -l install.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
 - validacion: `vendor/bin/phpunit tests/Services/StatusAttributeRegistryTest.php` en `sisa.api` -> PASS.
 - validacion: `vendor/bin/phpunit tests/Controllers/StatusControllerTest.php` en `sisa.api` -> PASS; mantiene el ruido conocido de conexion BD documentado en baseline.
 
