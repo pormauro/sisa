@@ -2,18 +2,22 @@
 
 ## SISA API - timeline diario de worklogs/tracking
 
-Estado: implementado en `sisa.api` con validacion focalizada; pendiente integrar pantalla grafica en el frontend web real o portar a Expo/RN.
+Estado: implementado en `sisa.api` y `sisa.web` con validacion focalizada.
 
 - se agrego `GET /work_logs/timeline` con permiso `listWorkLogs` para consultar una fecha (`date=YYYY-MM-DD`), empresa (`company_id`) y opcionalmente usuario (`user_id`).
 - la respuesta devuelve usuarios operativos, `tracking_blocks` existentes y `work_logs` del dia con participantes para que el cliente pueda renderizar worklogs compartidos por entidad unica.
 - se agrego `GET /work_logs/month-activity` para consultar `month=YYYY-MM` y obtener los dias con worklogs cargados, filtrable por usuario.
 - no se modifico el flujo de creacion/sync offline-first de worklogs; estos endpoints son de lectura para la vista grafica.
 - punto ciego: `client_name` queda nulo en la vista timeline hasta consolidar una fuente unica compatible con instalaciones legacy de `clients`; se devuelve `client_id` y `job_title`.
-- punto ciego: en este workspace no existe `sisa.web`; la UI disponible es Expo/RN, por lo que no se pego el componente Tailwind/DOM sin portarlo.
+- `sisa.web` incorpora la ruta `/worklogs-timeline` y el item de menu Tracking -> GPS + Worklogs.
+- la pantalla web carga timeline diario, dias del mes con worklogs, selector de usuario, zoom inicial x2, columna de usuarios fija/ocultable, seleccion manual, conversion de lapso GPS a worklog y edicion grafica por arrastre/resize de worklogs compartidos.
+- la creacion de worklogs desde timeline exige seleccionar un trabajo existente porque el contrato operativo actual de `POST /work_logs` requiere `job_id`.
 - validacion: `php -l src/Models/WorkLogs.php` en `sisa.api` -> PASS.
 - validacion: `php -l src/Controllers/WorkLogsController.php` en `sisa.api` -> PASS.
 - validacion: `php -l src/Routes/api.php` en `sisa.api` -> PASS.
 - validacion: `vendor/bin/phpunit tests/Controllers/WorkLogsControllerTest.php` en `sisa.api` -> PASS.
+- validacion: `npm run lint` en `sisa.web` -> PASS.
+- validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite.
 
 ## SISA API - status Cotizar
 
