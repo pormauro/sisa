@@ -4243,3 +4243,15 @@ Notas de lectura:
 
 - la infraestructura de TestDevice permite расширение facile para mas escenarios
 - se puede agregar mas coverage de multi-empresa y multi-usuario expandiendo TestDevice
+
+## SISA WEB - ajuste visual timeline worklogs
+
+Estado: completado con validacion focalizada.
+
+- se ajusto `/worklogs-timeline` para mostrar horas trabajadas en formato `HH:MM` en el resumen y por participante.
+- los indicadores por participante ahora usan iconos compactos con tooltip para lapsos GPS, worklogs y horas trabajadas.
+- las etiquetas de los rails GPS/worklogs se compactaron como iconos con tooltip para evitar solapamientos con los bloques del timeline.
+- se ajusto el espaciado vertical de bloques GPS/worklogs para mantener separacion visual.
+- validacion: `npm run lint` en `sisa.web` -> PASS.
+- validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite.
+- se restauraron artefactos generados de `dist/` luego del build.
