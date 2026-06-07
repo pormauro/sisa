@@ -1,5 +1,27 @@
 # Estado QA
 
+## SISA API/Web - employees fase 1
+
+Estado: implementado en `sisa.api` y `sisa.web` con validacion focalizada.
+
+- se agrego la entidad `employees` como personas operativas separadas de `users`, que siguen representando cuentas de acceso.
+- `employees.user_id` es nullable; cuando se informa, el backend valida membresia aprobada en la misma empresa mediante el patron existente de `company_users`.
+- se agrego migracion incremental `2026-06-employees-phase-1` con `employees` y `employees_history`, UUID, `company_id`, soft delete, versionado, metadata de origen y auditoria basica.
+- se agregaron endpoints CRUD minimos protegidos por `CheckUserBlockedMiddleware` y permisos `list/get/add/update/deleteEmployee`.
+- se agrego `sisa.web` `/employees` con listado, alta, edicion, archivado y vinculacion opcional a usuarios de la empresa.
+- no se toco `sisa.ui` movil ni se implementaron participantes, documentos, pagos, liquidaciones o integraciones con jobs/worklogs.
+- documentacion interna: `docs/employees-phase1.md`.
+- validacion: `php -l src/Controllers/EmployeesController.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Models/Employees.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/History/EmployeesHistory.php` en `sisa.api` -> PASS.
+- validacion: `php -l scripts/migrations/employees-phase1.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Routes/api.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `vendor/bin/phpunit` en `sisa.api` -> PASS (`phpunit_exit=0`); mantiene la linea conocida de error de conexion BD del baseline.
+- validacion: `npm run lint` en `sisa.web` -> PASS.
+- validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite.
+
 ## SISA API - timeline diario de worklogs/tracking
 
 Estado: implementado en `sisa.api` y `sisa.web` con validacion focalizada.
