@@ -1,5 +1,18 @@
 # Estado QA
 
+## SISA Web - timeline operativo por employees
+
+Estado: implementado en `sisa.web` con validacion de lint/build.
+
+- `WorklogsTimelinePage` carga empleados activos y usa employees como eje principal del timeline operativo.
+- los lapsos GPS siguen llegando por `user_id`; la pagina resuelve `user_id -> employee_id` cuando hay empleado vinculado y muestra fila legacy cuando no existe vinculo.
+- los worklogs se ubican por `participant_employee_ids` y mantienen fallback por `participant_user_ids`/`user_id` sin duplicar bloques cuando ambos apuntan al mismo empleado.
+- crear worklogs desde fila de empleado envia `participant_employee_ids`; las filas legacy conservan `participant_user_ids`/`participants` como compatibilidad.
+- mover/redimensionar worklogs preserva participantes employee/legacy existentes.
+- no se toco `sisa.api` ni el timeline tecnico de captura GPS.
+- validacion: `npm run lint` en `sisa.web` -> PASS.
+- validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
+
 ## SISA API/Web - priority_id en jobs fase 1
 
 Estado: implementado en `sisa.api` y `sisa.web` con validacion de sintaxis, PHPUnit y lint/build.
