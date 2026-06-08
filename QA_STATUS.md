@@ -1,5 +1,19 @@
 # Estado QA
 
+## SISA API - onboarding multiempresa
+
+Estado: implementado en `sisa.api` con validacion de sintaxis focalizada.
+
+- `GET /companies`, `GET /companies/search` y `POST /companies/{company_id}/memberships` quedan disponibles para cualquier usuario autenticado no bloqueado, sin permiso especifico adicional.
+- se mantiene `CheckUserBlockedMiddleware` en esos endpoints.
+- `POST /companies` conserva el permiso `createCompany`; editar, borrar, historial y acciones administrativas de membresias conservan sus permisos existentes.
+- `CompaniesController::list` ahora sanitiza la respuesta publica de listado/busqueda para exponer solo identificadores basicos de empresa: `id`, `razon_social`/`business_name`, `nombre_fantasia`, `nro_doc`/`tax_id`, `profile_file_id` y `activo`.
+- se verifico que `CompanyUsersController::requestMembership` crea o reabre solicitudes en `pending` para el usuario autenticado y no aprueba automaticamente.
+- documentacion interna: `docs/company-memberships.md`.
+- validacion: `php -l src/Routes/api.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Controllers/CompaniesController.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Controllers/CompanyUsersController.php` en `sisa.api` -> PASS.
+
 ## SISA API/Web - employees fase 1
 
 Estado: implementado en `sisa.api` y `sisa.web` con validacion focalizada.
