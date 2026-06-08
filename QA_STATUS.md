@@ -1,5 +1,19 @@
 # Estado QA
 
+## SISA Web - participantes de worklogs por employees en JobsPage
+
+Estado: implementado en `sisa.web` con validacion de lint/build.
+
+- `JobsPage` carga empleados activos junto con los datos de soporte del trabajo.
+- el modal de crear/editar worklog agrega selector de participantes basado en `employees` activos.
+- al editar, se marcan los participantes existentes que llegan con `employee_id`; los participantes legacy con solo `user_id` se muestran como aviso y se conservan visualmente como fallback hasta guardar.
+- al guardar worklogs se envia `participant_employee_ids`; si no hay empleados activos se permite guardar con fallback legacy `participant_user_ids` al usuario actual.
+- el listado/tarjetas de worklogs muestran nombres enriquecidos de empleado con fallback a `full_name`, `username`, `employee_id` o `user_id`.
+- `workLogsService` y `domain.ts` aceptan campos enriquecidos de participante por empleado sin borrar compatibilidad legacy con `user_id`.
+- no se toco `WorklogsTimelinePage`; queda pendiente adaptarla al modelo nuevo de `employees` porque todavia usa `users`/`participant_user_ids`.
+- validacion: `npm run lint` en `sisa.web` -> PASS.
+- validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
+
 ## SISA API - work_log_participants con employees fase 1
 
 Estado: implementado en `sisa.api` con validacion focalizada; migracion real pendiente por bloqueo conocido de conexion BD local.
