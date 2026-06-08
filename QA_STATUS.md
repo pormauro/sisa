@@ -29,6 +29,31 @@ Estado: implementado en `sisa.api` con validacion de sintaxis focalizada.
 - validacion: `php -l src/Controllers/CompaniesController.php` en `sisa.api` -> PASS.
 - validacion: `php -l src/Controllers/CompanyUsersController.php` en `sisa.api` -> PASS.
 
+## SISA API/Web - job_participants fase 1
+
+Estado: implementado en `sisa.api` y `sisa.web` con validacion focalizada; migracion real pendiente por bloqueo de conexion BD local.
+
+- se agrego `job_participants` como relacion entre trabajos y `employees`, sin usar `users` para esta nueva funcionalidad.
+- se agrego `job_participants_history` con snapshot JSON siguiendo el patron usado por `employees_history`.
+- se agregaron endpoints `GET/POST/PUT/DELETE /jobs/{job_id}/participants` con permisos `listJobParticipants`, `addJobParticipant`, `updateJobParticipant` y `deleteJobParticipant`.
+- las mutaciones validan empresa, trabajo activo, empleado activo de la misma empresa, duplicados activos y `ClosedJobMutationGuard`.
+- al marcar un participante como responsable principal, la API desmarca otros responsables activos del mismo trabajo dentro de una transaccion.
+- `sisa.web` agrega una pestaña `Participantes` en el detalle del trabajo y un componente separado `JobParticipantsPanel`.
+- no se toco `sisa.ui` movil, no se modifico `work_log_participants`, no se uso `jobs.participants` y no se agregaron documentos/costos/contabilidad de empleados.
+- documentacion interna: `docs/job-participants-phase1.md`.
+- validacion: `php -l src/Controllers/JobParticipantsController.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Models/JobParticipants.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/History/JobParticipantsHistory.php` en `sisa.api` -> PASS.
+- validacion: `php -l scripts/migrations/job-participants-phase1.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Routes/api.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Models/Permission.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `php update_install.php` en `sisa.api` -> BLOQUEADO por entorno local sin `.env`/BD disponible (`SQLSTATE[HY000] [2002]`, `update_install_exit=1`).
+- validacion: `vendor/bin/phpunit` en `sisa.api` -> PASS (`phpunit_exit=0`); mantiene la linea conocida de error de conexion BD del baseline.
+- validacion: `npm run lint` en `sisa.web` -> PASS.
+- validacion: `npm run build` en `sisa.web` -> PASS; regenero `dist` y `tsconfig.tsbuildinfo`, mantiene warning existente de chunks grandes de Vite.
+
 ## SISA API/Web - employees fase 1
 
 Estado: implementado en `sisa.api` y `sisa.web` con validacion focalizada.
