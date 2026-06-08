@@ -1,5 +1,21 @@
 # Estado QA
 
+## SISA API/Web - priority_id en jobs fase 1
+
+Estado: implementado en `sisa.api` y `sisa.web` con validacion de sintaxis, PHPUnit y lint/build.
+
+- se agrego migracion idempotente `scripts/migrations/jobs-priority-id-phase1.php` para incorporar `jobs.priority_id`, indexarlo, intentar FK no bloqueante y backfillear desde `jobs.priority` respetando prioridad de company antes de global.
+- `install.php` y `update_install.php` registran la migracion; instalaciones nuevas crean `jobs.priority_id` e indice desde el esquema base.
+- `Jobs` devuelve prioridad enriquecida (`priority_code`, `priority_label`, color, orden y costos) y ordena `sort=priority` por `job_priorities.order_index` con fallback legacy.
+- `JobsController` y `SyncOperationsController` aceptan/validan `priority_id`, completan `priority` legacy con el `code` y mantienen compatibilidad con payloads viejos por string.
+- `SyncEventGenerator` serializa `priority_id` y campos enriquecidos sin remover `priority`.
+- `sisa.web` JobsPage usa select de `jobPriorities`, guarda `priority_id`, filtra/chipea por catalogo y muestra base mano de obra, ajuste por prioridad y total con prioridad sin modificar worklogs ni tarifas.
+- no se borro `jobs.priority`; queda como compatibilidad temporal para clientes antiguos y datos no migrados.
+- validacion: `php -l` de archivos PHP editados en `sisa.api` -> PASS.
+- validacion: `vendor/bin/phpunit` en `sisa.api` -> PASS (`PHPUNIT_EXIT_CODE=0`); mantiene la linea conocida de error de conexion BD del baseline.
+- validacion: `npm run lint` en `sisa.web` -> PASS.
+- validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite.
+
 ## SISA Web - participantes de worklogs por employees en JobsPage
 
 Estado: implementado en `sisa.web` con validacion de lint/build.
