@@ -1,5 +1,20 @@
 # Estado QA
 
+## SISA Web - UX onboarding multiempresa
+
+Estado: implementado en `sisa.web` con validacion de lint/build.
+
+- se corrigio `/memberships`: ahora consulta todas las membresias de la empresa activa, incluyendo `pending`, y muestra acciones `Aprobar`/`Rechazar` para owner/admin o permiso `manageCompanyMemberships`.
+- `systemCatalogsService` agrega `listCompanyMemberships()`, `approveCompanyMembership()` y `rejectCompanyMembership()` contra los endpoints administrativos existentes.
+- `CompaniesPage` ya no abre siempre el editor al seleccionar una empresa; valida membresia y permisos antes de decidir entre editor y modal de solicitud.
+- usuarios sin membresia aprobada, o sin permisos administrativos/`updateCompany`, ven un modal de `Solicitar acceso a empresa` con datos basicos y estado de membresia/solicitud.
+- el modal envia `POST /companies/{company_id}/memberships` con `message: Solicitud enviada desde SISA Web` y `role: member`; al completar refresca membresias locales y muestra el toast de aprobacion pendiente.
+- solicitudes `pending` no se duplican; membresias `approved` muestran que el usuario ya pertenece; estados `rejected`, `left` y `removed` permiten reintento sujeto a respuesta del backend.
+- `companiesService` agrega `requestCompanyMembership()` y `listUserCompanyMemberships()` consultando todos los estados relevantes de membresia.
+- `Nueva empresa` se oculta si el usuario no tiene capacidad segura de creacion; `Guardar` y `Eliminar` solo se muestran en editor cuando corresponde por permisos/rol.
+- validacion: `npm run lint` en `sisa.web` -> PASS.
+- validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite.
+
 ## SISA API - onboarding multiempresa
 
 Estado: implementado en `sisa.api` con validacion de sintaxis focalizada.
