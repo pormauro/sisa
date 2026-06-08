@@ -1,5 +1,30 @@
 # Estado QA
 
+## SISA API - work_log_participants con employees fase 1
+
+Estado: implementado en `sisa.api` con validacion focalizada; migracion real pendiente por bloqueo conocido de conexion BD local.
+
+- se agrego la migracion incremental `2026-06-work-log-participants-employees-phase-1` para incorporar `work_log_participants.employee_id`, indexarlo, permitir `user_id NULL` y backfillear desde `employees.user_id` cuando exista vinculo activo en la misma empresa.
+- `install.php` y `update_install.php` registran la nueva migracion; la migracion legacy de worklogs/participants queda alineada para instalaciones nuevas.
+- `WorkLogParticipants` ahora persiste `employee_id`, deduplica participantes activos por `employee_id` cuando existe y mantiene fallback por `user_id` para registros/clientes legacy.
+- `WorkLogsController` acepta `participant_employee_ids` con prioridad sobre `participant_user_ids` y `participants`; si se usan payloads legacy resuelve el empleado vinculado cuando existe y conserva `user_id` para compatibilidad.
+- `SyncOperationsController` aplica la misma prioridad en push de `work_logs`, manteniendo `participants` como contrato legacy para mobile/offline actual.
+- `SyncEventGenerator` serializa participantes de worklogs con `user_id`, `employee_id`, `participant_user_ids` y `participant_employee_ids` durante la transicion.
+- `WorkLogs` timeline devuelve tambien `participant_employee_ids`; `AnalyticsController` cuenta participantes por `employee_id` cuando existe y por `user_id` como fallback.
+- no se toco `sisa.ui` movil ni se elimino ninguna columna legacy.
+- validacion: `php -l src/Models/WorkLogParticipants.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Models/WorkLogs.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Controllers/WorkLogsController.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Controllers/SyncOperationsController.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Controllers/AnalyticsController.php` en `sisa.api` -> PASS.
+- validacion: `php -l src/Services/SyncEventGenerator.php` en `sisa.api` -> PASS.
+- validacion: `php -l scripts/migrations/work-log-participants-employees-phase1.php` en `sisa.api` -> PASS.
+- validacion: `php -l install.php` en `sisa.api` -> PASS.
+- validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- validacion: `vendor/bin/phpunit tests/Models/WorkLogParticipantsTest.php` en `sisa.api` -> PASS.
+- validacion: `vendor/bin/phpunit tests/Controllers/WorkLogsControllerTest.php` en `sisa.api` -> PASS.
+- validacion: `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerWorkLogsPushTest.php` en `sisa.api` -> PASS.
+
 ## SISA Web - UX onboarding multiempresa
 
 Estado: implementado en `sisa.web` con validacion de lint/build.
