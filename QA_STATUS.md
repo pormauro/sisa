@@ -8,8 +8,10 @@ Estado: implementado en `sisa.api` y `sisa.ui` con validacion focalizada; prueba
 - API: `WorkLogParticipants` resuelve nombre/foto por `COALESCE(work_log_participants.user_id, employees.user_id)` para cubrir participantes employee-only y legacy.
 - API: `SyncEventGenerator` conserva `profile_file_id` en participantes de worklogs cuando existe.
 - API: la migracion `work-log-participants-employees-phase1` se endurecio para backfill solo con match unico de employee activo por `company_id + user_id`.
-- API: se agrego `work-log-participants-employees-phase2` idempotente para normalizar legacy `work_log_participants.user_id -> employee_id`, preservar `user_id`, contemplar `job_participants` solo si existe `user_id` legacy, y limpiar `employees.avatar_file_id` sin tocar tracking.
+- API: se agrego `work-log-participants-employees-phase2` idempotente para normalizar legacy `work_log_participants.user_id -> employee_id`, preservar `user_id`, contemplar `job_participants` solo si existe `user_id` legacy, y eliminar `employees.avatar_file_id` sin tocar tracking.
+- API: la misma migracion phase2 desactiva duplicados activos de `work_log_participants` por `work_log_id + employee_id` y por fallback legacy `work_log_id + user_id`, usando soft delete para no borrar historia.
 - Mobile: `participants_json` ahora lee arrays legacy, objetos `{ user_id, employee_id }`, `participant_user_ids` y `participant_employee_ids` sin ocultar participantes viejos.
+- Mobile: los arrays de participantes leidos desde `participants_json` se deduplican antes de renderizar o reserializar.
 - Mobile: al cargar employees activos, se normalizan worklogs locales agregando `participant_employee_ids` cuando existe mapeo `user_id -> employee_id`, preservando `participant_user_ids` legacy.
 - Mobile: los avatares de employees usan `profile_file_id` del usuario vinculado o el cache local de users; no usan `avatar_file_id` del employee.
 - No se tocaron tablas GPS, captura GPS ni tracking crudo por `user_id`.
