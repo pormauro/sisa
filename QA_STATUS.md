@@ -1,5 +1,16 @@
 # Estado QA
 
+## SISA API - diagnostico worklog participants employees
+
+Estado: implementado en `sisa.api` con validacion de sintaxis; ejecucion real pendiente por entorno local sin `.env`/BD disponible.
+
+- se agrego `scripts/diagnostics/worklog-participants-integrity.php` como auditoria read-only para revisar `employees`, `work_log_participants`, `work_logs`, `job_participants` y tablas candidatas de tracking/GPS.
+- el script no ejecuta `INSERT`, `UPDATE`, `DELETE` ni `ALTER`; solo usa `SHOW TABLES`, `SHOW COLUMNS` y `SELECT`.
+- reporta totales, referencias invalidas, duplicados activos, worklogs sin participantes, participantes legacy migrables y usuarios de tracking sin employee asociado.
+- la salida termina con bloques `OK`, `WARN`, `ERROR` y `Recommended next actions`.
+- validacion: `php -l scripts/diagnostics/worklog-participants-integrity.php` en `sisa.api` -> PASS.
+- validacion: `php scripts/diagnostics/worklog-participants-integrity.php` en `sisa.api` -> BLOQUEADO por entorno local sin `.env`/BD disponible (`SQLSTATE[HY000] [2002]`).
+
 ## SISA Web - timeline operativo por employees
 
 Estado: implementado en `sisa.web` con validacion de lint/build.
