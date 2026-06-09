@@ -10,19 +10,22 @@ Estado: implementado en `sisa.api` y `sisa.ui` con validacion focalizada; prueba
 - API: la migracion `work-log-participants-employees-phase1` se endurecio para backfill solo con match unico de employee activo por `company_id + user_id`.
 - API: se agrego `work-log-participants-employees-phase2` idempotente para normalizar legacy `work_log_participants.user_id -> employee_id`, preservar `user_id`, contemplar `job_participants` solo si existe `user_id` legacy, y eliminar `employees.avatar_file_id` sin tocar tracking.
 - API: la misma migracion phase2 desactiva duplicados activos de `work_log_participants` por `work_log_id + employee_id` y por fallback legacy `work_log_id + user_id`, usando soft delete para no borrar historia.
+- API: se agrego tambien `scripts/migrations/worklog-participants-employee-backfill-safe.php` como migracion idempotente explicita de backfill seguro de participantes; completa `employee_id` solo con match unico activo por `company_id + user_id`, conserva `user_id`, no modifica ambiguos y soft-deletea duplicados activos.
 - Mobile: `participants_json` ahora lee arrays legacy, objetos `{ user_id, employee_id }`, `participant_user_ids` y `participant_employee_ids` sin ocultar participantes viejos.
 - Mobile: los arrays de participantes leidos desde `participants_json` se deduplican antes de renderizar o reserializar.
 - Mobile: al cargar employees activos, se normalizan worklogs locales agregando `participant_employee_ids` cuando existe mapeo `user_id -> employee_id`, preservando `participant_user_ids` legacy.
 - Mobile: los avatares de employees usan `profile_file_id` del usuario vinculado o el cache local de users; no usan `avatar_file_id` del employee.
 - No se tocaron tablas GPS, captura GPS ni tracking crudo por `user_id`.
 - validacion: `php -l` de archivos PHP editados en `sisa.api` -> PASS.
+- validacion: `php -l scripts/migrations/worklog-participants-employee-backfill-safe.php` en `sisa.api` -> PASS.
 - validacion: `vendor/bin/phpunit tests/Models/WorkLogParticipantsTest.php` en `sisa.api` -> PASS.
 - validacion: `vendor/bin/phpunit tests/Controllers/WorkLogsControllerTest.php` en `sisa.api` -> PASS.
 - validacion: `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerWorkLogsPushTest.php` en `sisa.api` -> PASS.
+- validacion: `php scripts/diagnostics/worklog-participants-integrity.php` en `sisa.api` -> BLOQUEADO por entorno local sin `.env`/BD disponible (`SQLSTATE[HY000] [2002]`).
 - validacion: `npm run lint` en `sisa.ui` -> PASS.
 - validacion: `npm run check:cache` en `sisa.ui` -> PASS.
 - validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
-- validacion: `npx tsc --noEmit` focalizado por archivos tocados en `sisa.ui` -> sin errores nuevos; el TypeScript completo sigue bloqueado por deuda global ya documentada.
+- validacion: `npx tsc --noEmit` focalizado por archivos tocados en `sisa.ui` -> sin errores nuevos; `npx tsc --noEmit` completo sigue bloqueado por deuda global preexistente/no relacionada.
 - pendiente externo: confirmar con token real que `GET /employees?company_id=45&status=active` responde en el entorno desplegado, con o sin prefijo `/public`.
 
 ## SISA UI - jobs/worklogs employees y priority_id fase 5
