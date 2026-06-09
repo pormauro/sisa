@@ -1,10 +1,27 @@
 # Estado QA
 
+## SISA Web - WorkLogEditorModal compartido fase 3
+
+Estado: implementado en `sisa.web` con validacion de lint/build.
+
+- se creo `src/components/WorkLogEditorModal.tsx` como editor reutilizable para crear/editar worklogs.
+- el componente centraliza la UI del formulario de worklog: `tariff_id`, `job_item_id`, `started_at`, `duration_minutes`, `description`, `billable_flag`, `client_visible_flag`, `participant_employee_ids` y fallback legacy `participant_user_ids`.
+- `JobsPage` reemplazo su modal interno por `WorkLogEditorModal` conservando el armado de payload existente y el comportamiento actual del trabajo seleccionado.
+- `WorklogsTimelinePage` usa el mismo `WorkLogEditorModal` para crear desde seleccion/fila employee, crear desde fila legacy, editar worklogs existentes y convertir lapsos GPS a worklog.
+- crear desde fila employee precarga `participant_employee_ids`; crear desde fila legacy mantiene `participant_user_ids`; editar precarga participantes actuales employee/legacy.
+- editar desde timeline precarga `tariff_id` por ID y aplica fallback por `work_type` contra el catalogo de tarifas para worklogs legacy sin `tariff_id`.
+- mover/redimensionar worklogs sigue usando el flujo existente y preserva participantes mediante `participant_employee_ids`, `participant_user_ids` y `participants` legacy.
+- no se tocaron endpoints ni `sisa.api`.
+- validacion: `npm run lint` en `sisa.web` -> PASS.
+- validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
+
 ## SISA API - diagnostico worklog participants employees
 
 Estado: implementado en `sisa.api` con validacion de sintaxis; ejecucion real pendiente por entorno local sin `.env`/BD disponible.
 
 - se agrego `scripts/diagnostics/worklog-participants-integrity.php` como auditoria read-only para revisar `employees`, `work_log_participants`, `work_logs`, `job_participants` y tablas candidatas de tracking/GPS.
+- se corrigio el criterio de duplicados de `employees.user_id`: ahora solo es error cuando hay duplicados activos por `company_id + user_id`; duplicados historicos soft-deleted quedan permitidos e informados como OK.
+- los mapeos legacy `user_id -> employee_id` y tracking/GPS ahora solo consideran employees activos (`deleted_at IS NULL`) para no revivir empleados historicos.
 - el script no ejecuta `INSERT`, `UPDATE`, `DELETE` ni `ALTER`; solo usa `SHOW TABLES`, `SHOW COLUMNS` y `SELECT`.
 - reporta totales, referencias invalidas, duplicados activos, worklogs sin participantes, participantes legacy migrables y usuarios de tracking sin employee asociado.
 - la salida termina con bloques `OK`, `WARN`, `ERROR` y `Recommended next actions`.
