@@ -1,5 +1,28 @@
 # Estado QA
 
+## SISA API - tracking GPS timeline auto events fase 1
+
+Estado: implementado en `sisa.api` con validacion de sintaxis focalizada; ejecucion real pendiente por entorno local/BD.
+
+- Se agrego `TrackingEventDetectorService` para convertir puntos GPS + `gps_point_metrics` en bloques sugeridos `tracking_time_blocks` con `source=auto` y `status=suggested`.
+- El detector crea viajes `travel`, visitas `visit` enlazadas a `client`/`provider` con `role=visited`, y paradas desconocidas `pause` sin link.
+- La deteccion degrada o corta segmentos con mock, suspicious, impossible_speed, saltos sospechosos, baja precision y gaps grandes; la confianza baja cuando hay poca evidencia.
+- Se agregaron `auto_signature` y `detection_version` con migracion idempotente para evitar duplicados, mas verificacion por solapamiento temporal fuerte.
+- `POST /tracking/points/batch` ejecuta el detector en una ventana acotada alrededor del lote y no falla el upload si la deteccion falla; reporta `sync_hint` y `detected_time_blocks_count`.
+- `GET /tracking/timeline` ahora completa `trips`, `stays` y `labels` desde bloques existentes, conservando `points` y `time_blocks`.
+- Se agregaron `POST /tracking/time-blocks/{id}/confirm` y `/reject`; no modifican bloques `locked`/`billed` ni eliminados.
+- Se agrego `scripts/diagnostics/tracking-event-detector-dry-run.php` para diagnostico por `company_id`, `user_id`, `date` y `dry-run` sin modificar datos.
+- Documentacion actualizada en `sisa.api/docs/tracking-api.md` con detector, timeline, estados, ejemplos y limitaciones.
+- Validacion: `php -l src/Services/TrackingEventDetectorService.php` en `sisa.api` -> PASS.
+- Validacion: `php -l src/Controllers/TrackingController.php` en `sisa.api` -> PASS.
+- Validacion: `php -l src/Models/TrackingTimeBlocks.php` en `sisa.api` -> PASS.
+- Validacion: `php -l src/Models/TrackingTimeBlockLinks.php` en `sisa.api` -> PASS.
+- Validacion: `php -l src/Routes/api.php` en `sisa.api` -> PASS.
+- Validacion: `php -l install.php` en `sisa.api` -> PASS.
+- Validacion: `php -l update_install.php` en `sisa.api` -> PASS.
+- Validacion adicional: `php -l scripts/migrations/tracking-event-detector-phase1.php` y `php -l scripts/diagnostics/tracking-event-detector-dry-run.php` en `sisa.api` -> PASS.
+- Punto ciego: no se ejecuto detector contra datos reales ni suite completa por falta de ambiente/BD verificada en esta sesion.
+
 ## SISA API/UI - normalizacion participants employees y avatar de usuario
 
 Estado: implementado en `sisa.api` y `sisa.ui` con validacion focalizada; prueba HTTP real de `/employees` pendiente por token.
