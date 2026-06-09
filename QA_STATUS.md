@@ -1,5 +1,46 @@
 # Estado QA
 
+## SISA API/UI - normalizacion participants employees y avatar de usuario
+
+Estado: implementado en `sisa.api` y `sisa.ui` con validacion focalizada; prueba HTTP real de `/employees` pendiente por token.
+
+- API: `Employees` deja de usar imagen propia operativa; `avatar_file_id` ya no se acepta en payload create/update y la respuesta expone `profile_file_id` desde `employee.user_id -> user_profile.profile_file_id`.
+- API: `WorkLogParticipants` resuelve nombre/foto por `COALESCE(work_log_participants.user_id, employees.user_id)` para cubrir participantes employee-only y legacy.
+- API: `SyncEventGenerator` conserva `profile_file_id` en participantes de worklogs cuando existe.
+- API: la migracion `work-log-participants-employees-phase1` se endurecio para backfill solo con match unico de employee activo por `company_id + user_id`.
+- API: se agrego `work-log-participants-employees-phase2` idempotente para normalizar legacy `work_log_participants.user_id -> employee_id`, preservar `user_id`, contemplar `job_participants` solo si existe `user_id` legacy, y limpiar `employees.avatar_file_id` sin tocar tracking.
+- Mobile: `participants_json` ahora lee arrays legacy, objetos `{ user_id, employee_id }`, `participant_user_ids` y `participant_employee_ids` sin ocultar participantes viejos.
+- Mobile: al cargar employees activos, se normalizan worklogs locales agregando `participant_employee_ids` cuando existe mapeo `user_id -> employee_id`, preservando `participant_user_ids` legacy.
+- Mobile: los avatares de employees usan `profile_file_id` del usuario vinculado o el cache local de users; no usan `avatar_file_id` del employee.
+- No se tocaron tablas GPS, captura GPS ni tracking crudo por `user_id`.
+- validacion: `php -l` de archivos PHP editados en `sisa.api` -> PASS.
+- validacion: `vendor/bin/phpunit tests/Models/WorkLogParticipantsTest.php` en `sisa.api` -> PASS.
+- validacion: `vendor/bin/phpunit tests/Controllers/WorkLogsControllerTest.php` en `sisa.api` -> PASS.
+- validacion: `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerWorkLogsPushTest.php` en `sisa.api` -> PASS.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+- validacion: `npx tsc --noEmit` focalizado por archivos tocados en `sisa.ui` -> sin errores nuevos; el TypeScript completo sigue bloqueado por deuda global ya documentada.
+- pendiente externo: confirmar con token real que `GET /employees?company_id=45&status=active` responde en el entorno desplegado, con o sin prefijo `/public`.
+
+## SISA UI - jobs/worklogs employees y priority_id fase 5
+
+Estado: implementado parcialmente en `sisa.ui` con validacion liviana; TypeScript completo sigue bloqueado por deuda global existente.
+
+- `jobs` movil incorpora `priorityId`/`priority_id` en entidad, mapper, schema SQLite version `31`, migracion, repositorio local, create/update, bootstrap, pull sync y snapshots aceptados.
+- la creacion de jobs en mobile resuelve la prioridad seleccionada del catalogo y envia `priority_id`, conservando `priority` legacy en paralelo.
+- `work_logs` movil ahora preserva `participant_employee_ids` y `participant_user_ids` en el modelo, inputs, persistencia local `participants_json`, bootstrap, pull sync y restore de snapshots aceptados.
+- crear/editar worklogs separa IDs seleccionados en `participant_employee_ids`; solo usa `participant_user_ids`/`participants` legacy cuando no hay employee seleccionado.
+- `useCompanyUsers` intenta cargar empleados activos y mantiene usuarios de compania como fallback legacy para cuentas sin employee vinculado.
+- `ParticipantAvatarStrip` usa `employeeId ?? userId` como ID seleccionable y permite renderizar participantes employee/legacy sin crear un componente nuevo.
+- GPS/tracking crudo no se migro: se mantiene basado en `user_id`; la resolucion `user_id -> employee_id` solo se aplica al payload operativo de worklogs cuando existe employee.
+- se reviso la alineacion de columnas/parametros SQL para `priority_id` en `SQLiteJobsRepository` y `SQLiteSyncRepository`.
+- validacion: `npm run lint` en `sisa.ui` -> PASS.
+- validacion: `npm run check:cache` en `sisa.ui` -> PASS.
+- validacion: `npm run check:sync-smoke` en `sisa.ui` -> PASS.
+- validacion: `npx tsc --noEmit` en `sisa.ui` -> BLOQUEADO por errores TypeScript globales preexistentes/no relacionados en clientes, invoices, receipts, contexts, tracking y utilidades; se corrigieron los errores directamente introducidos por esta fase que faltaban `priorityId`, `employeeId` o `WorkLogFormState`.
+- punto ciego: el endpoint movil `/employees?company_id=...&status=active` queda inferido y debe validarse contra una sesion real/API desplegada.
+
 ## SISA Web - WorkLogEditorModal compartido fase 3
 
 Estado: implementado en `sisa.web` con validacion de lint/build.
