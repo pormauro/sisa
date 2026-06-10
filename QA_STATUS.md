@@ -57,6 +57,19 @@ Estado: implementado localmente en `sisa.web` con validacion de lint/build.
 - Validacion: `npm run lint` en `sisa.web` -> PASS.
 - Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
 
+## SISA API/Web - ventana Argentina para worklogs timeline
+
+Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sintaxis/lint/build.
+
+- API: `/work_logs/timeline?date=YYYY-MM-DD` ahora consulta la ventana UTC correspondiente al dia operativo Argentina: `YYYY-MM-DD 03:00:00` hasta `+1 day 03:00:00`.
+- API: `/work_logs/month-activity` usa ventana mensual desde `03:00 UTC` y agrupa con `DATE(DATE_SUB(started_at, INTERVAL 3 HOUR))` para pintar el calendario por fecha Argentina.
+- Web: `WorklogsTimelinePage` interpreta timestamps sin zona del servidor como UTC y los convierte a `America/Argentina/Buenos_Aires` para dibujar lapsos y worklogs.
+- Web: al crear/mover/redimensionar worklogs desde el timeline, vuelve a enviar ISO UTC, coherente con la ventana `03:00 -> 03:00` del backend.
+- Riesgo cubierto: worklogs y lapsos entre 21:00 y 23:59 Argentina ahora pertenecen al dia operativo correcto aunque en UTC sean `00:00-02:59` del dia siguiente.
+- Validacion: `php -l src/Controllers/WorkLogsController.php` y `php -l src/Models/WorkLogs.php` en `sisa.api` -> PASS.
+- Validacion: `npm run lint` en `sisa.web` -> PASS.
+- Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
+
 ## SISA API - tracking GPS timeline auto events fase 1
 
 Estado: implementado en `sisa.api` con validacion de sintaxis focalizada; ejecucion real pendiente por entorno local/BD.
