@@ -25,6 +25,8 @@ Estado: implementado localmente en `sisa.web` con validacion de lint/build.
 - El editor de links reemplaza el input numerico por selector para `client`, `provider` y `job`, y muestra avatar/logo con `SecureAvatar` cuando la compania vinculada expone `profile_file_id`.
 - Para links de cliente sin trabajos abiertos detectados (`completed_at` vacio), aparece la indicacion y botones para crear trabajo o presupuesto.
 - Los botones navegan a `/jobs?client_id=...` o `/quotes?client_id=...`; no crean datos ni modifican servidor directamente.
+- La fila visual del link se compacto en una tarjeta con logo de entidad mas grande, controles alineados y acciones comerciales en linea secundaria.
+- `JobsPage` ahora reconoce `client_id` en querystring y abre el editor de nuevo trabajo con cliente preseleccionado, igual que presupuestos.
 - `QuotesPage` ahora reconoce `client_id` en querystring, filtra por ese cliente y abre el editor de nuevo presupuesto con cliente preseleccionado.
 - Punto ciego: la deteccion de trabajos abiertos usa `completed_at` porque el catalogo de jobs disponible en esta pantalla no trae atributo semantico de estado finalizado/cerrado.
 - Validacion: `npm run lint` en `sisa.web` -> PASS.
