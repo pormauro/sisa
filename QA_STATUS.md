@@ -98,6 +98,18 @@ Estado: implementado localmente en `sisa.web` con validacion de lint/build.
 - Validacion: `npm run lint` en `sisa.web` -> PASS.
 - Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
 
+## SISA Web - adaptacion contrato tracking timeline API
+
+Estado: implementado localmente solo en `sisa.web` con validacion de lint/build.
+
+- `trackingCatalogsService` ahora acepta `time_blocks` y fallback `tracking_blocks` para tolerar el contrato nuevo/viejo del timeline GPS.
+- Los bloques GPS normalizan campos enriquecidos opcionales de entidad detectada: `detected_entity_type`, `detected_entity_id`, `detected_entity_name`, `detected_entity_profile_file_id` y distancia.
+- Los links normalizan campos enriquecidos opcionales de entidad: nombre/label y profile/logo file ids.
+- La UI de `/tracking-timeline` usa primero los datos enriquecidos de la API para globos/labels y mantiene fallback a catalogos locales si esos campos no llegan.
+- No se toco `sisa.api`.
+- Validacion: `npm run lint` en `sisa.web` -> PASS.
+- Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
+
 ## SISA API - tracking GPS timeline auto events fase 1
 
 Estado: implementado en `sisa.api` con validacion de sintaxis focalizada; ejecucion real pendiente por entorno local/BD.
