@@ -1,5 +1,20 @@
 # Estado QA
 
+## SISA API/Web - tracking blocks a worklogs con entidad detectada
+
+Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sintaxis/lint/build; prueba HTTP real pendiente por entorno local/BD.
+
+- API: `TrackingEventDetectorService` guarda metadata normalizada `detected_place` para viajes, visitas a `client`/`provider` y paradas desconocidas.
+- API: `WorkLogsController::timeline` adjunta links de `tracking_time_block_links` a cada `tracking_block` y expone campos planos `detected_entity_type`, `detected_entity_id`, `detected_entity_name` y `detected_entity_distance_m`.
+- Web: `worklogsTimelineService` normaliza metadata, links y entidad detectada para bloques GPS dentro de `/worklogs-timeline`.
+- Web: al convertir un lapso GPS en worklog, si el bloque detecta un cliente se filtran los trabajos por `client_id` y solo se preselecciona el trabajo cuando hay una unica coincidencia.
+- Web: los bloques de proveedor o desconocidos conservan metadata visible en el draft/titulo sin forzar seleccion de trabajo incompatible.
+- Validacion: `php -l src/Controllers/WorkLogsController.php` en `sisa.api` -> PASS.
+- Validacion: `php -l src/Services/TrackingEventDetectorService.php` en `sisa.api` -> PASS.
+- Validacion: `npm run lint` en `sisa.web` -> PASS.
+- Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
+- Bloqueo: PHPUnit focalizado de tracking/worklogs no se pudo ejecutar de forma confiable por conexion BD local rechazada (`SQLSTATE[HY000] [2002]`).
+
 ## SISA API - tracking GPS timeline auto events fase 1
 
 Estado: implementado en `sisa.api` con validacion de sintaxis focalizada; ejecucion real pendiente por entorno local/BD.
