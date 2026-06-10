@@ -15,6 +15,21 @@ Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sin
 - Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
 - Bloqueo: PHPUnit focalizado de tracking/worklogs no se pudo ejecutar de forma confiable por conexion BD local rechazada (`SQLSTATE[HY000] [2002]`).
 
+## SISA Web - tracking links con entidad visible y acciones comerciales
+
+Estado: implementado localmente en `sisa.web` con validacion de lint/build.
+
+- `TrackingTimelinePage` carga catalogos locales de clientes, proveedores y trabajos para resolver links de lapsos GPS sin mostrar solo `entity_id`.
+- La resolucion de nombre/logo replica el patron de `ClientsPage`: usa `client_company_id`/`provider_company_id` y carga las `companies` exactas con `listCompaniesForIds`, porque `business_name` puede llegar como `Sin nombre`.
+- El resumen de links ahora muestra el nombre resuelto de la entidad, por ejemplo cliente/proveedor/trabajo, con fallback a `Tipo #id` si el catalogo no tiene el registro.
+- El editor de links reemplaza el input numerico por selector para `client`, `provider` y `job`, y muestra avatar/logo con `SecureAvatar` cuando la compania vinculada expone `profile_file_id`.
+- Para links de cliente sin trabajos abiertos detectados (`completed_at` vacio), aparece la indicacion y botones para crear trabajo o presupuesto.
+- Los botones navegan a `/jobs?client_id=...` o `/quotes?client_id=...`; no crean datos ni modifican servidor directamente.
+- `QuotesPage` ahora reconoce `client_id` en querystring, filtra por ese cliente y abre el editor de nuevo presupuesto con cliente preseleccionado.
+- Punto ciego: la deteccion de trabajos abiertos usa `completed_at` porque el catalogo de jobs disponible en esta pantalla no trae atributo semantico de estado finalizado/cerrado.
+- Validacion: `npm run lint` en `sisa.web` -> PASS.
+- Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
+
 ## SISA API - tracking GPS timeline auto events fase 1
 
 Estado: implementado en `sisa.api` con validacion de sintaxis focalizada; ejecucion real pendiente por entorno local/BD.
