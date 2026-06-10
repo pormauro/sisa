@@ -70,6 +70,34 @@ Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sin
 - Validacion: `npm run lint` en `sisa.web` -> PASS.
 - Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
 
+## SISA Web - globos de cliente/proveedor en lapsos GPS
+
+Estado: implementado localmente en `sisa.web` con validacion de lint/build.
+
+- `/worklogs-timeline` ahora resuelve links de lapsos GPS con `entity_type=client|provider` para dibujar un globo con logo/nombre sobre el bloque GPS.
+- La resolucion usa los links del lapso como fuente, priorizando `role=visited`, y carga clientes/proveedores mas las `companies` vinculadas para obtener `profile_file_id`.
+- El globo usa `SecureAvatar`, por lo que muestra imagen si existe logo y fallback por iniciales si no hay archivo.
+- El globo se renderiza como marcador independiente sobre el timeline, centrado en el lapso, para que se vea aunque el bloque GPS sea muy corto o este comprimido.
+- En `/worklogs-timeline` se separaron carriles verticales: globo arriba, lapso GPS al medio y worklog abajo, evitando encimado visual.
+- En `/tracking-timeline` se agregaron globos de cliente/proveedor en el rail de lapsos, centrados por link del bloque.
+- En el mapa de `/tracking-timeline` se agregaron markers de cliente/proveedor en las coordenadas del bloque (`start_lat/start_lng` con fallback a `end_lat/end_lng`) usando el logo protegido cuando existe.
+- Se ajusto el rail compacto/fullscreen para separar globo y lapso sin solapamiento visual.
+- Al seleccionar un globo del rail se selecciona tambien el punto GPS temporalmente mas cercano; al seleccionar un globo del mapa se selecciona el punto GPS espacialmente mas cercano.
+- No se tocaron backend ni reglas horarias en este hito.
+- Validacion: `npm run lint` en `sisa.web` -> PASS.
+- Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
+
+## SISA Web - seleccion multiple de bloques GPS
+
+Estado: implementado localmente en `sisa.web` con validacion de lint/build.
+
+- La tabla de bloques de `/tracking-timeline` ahora tiene seleccion grafica por fila con checkbox visual.
+- Se agrego toolbar con contador, `Seleccionar todos`, limpiar seleccion y `Eliminar seleccionados`.
+- El borrado en lote usa el endpoint existente por bloque y confirma antes de eliminar; no borra puntos GPS raw.
+- Tras eliminar, se refresca el timeline una sola vez y se limpia la seleccion.
+- Validacion: `npm run lint` en `sisa.web` -> PASS.
+- Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
+
 ## SISA API - tracking GPS timeline auto events fase 1
 
 Estado: implementado en `sisa.api` con validacion de sintaxis focalizada; ejecucion real pendiente por entorno local/BD.
