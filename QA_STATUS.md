@@ -32,6 +32,31 @@ Estado: implementado localmente en `sisa.web` con validacion de lint/build.
 - Validacion: `npm run lint` en `sisa.web` -> PASS.
 - Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
 
+## SISA API/Web - persistencia de worklog creado desde lapso GPS
+
+Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sintaxis/lint/build; prueba HTTP real pendiente por entorno local/BD.
+
+- Web: al guardar un worklog creado desde un lapso GPS, el payload ahora envia `source_tracking_block_id` con el id del `tracking_time_block` original.
+- Web: la validacion previa al POST ahora separa errores de empresa/usuario/fecha, trabajo faltante y tarifa faltante para que el usuario vea por que no se guarda.
+- API: `POST /work_logs` acepta `source_tracking_block_id` opcional y valida que sea entero positivo o null.
+- API: cuando el worklog se crea, se agrega link idempotente en `tracking_time_block_links` con `entity_type=worklog`, `role=worked_on` y `allocation_percent=100`.
+- API: si el request cae por idempotencia y devuelve un worklog existente, tambien asegura el link contra el lapso GPS.
+- Punto ciego: `work_logs` sigue requiriendo `job_id` y tarifa/tipo; si el lapso no tiene trabajo compatible, primero hay que crear/seleccionar trabajo y tarifa antes de persistir el worklog.
+- Validacion: `php -l src/Controllers/WorkLogsController.php` en `sisa.api` -> PASS.
+- Validacion: `npm run lint` en `sisa.web` -> PASS.
+- Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
+
+## SISA Web - correccion horaria al guardar worklogs desde timeline
+
+Estado: implementado localmente en `sisa.web` con validacion de lint/build.
+
+- Se corrigio `dateTimeFromMinute` en `WorklogsTimelinePage` para enviar `started_at`/`ended_at` como hora de pared `YYYY-MM-DD HH:mm:ss` en vez de ISO UTC con `Z`.
+- Causa: `/work_logs/timeline` consulta rangos diarios como `YYYY-MM-DD 00:00:00` a `+1 day` sin convertir Argentina a UTC; enviar `23:xx Argentina` como ISO UTC terminaba guardando `02:xx` del dia siguiente y el worklog desaparecia del dia operativo original.
+- Verificacion remota read-only: `php -r 'echo date_default_timezone_get(), PHP_EOL;'` en `sistema_test` devolvio `UTC`, por lo que un datetime sin zona queda coherente con el contrato wall-time actual del endpoint.
+- Punto ciego: los worklogs ya creados con el payload ISO anterior pueden haber quedado persistidos en el dia siguiente y requieren correccion de datos separada si se quieren reubicar; no se modifico DB remota.
+- Validacion: `npm run lint` en `sisa.web` -> PASS.
+- Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
+
 ## SISA API - tracking GPS timeline auto events fase 1
 
 Estado: implementado en `sisa.api` con validacion de sintaxis focalizada; ejecucion real pendiente por entorno local/BD.
