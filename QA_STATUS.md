@@ -11,6 +11,8 @@ Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sin
 - API: `/tracking/nearby-clients` y `/tracking/nearby-providers` agregan campos opcionales `match_source`, `zone_id`, `zone_name`, `match_method`, `confidence` e `is_ambiguous`.
 - Web: se agrego servicio `empresaGpsZonesService.ts`.
 - Web: `SettingsPage` incluye una seccion exclusiva `Configuracion de empresa · Zonas GPS` con mapa Leaflet para centro/radio y editor basico de poligono por vertices.
+- Web: el editor de poligono ya no obliga a manipular JSON; permite click en mapa, editar lat/lng por punto, insertar puntos intermedios y eliminar vertices. El GeoJSON queda como seccion avanzada.
+- Web: en `CompaniesPage`, solo el superusuario ve el boton `Configurar zonas GPS` dentro de cada empresa para abrir la misma configuracion con `gps_company_id`.
 - Web: la edicion queda habilitada para superusuario, owner o admin de la empresa activa.
 - Web: la vista de cercania muestra fuente GPS/direccion principal y confianza cuando viene del backend.
 - Documentacion: `sisa.api/docs/tracking-api.md` describe modelo, jerarquia, endpoints, fallback, ambiguedad y limitaciones fase 1.
@@ -21,6 +23,7 @@ Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sin
 - Punto ciego: no se incorporo editor avanzado de poligonos; se agregan vertices por click y se permite ajuste manual del GeoJSON.
 - Punto ciego: tests HTTP/BD reales quedan sujetos al ambiente local disponible.
 - Confirmacion: `sisa.ui` no fue tocado.
+- Correccion posterior: se corrigio el posible `Internal Server Error` por firmas incompatibles en `EmpresaGpsZones::findById`/`update` al heredar de `BaseModel`; las operaciones con alcance de empresa usan ahora `findByZoneId`/`updateZone`.
 
 ## SISA API/Web - tracking blocks a worklogs con entidad detectada
 
