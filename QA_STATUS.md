@@ -11,7 +11,7 @@ Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sin
 - API: `/tracking/nearby-clients` y `/tracking/nearby-providers` agregan campos opcionales `match_source`, `zone_id`, `zone_name`, `match_method`, `confidence` e `is_ambiguous`.
 - Web: se agrego servicio `empresaGpsZonesService.ts`.
 - Web: `SettingsPage` incluye una seccion exclusiva `Configuracion de empresa · Zonas GPS` con mapa Leaflet para centro/radio y editor basico de poligono por vertices.
-- Web: el editor de poligono ya no obliga a manipular JSON; permite click en mapa, editar lat/lng por punto, insertar puntos intermedios y eliminar vertices. El GeoJSON queda como seccion avanzada.
+- Web: el editor de poligono ya no expone JSON como texto; permite click en mapa, editar lat/lng por punto, insertar puntos intermedios y eliminar vertices. El payload GeoJSON se genera internamente desde los puntos.
 - Web: el mapa de zonas GPS ahora permite mas zoom (`maxZoom=21`) y selector de capa `Calle`/`Satelite` con Esri World Imagery.
 - Web: en `CompaniesPage`, solo el superusuario ve el boton `Configurar zonas GPS` dentro de cada empresa para abrir la misma configuracion con `gps_company_id`.
 - Web: la edicion queda habilitada para superusuario, owner o admin de la empresa activa.
@@ -26,6 +26,8 @@ Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sin
 - Confirmacion: `sisa.ui` no fue tocado.
 - Correccion posterior: se corrigio el posible `Internal Server Error` por firmas incompatibles en `EmpresaGpsZones::findById`/`update` al heredar de `BaseModel`; las operaciones con alcance de empresa usan ahora `findByZoneId`/`updateZone`.
 - Correccion posterior: se elimino tambien la firma incompatible de `EmpresaGpsZones::create` y los endpoints `/empresas/{id}/gps-zones` devuelven `detail`/`exception` en JSON ante fallas para diagnostico visible en web.
+- Correccion posterior: `extractErrorMessage` ahora muestra `detail` junto a `error/message`, para evitar alertas genericas tipo `Internal Server Error` cuando la API devuelve diagnostico JSON.
+- Correccion posterior: se agregaron aliases `/companies/{id}/gps-zones` y la web ahora usa esos endpoints; el error handler global fuerza detalles para cualquier ruta que contenga `/gps-zone` aunque `APP_DEBUG` este apagado.
 
 ## SISA API/Web - tracking blocks a worklogs con entidad detectada
 
