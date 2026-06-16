@@ -110,6 +110,19 @@ Estado: implementado localmente solo en `sisa.web` con validacion de lint/build.
 - Validacion: `npm run lint` en `sisa.web` -> PASS.
 - Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
 
+## SISA Web - ventana Argentina explicita para tracking timeline
+
+Estado: implementado localmente solo en `sisa.web` con validacion de lint/build.
+
+- `getTrackingTimeline` calcula en la web la ventana UTC del dia Argentina seleccionado: `YYYY-MM-DD 03:00:00` hasta `+1 day 03:00:00`.
+- La request a `/tracking/timeline` conserva `date` y `timezone=America/Argentina/Buenos_Aires`, y agrega `date_from`/`date_to` como contrato explicito para APIs que acepten rango.
+- El cliente HTTP omite parametros `undefined`, por lo que el cambio no rompe fechas invalidas ni servidores que ignoren `date_from`/`date_to`.
+- No se toco `sisa.api` ni servidor remoto; el endpoint actual ya construye su ventana desde `date + timezone`.
+- Riesgo cubierto: la web comunica claramente el dia operativo Argentina al servidor como rango UTC `03:00 -> 03:00` sin desplazar visualmente el dia local.
+- Punto ciego: si el backend desplegado ignora `date_from`/`date_to`, el comportamiento depende de que respete `timezone`, que fue confirmado por lectura local del controlador pero no por escritura ni prueba remota mutante.
+- Validacion: `npm run lint` en `sisa.web` -> PASS.
+- Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
+
 ## SISA API - tracking GPS timeline auto events fase 1
 
 Estado: implementado en `sisa.api` con validacion de sintaxis focalizada; ejecucion real pendiente por entorno local/BD.
