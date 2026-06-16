@@ -12,6 +12,7 @@ Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sin
 - Web: se agrego servicio `empresaGpsZonesService.ts`.
 - Web: `SettingsPage` incluye una seccion exclusiva `Configuracion de empresa · Zonas GPS` con mapa Leaflet para centro/radio y editor basico de poligono por vertices.
 - Web: el editor de poligono ya no obliga a manipular JSON; permite click en mapa, editar lat/lng por punto, insertar puntos intermedios y eliminar vertices. El GeoJSON queda como seccion avanzada.
+- Web: el mapa de zonas GPS ahora permite mas zoom (`maxZoom=21`) y selector de capa `Calle`/`Satelite` con Esri World Imagery.
 - Web: en `CompaniesPage`, solo el superusuario ve el boton `Configurar zonas GPS` dentro de cada empresa para abrir la misma configuracion con `gps_company_id`.
 - Web: la edicion queda habilitada para superusuario, owner o admin de la empresa activa.
 - Web: la vista de cercania muestra fuente GPS/direccion principal y confianza cuando viene del backend.
@@ -24,6 +25,7 @@ Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sin
 - Punto ciego: tests HTTP/BD reales quedan sujetos al ambiente local disponible.
 - Confirmacion: `sisa.ui` no fue tocado.
 - Correccion posterior: se corrigio el posible `Internal Server Error` por firmas incompatibles en `EmpresaGpsZones::findById`/`update` al heredar de `BaseModel`; las operaciones con alcance de empresa usan ahora `findByZoneId`/`updateZone`.
+- Correccion posterior: se elimino tambien la firma incompatible de `EmpresaGpsZones::create` y los endpoints `/empresas/{id}/gps-zones` devuelven `detail`/`exception` en JSON ante fallas para diagnostico visible en web.
 
 ## SISA API/Web - tracking blocks a worklogs con entidad detectada
 
