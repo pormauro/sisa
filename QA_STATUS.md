@@ -1,5 +1,27 @@
 # Estado QA
 
+## SISA API/Web - zonas GPS operativas sobre empresas
+
+Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sintaxis/lint/build; PHPUnit focalizado bloqueado por BD local.
+
+- API: se agrego `empresa_gps_zones` con migracion idempotente `scripts/migrations/empresa-gps-zones-phase1.php`, registrada en `install.php` y `update_install.php`.
+- API: se agregaron modelo/controlador/rutas para zonas GPS desde clientes, proveedores y empresa real (`/empresas/{id}/gps-zones`).
+- API: `EmpresaGpsZoneMatcherService` evalua radio, margen y `Polygon` simple, con scoring, penalizacion por precision y ambiguedad.
+- API: `TrackingEventDetectorService` usa primero zona GPS operativa, conserva fallback por direccion principal y no crea link `visited` cuando el match es ambiguo.
+- API: `/tracking/nearby-clients` y `/tracking/nearby-providers` agregan campos opcionales `match_source`, `zone_id`, `zone_name`, `match_method`, `confidence` e `is_ambiguous`.
+- Web: se agrego servicio `empresaGpsZonesService.ts`.
+- Web: `SettingsPage` incluye una seccion exclusiva `Configuracion de empresa · Zonas GPS` con mapa Leaflet para centro/radio y editor basico de poligono por vertices.
+- Web: la edicion queda habilitada para superusuario, owner o admin de la empresa activa.
+- Web: la vista de cercania muestra fuente GPS/direccion principal y confianza cuando viene del backend.
+- Documentacion: `sisa.api/docs/tracking-api.md` describe modelo, jerarquia, endpoints, fallback, ambiguedad y limitaciones fase 1.
+- Validacion: `php -l` en `src/Models/EmpresaGpsZones.php`, `src/Controllers/EmpresaGpsZonesController.php`, `src/Services/EmpresaGpsZoneMatcherService.php`, `src/Services/TrackingEventDetectorService.php`, `src/Controllers/TrackingController.php`, `src/Routes/api.php`, `install.php`, `update_install.php`, migracion y diagnostico -> PASS.
+- Validacion: `npm run lint` en `sisa.web` -> PASS.
+- Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite y regenera hashes en `dist`.
+- Bloqueo: `vendor/bin/phpunit tests/Controllers/TrackingControllerTest.php` no pudo ejecutarse por conexion BD local rechazada (`SQLSTATE[HY000] [2002]`).
+- Punto ciego: no se incorporo editor avanzado de poligonos; se agregan vertices por click y se permite ajuste manual del GeoJSON.
+- Punto ciego: tests HTTP/BD reales quedan sujetos al ambiente local disponible.
+- Confirmacion: `sisa.ui` no fue tocado.
+
 ## SISA API/Web - tracking blocks a worklogs con entidad detectada
 
 Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sintaxis/lint/build; prueba HTTP real pendiente por entorno local/BD.
