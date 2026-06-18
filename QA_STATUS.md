@@ -1,5 +1,19 @@
 # Estado QA
 
+## SISA API/UI - sync work_logs con employee_id real
+
+Estado: implementado localmente en `sisa.api` y `sisa.ui` con validacion focalizada y baseline parcial.
+
+- UI mobile: se elimino la equivalencia falsa `userId = employeeId` para empleados sin `user_id`; un usuario solo selecciona automaticamente un empleado si existe vinculo real `employees.user_id`.
+- UI mobile: antes de pushear `work_logs`, la cola corrige payloads pendientes sospechosos (`participant_employee_ids` vacio o igual a `[user_id]`) resolviendo `/employees?company_id=...&status=active`; si no hay empleado vinculado, bloquea el retry con error controlado.
+- API: `work_log_participants` valida empleados por `company_id`, `deleted_at` y `status=active` cuando la columna existe.
+- API sync: `work_logs` rechaza `job_uuid` que pertenece a otra empresa que la `company_id` del push.
+- API: los errores `invalid_work_log_participants` ahora incluyen contexto tecnico de `company_id`, `job_uuid`, ids recibidos, ids invalidos y motivo.
+- Validacion: `vendor/bin/phpunit tests/Controllers/SyncOperationsControllerWorkLogsPushTest.php tests/Controllers/WorkLogsControllerTest.php` en `sisa.api` -> PASS (8 tests, 47 assertions).
+- Validacion: `npm run lint` en `sisa.ui` -> PASS.
+- Baseline: `qa/run-baseline.ps1` -> PASS en Backend PHPUnit, Frontend lint, cache guard y sync smoke; FAIL existente/no relacionado en Frontend startup guard por expectativa `authTokenRef` en `scripts/startup-stability-smoke.js`.
+- Punto ciego: no se ejecuto prueba en dispositivo real; requiere confirmar con datos reales que `user_id=1` en `company_id=45` tenga `employees.user_id=1` y usar ese `employees.id`.
+
 ## SISA API/Web - zonas GPS operativas sobre empresas
 
 Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sintaxis/lint/build; PHPUnit focalizado bloqueado por BD local.
@@ -28,6 +42,7 @@ Estado: implementado localmente en `sisa.api` y `sisa.web` con validacion de sin
 - Correccion posterior: se elimino tambien la firma incompatible de `EmpresaGpsZones::create` y los endpoints `/empresas/{id}/gps-zones` devuelven `detail`/`exception` en JSON ante fallas para diagnostico visible en web.
 - Correccion posterior: `extractErrorMessage` ahora muestra `detail` junto a `error/message`, para evitar alertas genericas tipo `Internal Server Error` cuando la API devuelve diagnostico JSON.
 - Correccion posterior: se agregaron aliases `/companies/{id}/gps-zones` y la web ahora usa esos endpoints; el error handler global fuerza detalles para cualquier ruta que contenga `/gps-zone` aunque `APP_DEBUG` este apagado.
+- Correccion posterior: se agrego el import faltante de `EmpresaGpsZonesController` en `src/Routes/api.php`; en remoto `sistema-test` el endpoint autenticado `/api/companies/45/gps-zones?company_id=45&include_inactive=1` paso de `500 Callable EmpresaGpsZonesController::listEmpresaZones() does not exist` a `200 {"zones":[]}`.
 
 ## SISA API/Web - tracking blocks a worklogs con entidad detectada
 
