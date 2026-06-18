@@ -1,5 +1,18 @@
 # Estado QA
 
+## SISA API - PDF de facturas sin metadatos operativos
+
+Estado: implementado localmente con validacion de sintaxis focalizada.
+
+- API: `InvoicesController::enrichInvoiceItemsForPdf` dejo de agregar al PDF publico las lineas `Estado del trabajo: ...` y `Tipo: ...` para items asociados a trabajos.
+- API: se elimino del enriquecimiento PDF la consulta a `statuses` y la resolucion de `work_type`/tarifa que solo alimentaban esos metadatos internos.
+- API: `buildInvoicePdfHtml` ahora resuelve `nombre_fantasia` y `razon_social` sin warnings cuando alguna clave falta; si ambos existen, el PDF conserva ambos datos para empresa emisora y cliente facturado.
+- Test: se agrego cobertura para confirmar que el PDF muestra nombre de fantasia y razon social cuando ambos estan disponibles.
+- Se conserva la estructura de `invoice items`, la creacion de facturas, sync, work_logs y estados de jobs sin cambios; el ajuste queda limitado a los detalles renderizados para PDF.
+- Validacion: `php -l src/Controllers/InvoicesController.php` en `sisa.api` -> PASS.
+- Validacion: `vendor/bin/phpunit tests/Controllers/InvoicesControllerPdfRegressionTest.php` en `sisa.api` -> PASS (3 tests, 9 assertions), sin warnings.
+- Punto ciego: no se genero un PDF real en este entorno; la verificacion ejecutada fue sintaxis, regresion focalizada y busqueda focalizada de etiquetas removidas.
+
 ## SISA API/UI - sync work_logs con employee_id real
 
 Estado: implementado localmente en `sisa.api` y `sisa.ui` con validacion focalizada y baseline parcial.
