@@ -1,5 +1,28 @@
 # Estado QA
 
+## SISA API/UI/Web - tracking GPS runtime global y velocidad v2
+
+Estado: implementado localmente con validacion focalizada; pruebas de dispositivo real pendientes.
+
+- UI mobile: `TrackingRuntimeProvider` se monta globalmente durante la sesion autenticada y ya no depende de `pathname.startsWith('/tracking')` para arrancar captura, watchdog ni sync.
+- UI mobile: `src/tracking/syncService.ts` centraliza el envio offline-first con debounce corto, lock de modulo, backoff, timeout, reintento de `sending` abandonados y conservacion de puntos ante errores temporales.
+- UI mobile: los puntos aceptados por Expo Location se guardan primero en `gps_points_queue` y luego disparan sync casi en tiempo real incluso desde la tarea background, usando token seguro y cache local cuando React no esta montado.
+- UI mobile: los puntos confirmados por backend pasan a `acked` con `server_point_id`; ya no se borran al sincronizar. Los rechazos definitivos quedan `rejected` y los errores temporales vuelven a `failed`.
+- UI mobile: `decisionEngine` baja el limite imposible a 55 m/s, exige intervalos >= 5s para velocidad, descarta/aisla mock, baja precision, jitter y puntos previos invalidos para movimiento/ruta.
+- API: `GpsPointMetrics` agrega `gps_metrics_v2` y mantiene `gps_metrics_v1` sin redefinirlo.
+- API: ingest batch y recálculo por defecto usan `GpsPointMetrics::CURRENT_ALGORITHM_VERSION` (`gps_metrics_v2`).
+- API: `gps_metrics_v2` descuenta el margen combinado de precision, exige precision <= 40m, intervalo 5-300s, timestamps crecientes, no mock y velocidad <= 55 m/s; si no hay velocidad confiable deja `effective_speed_mps = null`.
+- API: se agrego `scripts/recalculate-gps-metrics-v2.php` para recalculo historico filtrado por usuario, dispositivo, empresa y rango.
+- Web: `/tracking-timeline` usa `effective_speed_mps` validada para velocimetro/grafico y muestra `Sin velocidad confiable` cuando no existe metrica valida; no usa `provider_speed_mps` como fallback visual.
+- Documentacion: `sisa.ui/docs/architecture/tracking-runtime-offline-first.md` y `sisa.api/docs/tracking-api.md` describen arquitectura, flujo, triggers, metricas v2 y recálculo.
+- Validacion: `npm run lint` en `sisa.ui` -> PASS.
+- Validacion: chequeo focalizado `npx tsc --noEmit --pretty false | Select-String "database/tracking|src/tracking|contexts/TrackingContext|app/_layout"` -> sin errores GPS; `npx tsc --noEmit` completo conserva errores TypeScript preexistentes fuera de GPS.
+- Validacion: `php -l src/Models/GpsPointMetrics.php`, `php -l src/Controllers/TrackingController.php` y `php -l scripts/recalculate-gps-metrics-v2.php` en `sisa.api` -> PASS.
+- Validacion: `vendor/bin/phpunit tests/Controllers/TrackingControllerTest.php` en `sisa.api` -> PASS de exit code, mantiene ruido de conexion BD local ya registrado en baseline.
+- Validacion: `npm run build` en `sisa.web` -> PASS; mantiene warning existente de chunks grandes de Vite.
+- Punto ciego: no se ejecuto en dispositivo Android/Expo real; en condiciones donde Android no permita HTTP en background, la tarea conserva el punto en SQLite y el runtime lo reintenta al recuperar foreground/red.
+- Punto ciego: la suite mobile no tiene harness unitario existente para Expo Location/SQLite; la validacion automatizada quedo en lint/typecheck focalizado.
+
 ## SISA API - PDF de facturas sin metadatos operativos
 
 Estado: implementado localmente con validacion de sintaxis focalizada.
@@ -27,6 +50,12 @@ Estado: implementado localmente en `sisa.api` y `sisa.ui` con validacion focaliz
 - Baseline: `qa/run-baseline.ps1` -> PASS en Backend PHPUnit, Frontend lint, cache guard y sync smoke; FAIL existente/no relacionado en Frontend startup guard por expectativa `authTokenRef` en `scripts/startup-stability-smoke.js`.
 - Punto ciego: no se ejecuto prueba en dispositivo real; requiere confirmar con datos reales que `user_id=1` en `company_id=45` tenga `employees.user_id=1` y usar ese `employees.id`.
 - Correccion posterior: `useRunJobsSync` ya no interpreta `participant_employee_ids=[user_id]` como payload legado cuando la lista trae valores; solo resuelve el empleado actual si `participant_employee_ids` viene vacio. Esto evita bloquear localmente worklogs validos cuando coinciden numericamente `user_id` y `employee_id`.
+- Validacion posterior: `npm run lint` en `sisa.ui` -> PASS.
+- Correccion posterior: el formulario mobile de worklogs ahora carga participantes desde la empresa del trabajo, no desde la empresa activa de la barra de navegacion; cuando se cargan empleados, reemplaza el fallback `[user_id]` por el `employee_id` real del usuario.
+- Correccion posterior: el formulario mobile de worklogs aplica automaticamente la tarifa por defecto del cliente cuando el dato llega despues del montaje inicial del formulario y conserva la seleccion manual si el usuario ya eligio una tarifa.
+- Validacion posterior: `npm run lint` en `sisa.ui` -> PASS.
+- Correccion posterior: el push de worklogs repara operaciones ya encoladas con el patron legado `participant_employee_ids=[user_id]`; intenta resolver el `employee_id` real y, si no lo encuentra, elimina `participant_employee_ids` y envia `participant_user_ids` para que el servidor resuelva por usuario/membresia en vez de rechazar `employee_id` invalido.
+- Correccion posterior: `createWorkLog`/`updateWorkLog` ya no serializan `participant_employee_ids` cuando la lista esta vacia, evitando forzar la ruta de validacion por empleado.
 - Validacion posterior: `npm run lint` en `sisa.ui` -> PASS.
 
 ## SISA API/Web - zonas GPS operativas sobre empresas
