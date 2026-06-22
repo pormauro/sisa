@@ -26,6 +26,8 @@ Estado: implementado localmente en `sisa.api` y `sisa.ui` con validacion focaliz
 - Validacion: `npm run lint` en `sisa.ui` -> PASS.
 - Baseline: `qa/run-baseline.ps1` -> PASS en Backend PHPUnit, Frontend lint, cache guard y sync smoke; FAIL existente/no relacionado en Frontend startup guard por expectativa `authTokenRef` en `scripts/startup-stability-smoke.js`.
 - Punto ciego: no se ejecuto prueba en dispositivo real; requiere confirmar con datos reales que `user_id=1` en `company_id=45` tenga `employees.user_id=1` y usar ese `employees.id`.
+- Correccion posterior: `useRunJobsSync` ya no interpreta `participant_employee_ids=[user_id]` como payload legado cuando la lista trae valores; solo resuelve el empleado actual si `participant_employee_ids` viene vacio. Esto evita bloquear localmente worklogs validos cuando coinciden numericamente `user_id` y `employee_id`.
+- Validacion posterior: `npm run lint` en `sisa.ui` -> PASS.
 
 ## SISA API/Web - zonas GPS operativas sobre empresas
 
