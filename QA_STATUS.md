@@ -4,18 +4,24 @@
 
 Estado: implementado localmente con validacion focalizada; pruebas de dispositivo real pendientes.
 
+- UI mobile: se agrego plugin Expo `plugins/withTrackingForegroundService.js` para generar un Foreground Service Android nativo con modulo `SisaTrackingForeground` durante `expo prebuild`/EAS.
+- UI mobile: el Foreground Service Android lee `sisa.db`, revive `sending`, marca lote `sending`, sube `/tracking/points/batch`, borra puntos aceptados localmente, conserva rechazados como `rejected` y vuelve temporales a `failed`.
 - UI mobile: `TrackingRuntimeProvider` se monta globalmente durante la sesion autenticada y ya no depende de `pathname.startsWith('/tracking')` para arrancar captura, watchdog ni sync.
+- UI mobile: `TrackingRuntimeProvider` arranca/detiene el Foreground Service Android junto con la policy/permisos/sesion; Expo Go no soporta este servicio, requiere dev build/EAS.
 - UI mobile: `src/tracking/syncService.ts` centraliza el envio offline-first con debounce corto, lock de modulo, backoff, timeout, reintento de `sending` abandonados y conservacion de puntos ante errores temporales.
 - UI mobile: los puntos aceptados por Expo Location se guardan primero en `gps_points_queue` y luego disparan sync casi en tiempo real incluso desde la tarea background, usando token seguro y cache local cuando React no esta montado.
-- UI mobile: los puntos confirmados por backend pasan a `acked` con `server_point_id`; ya no se borran al sincronizar. Los rechazos definitivos quedan `rejected` y los errores temporales vuelven a `failed`.
+- UI mobile: los puntos confirmados por backend se borran de SQLite local. Los rechazos definitivos quedan `rejected` y los errores temporales vuelven a `failed`.
+- UI mobile: las pantallas de cola/configuracion permiten eliminar rechazados de a uno, seleccionar varios y eliminarlos, o eliminar todos.
 - UI mobile: `decisionEngine` baja el limite imposible a 55 m/s, exige intervalos >= 5s para velocidad, descarta/aisla mock, baja precision, jitter y puntos previos invalidos para movimiento/ruta.
 - API: `GpsPointMetrics` agrega `gps_metrics_v2` y mantiene `gps_metrics_v1` sin redefinirlo.
 - API: ingest batch y recálculo por defecto usan `GpsPointMetrics::CURRENT_ALGORITHM_VERSION` (`gps_metrics_v2`).
+- API: `GET /tracking/status` enriquece `last_location` con metrica preferida y expone `speed_mps` como velocidad efectiva o `null`, conservando `provider_speed_mps` como dato crudo.
 - API: `gps_metrics_v2` descuenta el margen combinado de precision, exige precision <= 40m, intervalo 5-300s, timestamps crecientes, no mock y velocidad <= 55 m/s; si no hay velocidad confiable deja `effective_speed_mps = null`.
 - API: se agrego `scripts/recalculate-gps-metrics-v2.php` para recalculo historico filtrado por usuario, dispositivo, empresa y rango.
 - Web: `/tracking-timeline` usa `effective_speed_mps` validada para velocimetro/grafico y muestra `Sin velocidad confiable` cuando no existe metrica valida; no usa `provider_speed_mps` como fallback visual.
 - Documentacion: `sisa.ui/docs/architecture/tracking-runtime-offline-first.md` y `sisa.api/docs/tracking-api.md` describen arquitectura, flujo, triggers, metricas v2 y recálculo.
 - Validacion: `npm run lint` en `sisa.ui` -> PASS.
+- Validacion: `node --check plugins/withTrackingForegroundService.js` en `sisa.ui` -> PASS.
 - Validacion: chequeo focalizado `npx tsc --noEmit --pretty false | Select-String "database/tracking|src/tracking|contexts/TrackingContext|app/_layout"` -> sin errores GPS; `npx tsc --noEmit` completo conserva errores TypeScript preexistentes fuera de GPS.
 - Validacion: `php -l src/Models/GpsPointMetrics.php`, `php -l src/Controllers/TrackingController.php` y `php -l scripts/recalculate-gps-metrics-v2.php` en `sisa.api` -> PASS.
 - Validacion: `vendor/bin/phpunit tests/Controllers/TrackingControllerTest.php` en `sisa.api` -> PASS de exit code, mantiene ruido de conexion BD local ya registrado en baseline.
