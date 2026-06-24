@@ -1,11 +1,32 @@
 # Estado QA
 
+## SISA API - persistencia de IVA global en facturas
+
+Estado: implementado localmente con validacion focalizada. Correccion web agregada posteriormente.
+
+- API: `Invoices::recalculateTotals` ya no pisa el `tax_amount` de cabecera con cero cuando la factura tiene IVA global y los items no tienen IVA individual.
+- API: si los items si tienen `tax_amount`, la factura sigue recalculando el IVA desde las lineas para conservar el comportamiento existente de facturas con IVA por item.
+- Riesgo cubierto: creacion y actualizacion de facturas con IVA cargado a nivel comprobante dejaban de mostrar/persistir IVA despues de recalcular totales por items.
+- Validacion: `vendor/bin/phpunit tests/Models/InvoicesRecalculateTotalsTest.php` en `sisa.api` -> PASS (2 tests, 8 assertions).
+- Punto ciego: no se ejecuto la suite completa ni una prueba HTTP real contra BD MySQL en este turno.
+- Web: `InvoicesPage` ahora tiene campo `IVA %`, calcula `tax_amount` como porcentaje sobre subtotal y envia `tax_percentage`, `tax_amount` y `total_amount` coherentes; antes enviaba siempre `tax_amount: 0` y total igual al subtotal.
+- Web: al editar, el formulario prellena el porcentaje desde `tax_percentage` si llega o lo deriva de `tax_amount / subtotal`, evitando mostrar 21 pesos como si fuera 21%.
+- Validacion posterior web: `npm run lint` en `sisa.web` -> PASS.
+- UI mobile: se quitaron los campos `Descuento (%)` e `Impuesto (%)` del editor de items de facturas, tanto en alta como en edicion.
+- UI mobile: `prepareInvoiceItemPayloads` ya no envia `discount_amount` ni `tax_amount` por item; el IVA queda a nivel factura mediante porcentaje/monto total.
+- Web: el editor de items de factura ya no expone campos de impuesto/descuento por item y el guardado web no envia esos campos en cada item.
+- Validacion posterior UI/Web: `npm run lint` en `sisa.ui` -> PASS; `npm run lint` en `sisa.web` -> PASS.
+- UI mobile: los campos avanzados de item `Producto/servicio`, `Entidad`, `Trabajo asociado`, `Pago cobrable` y `Orden` pasan a selectores; el orden reacomoda visualmente la lista y actualiza `orderIndex`.
+- UI mobile: al elegir producto/servicio, trabajo o pago cobrable se completan descripcion/codigo/precio cuando el dato esta disponible; precio unitario y descripcion siguen editables como entrada necesaria.
+- Web: el modal de item de factura reemplaza tipo, trabajo, pago cobrable y orden por selectores nativos; el orden reacomoda la lista y se envia como `order_index`.
+- Validacion posterior selectores: `npm run lint` en `sisa.ui` -> PASS; `npm run lint` en `sisa.web` -> PASS.
+
 ## SISA API/UI/Web - tracking GPS runtime global y velocidad v2
 
 Estado: implementado localmente con validacion focalizada; pruebas de dispositivo real pendientes.
 
 - UI mobile: se agrego plugin Expo `plugins/withTrackingForegroundService.js` para generar un Foreground Service Android nativo con modulo `SisaTrackingForeground` durante `expo prebuild`/EAS.
-- UI mobile: el Foreground Service Android lee `sisa.db`, revive `sending`, marca lote `sending`, sube `/tracking/points/batch`, borra puntos aceptados localmente, conserva rechazados como `rejected` y vuelve temporales a `failed`.
+- UI mobile: el Foreground Service Android captura ubicaciones con `LocationManager`, inserta puntos en `gps_points_queue`, lee `sisa.db`, revive `sending`, marca lote `sending`, sube `/tracking/points/batch`, borra puntos aceptados localmente, conserva rechazados como `rejected` y vuelve temporales a `failed`.
 - UI mobile: `TrackingRuntimeProvider` se monta globalmente durante la sesion autenticada y ya no depende de `pathname.startsWith('/tracking')` para arrancar captura, watchdog ni sync.
 - UI mobile: `TrackingRuntimeProvider` arranca/detiene el Foreground Service Android junto con la policy/permisos/sesion; Expo Go no soporta este servicio, requiere dev build/EAS.
 - UI mobile: `src/tracking/syncService.ts` centraliza el envio offline-first con debounce corto, lock de modulo, backoff, timeout, reintento de `sending` abandonados y conservacion de puntos ante errores temporales.
@@ -22,6 +43,7 @@ Estado: implementado localmente con validacion focalizada; pruebas de dispositiv
 - Documentacion: `sisa.ui/docs/architecture/tracking-runtime-offline-first.md` y `sisa.api/docs/tracking-api.md` describen arquitectura, flujo, triggers, metricas v2 y recálculo.
 - Validacion: `npm run lint` en `sisa.ui` -> PASS.
 - Validacion: `node --check plugins/withTrackingForegroundService.js` en `sisa.ui` -> PASS.
+- Validacion: `npx expo config --json` en `sisa.ui` -> PASS.
 - Validacion: chequeo focalizado `npx tsc --noEmit --pretty false | Select-String "database/tracking|src/tracking|contexts/TrackingContext|app/_layout"` -> sin errores GPS; `npx tsc --noEmit` completo conserva errores TypeScript preexistentes fuera de GPS.
 - Validacion: `php -l src/Models/GpsPointMetrics.php`, `php -l src/Controllers/TrackingController.php` y `php -l scripts/recalculate-gps-metrics-v2.php` en `sisa.api` -> PASS.
 - Validacion: `vendor/bin/phpunit tests/Controllers/TrackingControllerTest.php` en `sisa.api` -> PASS de exit code, mantiene ruido de conexion BD local ya registrado en baseline.
