@@ -20,6 +20,9 @@ Estado: implementado localmente con validacion focalizada. Correccion web agrega
 - UI mobile: al elegir producto/servicio, trabajo o pago cobrable se completan descripcion/codigo/precio cuando el dato esta disponible; precio unitario y descripcion siguen editables como entrada necesaria.
 - Web: el modal de item de factura reemplaza tipo, trabajo, pago cobrable y orden por selectores nativos; el orden reacomoda la lista y se envia como `order_index`.
 - Validacion posterior selectores: `npm run lint` en `sisa.ui` -> PASS; `npm run lint` en `sisa.web` -> PASS.
+- UI mobile/Web: los selectores de trabajos y pagos cobrables en items de factura quedan filtrados por el cliente activo de la factura.
+- UI mobile/Web: en edicion de una factura existente el cliente queda bloqueado y el payload conserva el `client_id` original, evitando mover comprobantes entre clientes despues de creados.
+- Validacion posterior cliente bloqueado/filtros: `npm run lint` en `sisa.ui` -> PASS; `npm run lint` en `sisa.web` -> PASS.
 
 ## SISA API/UI/Web - tracking GPS runtime global y velocidad v2
 
