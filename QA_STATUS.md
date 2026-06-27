@@ -1,5 +1,30 @@
 # Estado QA
 
+## SISA API/Web/UI - recibos mayores a factura y saldo a favor
+
+Estado: implementado localmente con validacion focalizada.
+
+- API: `InvoicesController::attachReceipt` ya no toma el total del recibo como `applied_amount` por defecto; si no viene importe explicito aplica `min(saldo disponible del recibo, saldo pendiente de la factura)`.
+- API: si `applied_amount` viene explicito y supera el saldo pendiente de la factura, el endpoint rechaza con 409 y conserva la validacion contable de `ReceiptApplicationService`.
+- API: `ReceiptApplicationService` mantiene la restriccion por factura y por total del recibo, permite `total_receipt > total_applied`, deja `unapplied_balance` y reconcilia recibo como `partially_applied` cuando queda excedente.
+- API: se agrego `ClientStatementService` y endpoint `/accounting/client-statement` con movimientos cronologicos: facturas como DEBE, aplicaciones como HABER, excedentes como SALDO A FAVOR y `running_balance` acumulado con saldo negativo para credito del cliente.
+- Web: el detalle del cliente consume el statement del backend y muestra saldo cronologico; la barra de cobro muestra total recibido, aplicado y saldo a favor del cliente.
+- UI mobile: `app/clients/accounting.tsx` consume el mismo statement del backend y muestra saldo acumulado/saldo a favor; crear recibo desde factura envia `applied_amount` sugerido igual al pendiente y permite `price` mayor.
+- UI mobile/Web: el error `applied_amount exceeds the invoice pending balance` se traduce como `No podés aplicar a la factura más de lo que debe. El excedente debe quedar como saldo a favor.`
+- Test API: recibo 150000 aplicado a factura 100000 deja factura pagada y `unapplied_balance` 50000 con recibo `partially_applied`.
+- Test API: se conserva rechazo de `applied_amount` 150000 sobre factura 100000.
+- Test API: recibo 300000 paga facturas 100000 + 150000 y deja 50000 a favor.
+- Test API: falla de aplicacion no deja escrituras parciales en `invoice_receipt_payments`.
+- Test API: statement cronologico verifica saldos 100000 -> 0 -> -50000.
+- Validacion API: `php -l src/Services/ReceiptApplicationService.php`, `php -l src/Controllers/InvoicesController.php`, `php -l src/Services/ClientStatementService.php`, `php -l src/Controllers/AccountingController.php` -> PASS.
+- Validacion API: `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` -> PASS (15 tests, 52 assertions).
+- Validacion API: `vendor/bin/phpunit tests/Services/ClientStatementServiceTest.php` -> PASS (1 test, 3 assertions).
+- Validacion API: `vendor/bin/phpunit tests/Controllers/InvoicesOfflineFirstSmokeTest.php` -> PASS (3 tests, 14 assertions).
+- Validacion API: `vendor/bin/phpunit tests/Controllers/AccountingControllerTransactionSmokeTest.php` -> PASS (3 tests, 68 assertions).
+- Validacion Web: `npm run lint` -> PASS; `npm run build` -> PASS con warning preexistente de chunks grandes de Vite.
+- Validacion UI mobile: `npm run lint` -> PASS; `npm run typecheck` no existe en `sisa.ui`.
+- Punto ciego: no se agrego E2E HTTP cruzado API/Web/App; la equivalencia visual queda protegida por consumo del mismo endpoint de statement.
+
 ## SISA API - cierre transaccional recibos y pagos
 
 Estado: implementado localmente con validacion focalizada.
