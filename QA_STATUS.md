@@ -62,6 +62,12 @@ Estado: implementado localmente con validacion focalizada.
 - Test cierre performance facturas: se agrego `tests/Models/InvoicesTest.php` para proteger equivalencia entre detalle y listado, factura parcial con recibo confirmado/pendiente, recibo legacy confirmado y factura sin recibos.
 - Validacion cierre performance facturas API: `php -l src/Services/InvoiceSettlementSummaryService.php`, `php -l src/Models/Invoices.php` -> PASS.
 - Validacion cierre performance facturas API: `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` -> PASS (19 tests, 72 assertions); `vendor/bin/phpunit tests/Services/ClientStatementServiceTest.php` -> PASS (10 tests, 35 assertions); `vendor/bin/phpunit tests/Models/InvoicesTest.php` -> PASS (1 test, 14 assertions).
+- Informe real estado de cuenta: `GET /accounting/client-statement/report?format=pdf` genera PDF con Dompdf, lo guarda en `uploads/reports`, registra `files` y responde `file_id`, `download_url`, `filename` y metadata basica; `format=json` conserva `report.title`, `report.period` y `report.statement`.
+- Informe real estado de cuenta: el PDF usa `ClientStatementService` como verdad contable, muestra empresa, cliente, periodo, fecha de generacion, saldo inicial, tabla cronologica con debe/haber confirmado/pendiente/rechazado/saldo real, totales y nota aclaratoria; no renderiza estado/tipo interno de trabajos.
+- Informe real estado de cuenta Web/UI: web reemplaza el boton de informe JSON por `Descargar estado de cuenta` y descarga el `file_id`; mobile agrega descarga PDF desde la pantalla contable usando `FilesContext` para abrir el archivo protegido.
+- Validacion informe real API: `php -l src/Controllers/AccountingController.php`, `php -l src/Services/ClientStatementPdfGenerator.php` -> PASS.
+- Validacion informe real API: `vendor/bin/phpunit tests/Controllers/ClientStatementControllerTest.php` -> PASS (8 tests, 15 assertions); `vendor/bin/phpunit tests/Services/ClientStatementServiceTest.php` -> PASS (10 tests, 35 assertions); `vendor/bin/phpunit tests/Services/ClientStatementPdfGeneratorTest.php` -> PASS (2 tests, 11 assertions).
+- Validacion informe real Web/UI: `npm run lint` y `npm run build` en `sisa.web` -> PASS con warning preexistente de chunks grandes de Vite; `npm run lint` en `sisa.ui` -> PASS.
 
 ## SISA API - cierre transaccional recibos y pagos
 
