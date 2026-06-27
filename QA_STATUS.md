@@ -1,5 +1,22 @@
 # Estado QA
 
+## SISA API - cierre transaccional recibos y pagos
+
+Estado: implementado localmente con validacion focalizada.
+
+- API: `ReceiptsController::addReceipt` ahora crea recibo, items, conciliacion, historial, sync event y `syncReceiptEntries` dentro de la misma transaccion; la contabilidad corre antes del commit.
+- API: `ReceiptsController::updateReceipt` ahora actualiza recibo/items, reconcilia, registra historial/eventos y sincroniza contabilidad antes del commit; si falla, rollback completo del update.
+- API: `PaymentsController::addPayment` ahora crea pago, historial, sync event y `syncPaymentEntries` dentro de una transaccion unica; la notificacion de caja queda despues del commit.
+- API: `PaymentsController::updatePayment` ahora actualiza pago, historial, sync event, `syncPaymentEntries` y `reconcileReceiptsAndInvoicesForPayment` antes del commit; la notificacion queda despues del commit.
+- API: recibos/pagos instancian `AccountingFlowService` con la misma conexion transaccional del modelo/controlador.
+- API: helpers de recibos usados durante update aceptan la conexion activa para evitar consultas/reconciliaciones fuera de la transaccion.
+- Test: se agrego `AccountingControllerTransactionSmokeTest` para proteger que add/update de recibos y pagos mantengan `syncReceiptEntries`/`syncPaymentEntries` antes del commit y con rollback disponible.
+- Validacion: `php -l src/Controllers/ReceiptsController.php`, `php -l src/Controllers/PaymentsController.php`, `php -l src/Services/AccountingFlowService.php`, `php -l tests/Services/AccountingFlowServiceTest.php` y `php -l tests/Controllers/AccountingControllerTransactionSmokeTest.php` en `sisa.api` -> PASS.
+- Validacion: `vendor/bin/phpunit tests/Services/AccountingFlowServiceTest.php` en `sisa.api` -> PASS (13 tests, 117 assertions).
+- Validacion: `vendor/bin/phpunit tests/Controllers/InvoicesOfflineFirstSmokeTest.php` en `sisa.api` -> PASS (3 tests, 14 assertions).
+- Validacion: `vendor/bin/phpunit tests/Controllers/AccountingControllerTransactionSmokeTest.php` en `sisa.api` -> PASS (2 tests, 16 assertions).
+- Punto ciego: no se agrego harness HTTP/BD completo para simular una falla real de sync contable desde controller; la cobertura nueva protege el orden transaccional por smoke estatico y la semantica de no anular ante plan invalido queda cubierta en `AccountingFlowServiceTest`.
+
 ## SISA API - sync contable seguro para recibos y pagos
 
 Estado: implementado localmente con validacion focalizada.
@@ -16,7 +33,7 @@ Estado: implementado localmente con validacion focalizada.
 - Validacion: `php -l src/Services/AccountingFlowService.php`, `php -l src/Controllers/ReceiptsController.php`, `php -l src/Controllers/PaymentsController.php`, `php -l src/Services/ReceiptInstrumentLifecycleService.php` y `php -l tests/Services/AccountingFlowServiceTest.php` en `sisa.api` -> PASS.
 - Validacion: `vendor/bin/phpunit tests/Services/AccountingFlowServiceTest.php` en `sisa.api` -> PASS (13 tests, 117 assertions).
 - Validacion: `vendor/bin/phpunit tests/Controllers/InvoicesOfflineFirstSmokeTest.php` en `sisa.api` -> PASS (3 tests, 14 assertions).
-- Punto ciego: los controladores de creacion/actualizacion de recibos/pagos aun tienen efectos secundarios post-commit; este cambio evita exito silencioso, pero no convierte esos flujos completos en una unica transaccion HTTP.
+- Correccion posterior: el cierre transaccional de create/update en recibos y pagos queda implementado en el hito `SISA API - cierre transaccional recibos y pagos`.
 
 ## SISA API - facturas sin encabezados contables legacy
 
