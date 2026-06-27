@@ -50,6 +50,14 @@ Estado: implementado localmente con validacion focalizada.
 - Validacion facturas aplicadas vs cobradas API: `vendor/bin/phpunit tests/Services/ReceiptSettlementAmountServiceTest.php` -> PASS (6 tests, 16 assertions); `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` -> PASS (19 tests, 68 assertions); `vendor/bin/phpunit tests/Services/ClientStatementServiceTest.php` -> PASS (10 tests, 35 assertions); `vendor/bin/phpunit tests/Controllers/ClientStatementControllerTest.php` -> PASS (8 tests, 13 assertions).
 - Validacion facturas aplicadas vs cobradas Web: `npm run lint` -> PASS; `npm run build` -> PASS con warning preexistente de chunks grandes de Vite; cambios generados en `dist/` fueron revertidos.
 - Validacion facturas aplicadas vs cobradas UI mobile: `npm run lint` -> PASS.
+- Cierre consistencia facturas: se agrego `InvoiceSettlementSummaryService` como fuente unica para `total_applied`, `total_confirmed`, `pending_settlement_amount`, `rejected_settlement_amount`, `applied_pending_balance`, `real_pending_balance` y estado sugerido.
+- Cierre consistencia facturas: `ReceiptApplicationService::getInvoiceApplicationSummary`, `reconcileInvoiceStatus` e `Invoices::normalizeInvoice` delegan en la misma fuente; se elimina el uso all-or-nothing de `invoice_receipt_payments.status` para deuda real.
+- Cierre consistencia facturas: `InvoiceReceiptPayments` devuelve `receipt.status` y `receipt.settlement_status`; los links se enriquecen con `confirmed_amount`, `pending_amount` y `rejected_amount` derivados no persistidos.
+- Cierre consistencia facturas Web/UI: web y app usan `real_pending_balance` para deuda real y `confirmed_receipts_total`/`pending_settlement_amount` para confirmado y pendiente; `pending_balance` queda solo como compatibilidad de saldo no cubierto por aplicaciones.
+- Validacion cierre consistencia API: `php -l src/Services/InvoiceSettlementSummaryService.php`, `php -l src/Services/ReceiptApplicationService.php`, `php -l src/Services/ReceiptSettlementAmountService.php`, `php -l src/Models/Invoices.php` -> PASS.
+- Validacion cierre consistencia API: `vendor/bin/phpunit tests/Services/ReceiptSettlementAmountServiceTest.php` -> PASS (6 tests, 16 assertions); `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` -> PASS (19 tests, 72 assertions); `vendor/bin/phpunit tests/Services/ClientStatementServiceTest.php` -> PASS (10 tests, 35 assertions); `vendor/bin/phpunit tests/Controllers/ClientStatementControllerTest.php` -> PASS (8 tests, 13 assertions).
+- Validacion cierre consistencia Web: `npm run lint` -> PASS; `npm run build` -> PASS con warning preexistente de chunks grandes de Vite; cambios generados en `dist/` fueron revertidos.
+- Validacion cierre consistencia UI mobile: `npm run lint` -> PASS.
 
 ## SISA API - cierre transaccional recibos y pagos
 
