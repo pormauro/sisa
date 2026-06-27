@@ -1,5 +1,27 @@
 # Estado QA
 
+## SISA API/Web - onboarding multiempresa inicial
+
+Estado: implementado localmente con validacion focalizada.
+
+- API: `GET /companies/search` conserva busqueda autenticada de empresas y ahora devuelve datos publicos minimos con `membership_status`; el CUIT/tax_id sale enmascarado y no se exponen usuarios, permisos ni configuracion privada.
+- API: se agregaron endpoints compatibles con el flujo nuevo: `GET /companies/my`, `POST /companies/{company_id}/join-requests`, `GET /companies/join-requests/my`, `GET /companies/{company_id}/join-requests`, `POST /companies/join-requests/{request_id}/approve`, `POST /companies/join-requests/{request_id}/reject` y `POST /companies/active`.
+- API: las solicitudes de ingreso reutilizan `empresas_usuarios.estado = pending` para no duplicar estructuras existentes; duplicados pending devuelven `COMPANY_JOIN_REQUEST_ALREADY_PENDING` y miembros aprobados devuelven `ALREADY_COMPANY_MEMBER`.
+- API: aprobar/rechazar/listar solicitudes valida admin/owner dentro del controlador; seleccionar empresa activa valida membresia aprobada antes de actualizar `user_configurations.company_default_id`.
+- API: `/profile` devuelve `active_company_id`, `companies` y `onboarding_state` (`no_company`, `join_pending`, `active_company`) sin inventar permisos operativos para usuarios sin empresa activa.
+- API: `CompanyUsers::listMembersByCompany()` tolera esquemas sin `user_profile.profile_file_id`, cubriendo fixtures SQLite e instalaciones antiguas sin cambiar el contrato cuando la columna existe.
+- Web: la sesion ya no selecciona una empresa por fallback local; usa la empresa activa devuelta por API o queda sin `selectedCompanyId` hasta seleccion explicita.
+- Web: `selectCompany` persiste contra `POST /companies/active`; el selector de empresa muestra estado de cambio y actualiza la sesion solo despues de respuesta OK.
+- Web: usuarios autenticados sin empresa activa redirigen a `/company-onboarding` y los modulos operativos protegidos no se cargan sin `selectedCompanyId`.
+- Web: la pantalla de empresas funciona como onboarding: permite buscar/ver empresas, solicitar acceso, ver solicitud pendiente y seleccionar empresa si ya es miembro; no muestra creacion libre si no hay permiso.
+- Web: al tocar una empresa sin permiso de edicion no abre modal editor; abre accion de solicitud/estado. Miembros aprobados sin permiso pueden seleccionar empresa activa.
+- Validacion API: `php -l` en `src/Controllers/CompaniesController.php`, `src/Controllers/CompanyUsersController.php`, `src/Controllers/ProfileController.php`, `src/Controllers/UserConfigurationsController.php`, `src/Models/CompanyUsers.php` y `src/Routes/api.php` -> PASS.
+- Validacion API: `vendor/bin/phpunit tests/Controllers/CompanyOperationalSyncPublishingTest.php` -> PASS (3 tests, 16 assertions); `vendor/bin/phpunit tests/Models/CompanyUsersTest.php` -> PASS (3 tests, 16 assertions).
+- Validacion API bloqueada: los archivos solicitados `tests/Controllers/CompanyOnboardingTest.php`, `CompanyJoinRequestsTest.php`, `AuthProfileCompanyStateTest.php` y `PermissionsSmokeTest.php` no existen en el repo; `vendor/bin/phpunit` completo queda bloqueado por el error de conexion MySQL ya registrado como ruido/deuda de baseline en `AGENTS.md`.
+- Validacion Web: `npm run lint` -> PASS; `npm run build` -> PASS con warning preexistente de chunks grandes de Vite.
+- Pendiente app móvil: no se implemento `sisa.ui` en este loop; queda pendiente replicar pantalla de seleccion/solicitud y bloqueo de dashboard operativo sin empresa activa.
+- Punto ciego: falta suite HTTP/API dedicada para los 15 casos nominales del flujo multiempresa y tests de UI automatizados; la cobertura actual es contrato focalizado, lint/build y comportamiento ya integrado en servicios/componentes web.
+
 ## SISA API/Web/UI - recibos mayores a factura y saldo a favor
 
 Estado: implementado localmente con validacion focalizada.
