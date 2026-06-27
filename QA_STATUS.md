@@ -48,21 +48,27 @@ Estado: implementado localmente con validacion focalizada.
 
 ## SISA UI - hardening operativo sin empresa activa
 
-Estado: avance parcial implementado localmente con validacion focalizada.
+Estado: implementado localmente con validacion focalizada; QA manual pendiente.
 
 - UI mobile: contexts operativos de clientes, carpetas, trabajos, pagos, facturas, recibos, cajas, reportes, productos/servicios, cuentas, asientos, cierres, transferencias, citas, categorias, proveedores, tarifas, prioridades, estados, plantillas de pago, presupuestos y tracking usan `AuthContext.activeCompanyId` como autoridad de empresa activa.
 - UI mobile: si falta `activeCompanyId` los contexts publican estado vacio seguro y no hidratan SQLite/cache operativo, bootstrap de empresa ni endpoints de datos de campo.
 - UI mobile: los endpoints operativos revisados ahora agregan `company_id` cuando consultan o mutan datos scopiados; las mutaciones devuelven fallo seguro si no hay empresa activa confirmada.
 - UI mobile: `selected-company-id` queda limitado a cache derivado en `AuthContext`/`BootstrapContext` y preferencias de empresa; se elimino el fallback directo desde tracking sync service.
 - UI mobile: tracking y auto-sync de jobs no arrancan ni suben datos si no hay `activeCompanyId`; policy/status/nearby/sync llevan `company_id` cuando aplican.
+- UI mobile: se agrego `ActiveCompanyRequiredState` y `useRequireActiveCompany` para deep-links operativos; las pantallas revisadas muestran estado claro y boton a `/company-onboarding` si falta empresa activa.
+- UI mobile: se endurecieron deep-links de clientes, jobs, facturas, recibos, pagos, citas, tracking nearby, carpetas, proveedores, plantillas de pago, cajas y reportes para cortar loads, refreshes, sync, fetches directos y mutaciones sin `activeCompanyId`.
+- UI mobile: create/detail de recibos, pagos, proveedores, cajas y plantillas de pago validan empresa antes de mutar; fetches directos de historial/asientos/movimientos agregan `company_id` cuando aplica.
+- UI mobile: `app/company-onboarding.tsx` permite buscar/solicitar acceso a otra empresa aun cuando el usuario ya tenga empresas aprobadas.
 - Riesgo cubierto: un usuario autenticado sin empresa activa ya no debe disparar requests operativos ni mostrar datos persistidos de una empresa anterior por cache local.
-- Validacion UI mobile: `npm run lint` -> PASS.
+- Validacion UI mobile: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188` (`selectedJobRecord` sin uso).
 - Validacion UI mobile: `npm run check:cache` -> PASS.
 - Validacion UI mobile: `npm run check:sync-smoke` -> PASS.
-- Validacion typecheck: `npx tsc --noEmit --pretty false` sigue bloqueado por deuda TypeScript de baseline en pantallas/contextos legacy (`clients`, `jobs`, `receipts`, `tracking`, `BootstrapContext`, `InvoicesContext` y hooks de sync); se corrigieron errores propios detectados en contexts migrados salvo deuda previa de `InvoicesContext` ya visible en typecheck.
-- QA manual pendiente obligatorio: usuario sin empresa activa debe loguear y permanecer en onboarding sin requests a `/clients`, `/jobs`, `/invoices`, `/receipts`, `/payments`, `/accounting/*`, `/tracking/*` ni bootstrap/cache operativo de empresa.
-- QA manual pendiente obligatorio: usuario A/B debe cambiar empresa activa, confirmar limpieza/recarga de caches por empresa y verificar que no reaparecen datos de la empresa anterior.
-- Punto ciego: faltan guards defensivos en varias pantallas deep-link que aun leen `selected-company-id` como cache local; los providers ya bloquean requests, pero queda pendiente endurecer la UI de entrada directa para mensajes/redirects consistentes.
+- Validacion typecheck: `npx tsc --noEmit --pretty false` sigue bloqueado por deuda TypeScript de baseline en `clients/finalizedJobs`, `companies/memberships`, `invoices/[id]`, `job-priorities`, `jobs`, `receipts`, `tracking`, `CircleImagePicker`, `BootstrapContext`, `InvoicesContext` y hooks/cache de sync. Se corrigieron errores propios del loop por imports `Company` y payload tipado de reporte de cliente; quedan errores legacy fuera de este hito.
+- QA manual A pendiente obligatorio: deep-link sin empresa activa a `/clients`, `/jobs`, `/invoices`, `/receipts`, `/payments`, `/tracking/nearby-clients`, `/folders`, `/providers`, `/payment_templates`, `/cash_boxes` y `/reports` debe mostrar `Seleccioná una empresa` y no disparar loads/sync/mutaciones operativas.
+- QA manual B pendiente obligatorio: usuario con solicitud pendiente directo a `/jobs/create` debe quedar bloqueado con estado de empresa requerida/onboarding sin crear borradores ni sync.
+- QA manual C pendiente obligatorio: usuario con empresa activa debe poder abrir deep-links a `/clients`, `/jobs`, `/invoices`, `/receipts`, `/payments`, `/providers`, `/cash_boxes` y `/reports` con datos scopiados por `company_id`.
+- QA manual D pendiente obligatorio: cambio de empresa desde `/clients` debe limpiar/recargar caches y no mostrar datos de la empresa anterior al volver a pantallas operativas.
+- Punto ciego: no se agregaron pruebas E2E automatizadas; la cobertura queda en guards de providers/pantallas, checks livianos y matriz manual A/B/C/D.
 
 ## SISA API/Web/UI - recibos mayores a factura y saldo a favor
 
