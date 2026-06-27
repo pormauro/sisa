@@ -34,6 +34,14 @@ Estado: implementado localmente con validacion focalizada.
 - Validacion hardening API: `vendor/bin/phpunit tests/Services/ClientStatementServiceTest.php` -> PASS (5 tests, 16 assertions); `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` -> PASS (16 tests, 56 assertions); `vendor/bin/phpunit tests/Controllers/ClientStatementControllerTest.php` -> PASS (4 tests, 7 assertions); `vendor/bin/phpunit tests/Controllers/AccountingControllerTransactionSmokeTest.php` -> PASS (3 tests, 68 assertions).
 - Validacion hardening Web: `npm run lint` -> PASS; `npm run build` -> PASS con warning preexistente de chunks grandes de Vite.
 - Validacion hardening UI mobile: `npm run lint` -> PASS.
+- Hardening posterior estado real vs pendiente: se agrego `ReceiptSettlementAmountService` para centralizar `confirmed_amount`, `pending_amount`, `rejected_amount` y compatibilidad `settled_legacy` para recibos sin items.
+- Hardening posterior statement: `ClientStatementService` ahora separa saldo real confirmado (`accounting_balance`/`running_balance`) de `pending_receipts_total` y `rejected_receipts_total`; recibos `pending` no reducen deuda, `partial` reduce solo confirmado, `rejected` no reduce deuda y legacy sin items conserva comportamiento anterior.
+- Hardening posterior reporte: nuevo endpoint seguro `GET /accounting/client-statement/report` con la misma validacion de `company_id`, scope y cliente que el statement; devuelve informe JSON con periodo y statement. No se rompen reportes existentes.
+- Hardening posterior Web/UI: web y app muestran saldo real, saldo a favor, pendiente de confirmacion y rechazado; movimientos pendientes/rechazados se muestran separados y sin mezclar con cobrado real. Web consume el endpoint de reporte desde `Generar informe`.
+- Validacion estado real API: `php -l src/Services/ClientStatementService.php`, `php -l src/Controllers/AccountingController.php`, `php -l src/Services/ReceiptSettlementAmountService.php`, `php -l src/Services/ReceiptApplicationService.php` -> PASS.
+- Validacion estado real API: `vendor/bin/phpunit tests/Services/ClientStatementServiceTest.php` -> PASS (9 tests, 32 assertions); `vendor/bin/phpunit tests/Services/ReceiptSettlementAmountServiceTest.php` -> PASS (4 tests, 9 assertions); `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` -> PASS (16 tests, 56 assertions); `vendor/bin/phpunit tests/Controllers/ClientStatementControllerTest.php` -> PASS (8 tests, 13 assertions); `vendor/bin/phpunit tests/Controllers/AccountingControllerTransactionSmokeTest.php` -> PASS (3 tests, 68 assertions).
+- Validacion estado real Web: `npm run lint` -> PASS; `npm run build` -> PASS con warning preexistente de chunks grandes de Vite; cambios generados en `dist/` fueron revertidos.
+- Validacion estado real UI mobile: `npm run lint` -> PASS.
 
 ## SISA API - cierre transaccional recibos y pagos
 
