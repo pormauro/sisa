@@ -46,6 +46,24 @@ Estado: implementado localmente con validacion focalizada.
 - QA manual pendiente obligatorio: despues de aprobacion por admin desde web/API, el usuario debe actualizar, ver empresa, seleccionarla y entrar a Home.
 - QA manual pendiente obligatorio: usuario con dos empresas debe cambiar A/B, refrescar permisos/datos y no mezclar caches entre empresas.
 
+## SISA UI - hardening operativo sin empresa activa
+
+Estado: avance parcial implementado localmente con validacion focalizada.
+
+- UI mobile: contexts operativos de clientes, carpetas, trabajos, pagos, facturas, recibos, cajas, reportes, productos/servicios, cuentas, asientos, cierres, transferencias, citas, categorias, proveedores, tarifas, prioridades, estados, plantillas de pago, presupuestos y tracking usan `AuthContext.activeCompanyId` como autoridad de empresa activa.
+- UI mobile: si falta `activeCompanyId` los contexts publican estado vacio seguro y no hidratan SQLite/cache operativo, bootstrap de empresa ni endpoints de datos de campo.
+- UI mobile: los endpoints operativos revisados ahora agregan `company_id` cuando consultan o mutan datos scopiados; las mutaciones devuelven fallo seguro si no hay empresa activa confirmada.
+- UI mobile: `selected-company-id` queda limitado a cache derivado en `AuthContext`/`BootstrapContext` y preferencias de empresa; se elimino el fallback directo desde tracking sync service.
+- UI mobile: tracking y auto-sync de jobs no arrancan ni suben datos si no hay `activeCompanyId`; policy/status/nearby/sync llevan `company_id` cuando aplican.
+- Riesgo cubierto: un usuario autenticado sin empresa activa ya no debe disparar requests operativos ni mostrar datos persistidos de una empresa anterior por cache local.
+- Validacion UI mobile: `npm run lint` -> PASS.
+- Validacion UI mobile: `npm run check:cache` -> PASS.
+- Validacion UI mobile: `npm run check:sync-smoke` -> PASS.
+- Validacion typecheck: `npx tsc --noEmit --pretty false` sigue bloqueado por deuda TypeScript de baseline en pantallas/contextos legacy (`clients`, `jobs`, `receipts`, `tracking`, `BootstrapContext`, `InvoicesContext` y hooks de sync); se corrigieron errores propios detectados en contexts migrados salvo deuda previa de `InvoicesContext` ya visible en typecheck.
+- QA manual pendiente obligatorio: usuario sin empresa activa debe loguear y permanecer en onboarding sin requests a `/clients`, `/jobs`, `/invoices`, `/receipts`, `/payments`, `/accounting/*`, `/tracking/*` ni bootstrap/cache operativo de empresa.
+- QA manual pendiente obligatorio: usuario A/B debe cambiar empresa activa, confirmar limpieza/recarga de caches por empresa y verificar que no reaparecen datos de la empresa anterior.
+- Punto ciego: faltan guards defensivos en varias pantallas deep-link que aun leen `selected-company-id` como cache local; los providers ya bloquean requests, pero queda pendiente endurecer la UI de entrada directa para mensajes/redirects consistentes.
+
 ## SISA API/Web/UI - recibos mayores a factura y saldo a favor
 
 Estado: implementado localmente con validacion focalizada.
