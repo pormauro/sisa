@@ -58,6 +58,10 @@ Estado: implementado localmente con validacion focalizada.
 - Validacion cierre consistencia API: `vendor/bin/phpunit tests/Services/ReceiptSettlementAmountServiceTest.php` -> PASS (6 tests, 16 assertions); `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` -> PASS (19 tests, 72 assertions); `vendor/bin/phpunit tests/Services/ClientStatementServiceTest.php` -> PASS (10 tests, 35 assertions); `vendor/bin/phpunit tests/Controllers/ClientStatementControllerTest.php` -> PASS (8 tests, 13 assertions).
 - Validacion cierre consistencia Web: `npm run lint` -> PASS; `npm run build` -> PASS con warning preexistente de chunks grandes de Vite; cambios generados en `dist/` fueron revertidos.
 - Validacion cierre consistencia UI mobile: `npm run lint` -> PASS.
+- Cierre performance facturas: `InvoiceSettlementSummaryService` agrega `summarizeInvoices()` para calcular settlement de listados con carga batch de links, recibos e items; `Invoices::listAll`, `listInvoicesWithItems` y rango por fecha usan la ruta batch sin cambiar `normalizeInvoice()` para detalle individual.
+- Test cierre performance facturas: se agrego `tests/Models/InvoicesTest.php` para proteger equivalencia entre detalle y listado, factura parcial con recibo confirmado/pendiente, recibo legacy confirmado y factura sin recibos.
+- Validacion cierre performance facturas API: `php -l src/Services/InvoiceSettlementSummaryService.php`, `php -l src/Models/Invoices.php` -> PASS.
+- Validacion cierre performance facturas API: `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` -> PASS (19 tests, 72 assertions); `vendor/bin/phpunit tests/Services/ClientStatementServiceTest.php` -> PASS (10 tests, 35 assertions); `vendor/bin/phpunit tests/Models/InvoicesTest.php` -> PASS (1 test, 14 assertions).
 
 ## SISA API - cierre transaccional recibos y pagos
 
