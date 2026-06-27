@@ -22,6 +22,30 @@ Estado: implementado localmente con validacion focalizada.
 - Pendiente app móvil: no se implemento `sisa.ui` en este loop; queda pendiente replicar pantalla de seleccion/solicitud y bloqueo de dashboard operativo sin empresa activa.
 - Punto ciego: falta suite HTTP/API dedicada para los 15 casos nominales del flujo multiempresa y tests de UI automatizados; la cobertura actual es contrato focalizado, lint/build y comportamiento ya integrado en servicios/componentes web.
 
+## SISA UI - onboarding multiempresa inicial móvil
+
+Estado: implementado localmente con validacion focalizada.
+
+- UI mobile: `AuthContext` ahora lee `/profile` como fuente de verdad multiempresa y expone `activeCompanyId`, `onboardingState`, `userCompanies` y `refreshProfile()`.
+- UI mobile: `selected-company-id` queda como cache derivado de `/profile`; se escribe solo cuando el API confirma `active_company_id` y se limpia cuando no hay empresa activa. En restauracion online no se usa empresa cacheada hasta revalidar `/profile`; en offline se permite usar cache previamente validado.
+- UI mobile: se agrego `CompanyOnboardingContext` para `GET /companies/my`, `GET /companies/search`, `POST /companies/{company_id}/join-requests`, `GET /companies/join-requests/my` y `POST /companies/active`.
+- UI mobile: `selectActiveCompany()` llama `/companies/active`, limpia caches de datos de empresa, refresca perfil, refresca permisos y recarga empresas propias.
+- UI mobile: se agrego pantalla `app/company-onboarding.tsx` con estados sin empresa, solicitud pendiente y seleccion de empresa aprobada; no crea ni edita empresas.
+- UI mobile: `_layout.tsx` redirige usuarios autenticados sin empresa activa a `/company-onboarding`, no muestra bottom nav ahi y no habilita utilidades post-ready, sync/jobs media, tracking, appointments ni hidratacion contable sin `activeCompanyId`.
+- UI mobile: `Home.tsx` tiene guardia directa para no renderizar dashboard ni paneles si no hay empresa activa.
+- UI mobile: `PermissionsContext` usa `activeCompanyId` validado por AuthContext como scope de permisos, no la cache local.
+- UI mobile: `BottomNavigationBar` deja de auto-seleccionar empresa desde config/membresias; muestra la empresa activa confirmada por AuthContext.
+- UI mobile: `CompanyPreferenceScreen` selecciona empresa via `CompanyOnboardingContext.selectActiveCompany()` en vez de activar bootstrap/cache local directamente.
+- QA cache: `CompanyOnboardingContext.tsx` queda como excepcion explicita en `scripts/verify-context-cache.js` porque sus resultados publicos/join requests no deben ser cache operativo de campo; la empresa activa se persiste solo si `/profile` o `/companies/active` la confirma.
+- Validacion UI mobile: `npm run lint` -> PASS.
+- Validacion UI mobile: `npm run check:cache` -> PASS.
+- Validacion UI mobile: `npm run check:sync-smoke` -> PASS.
+- Validacion typecheck: no existe script `npm run typecheck` en `sisa.ui`; `npx tsc --noEmit --pretty false` sigue fallando por deudas TypeScript preexistentes fuera del flujo multiempresa (clients/finalizedJobs/jobs/receipts/tracking/contextos legacy), sin errores propios remanentes en `AuthContext` tras corregir la inferencia del normalizador nuevo.
+- QA manual pendiente obligatorio: usuario nuevo sin empresa debe login -> `/company-onboarding` -> buscar empresa -> solicitar ingreso -> quedar pendiente.
+- QA manual pendiente obligatorio: usuario con solicitud pendiente debe reloguear y seguir en onboarding sin montar/cargar modulos operativos.
+- QA manual pendiente obligatorio: despues de aprobacion por admin desde web/API, el usuario debe actualizar, ver empresa, seleccionarla y entrar a Home.
+- QA manual pendiente obligatorio: usuario con dos empresas debe cambiar A/B, refrescar permisos/datos y no mezclar caches entre empresas.
+
 ## SISA API/Web/UI - recibos mayores a factura y saldo a favor
 
 Estado: implementado localmente con validacion focalizada.
