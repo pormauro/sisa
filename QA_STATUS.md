@@ -16,6 +16,9 @@ Estado: implementado localmente con validacion focalizada.
 - Validacion: `vendor/bin/phpunit tests/Controllers/InvoicesOfflineFirstSmokeTest.php` en `sisa.api` -> PASS (3 tests, 14 assertions).
 - Validacion: `vendor/bin/phpunit tests/Controllers/AccountingControllerTransactionSmokeTest.php` en `sisa.api` -> PASS (2 tests, 16 assertions).
 - Punto ciego: no se agrego harness HTTP/BD completo para simular una falla real de sync contable desde controller; la cobertura nueva protege el orden transaccional por smoke estatico y la semantica de no anular ante plan invalido queda cubierta en `AccountingFlowServiceTest`.
+- Correccion posterior: `AccountingControllerTransactionSmokeTest` ahora tambien cubre `InvoicesController::addInvoice` y `updateInvoice`, refuerza que no haya side effects post-commit silenciosos y verifica que recibos/pagos usen `AccountingFlowService($connection)` dentro del bloque transaccional.
+- Validacion posterior: `php -l tests/Controllers/AccountingControllerTransactionSmokeTest.php` en `sisa.api` -> PASS.
+- Validacion posterior: `vendor/bin/phpunit tests/Controllers/AccountingControllerTransactionSmokeTest.php` en `sisa.api` -> PASS (3 tests, 68 assertions).
 
 ## SISA API - sync contable seguro para recibos y pagos
 
