@@ -42,6 +42,14 @@ Estado: implementado localmente con validacion focalizada.
 - Validacion estado real API: `vendor/bin/phpunit tests/Services/ClientStatementServiceTest.php` -> PASS (9 tests, 32 assertions); `vendor/bin/phpunit tests/Services/ReceiptSettlementAmountServiceTest.php` -> PASS (4 tests, 9 assertions); `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` -> PASS (16 tests, 56 assertions); `vendor/bin/phpunit tests/Controllers/ClientStatementControllerTest.php` -> PASS (8 tests, 13 assertions); `vendor/bin/phpunit tests/Controllers/AccountingControllerTransactionSmokeTest.php` -> PASS (3 tests, 68 assertions).
 - Validacion estado real Web: `npm run lint` -> PASS; `npm run build` -> PASS con warning preexistente de chunks grandes de Vite; cambios generados en `dist/` fueron revertidos.
 - Validacion estado real UI mobile: `npm run lint` -> PASS.
+- Hardening posterior facturas aplicadas vs cobradas: `ReceiptSettlementAmountService` separa `canceled_amount`, `items_total` y `difference_amount`; los items `canceled/cancelled` no se convierten en pendiente falso.
+- Hardening posterior facturas aplicadas vs cobradas: `ReceiptApplicationService::getInvoiceApplicationSummary` expone `total_applied`, `total_confirmed`, `pending_settlement_amount`, `rejected_settlement_amount`, `applied_pending_balance`, `real_pending_balance` y mantiene `pending_balance = applied_pending_balance` por compatibilidad.
+- Hardening posterior facturas aplicadas vs cobradas: `Invoices`/`InvoiceReceiptPayments` propagan campos basicos de confirmado, pendiente de acreditacion, rechazado, saldo aplicado y deuda real en listados/serializacion sin recalculo frontend.
+- Hardening posterior Web/UI: la barra de cobro y la pantalla mobile de contabilidad muestran aplicado, confirmado, pendiente de confirmacion y deuda real; ya no llaman pagado/cobrado a recibos solo aplicados pero pendientes.
+- Validacion facturas aplicadas vs cobradas API: `php -l src/Services/ReceiptSettlementAmountService.php`, `php -l src/Services/ReceiptApplicationService.php`, `php -l src/Services/ClientStatementService.php`, `php -l src/Models/Invoices.php` -> PASS.
+- Validacion facturas aplicadas vs cobradas API: `vendor/bin/phpunit tests/Services/ReceiptSettlementAmountServiceTest.php` -> PASS (6 tests, 16 assertions); `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` -> PASS (19 tests, 68 assertions); `vendor/bin/phpunit tests/Services/ClientStatementServiceTest.php` -> PASS (10 tests, 35 assertions); `vendor/bin/phpunit tests/Controllers/ClientStatementControllerTest.php` -> PASS (8 tests, 13 assertions).
+- Validacion facturas aplicadas vs cobradas Web: `npm run lint` -> PASS; `npm run build` -> PASS con warning preexistente de chunks grandes de Vite; cambios generados en `dist/` fueron revertidos.
+- Validacion facturas aplicadas vs cobradas UI mobile: `npm run lint` -> PASS.
 
 ## SISA API - cierre transaccional recibos y pagos
 
