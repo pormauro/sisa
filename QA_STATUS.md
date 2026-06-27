@@ -24,6 +24,16 @@ Estado: implementado localmente con validacion focalizada.
 - Validacion Web: `npm run lint` -> PASS; `npm run build` -> PASS con warning preexistente de chunks grandes de Vite.
 - Validacion UI mobile: `npm run lint` -> PASS; `npm run typecheck` no existe en `sisa.ui`.
 - Punto ciego: no se agrego E2E HTTP cruzado API/Web/App; la equivalencia visual queda protegida por consumo del mismo endpoint de statement.
+- Hardening posterior API: `ClientStatementService` adopta politica `receipt_as_single_credit`: el recibo completo es el HABER contable una sola vez y las aplicaciones quedan como detalle/asignacion, evitando duplicar credito y evitando que el pasado cambie cuando un saldo a favor se aplica a facturas futuras.
+- Hardening posterior API: `AccountingController::clientStatement` exige `company_id`, valida scope con `CompanyAccessService`, verifica que `client_id` exista en esa empresa y devuelve 403/404 segun corresponda.
+- Hardening posterior API: el statement agrega `opening_balance`, `closing_balance`, `charge_client_payment` como DEBE y running balance desde el saldo inicial cuando hay `start_date`.
+- Hardening posterior UI mobile: crear recibo desde factura envia `applied_amount = min(total recibido, saldo pendiente)`, permitiendo cobros menores, iguales o mayores a la factura; la pantalla muestra total recibido, aplicado, saldo pendiente restante y saldo a favor.
+- Hardening posterior UI mobile/Web: las llamadas a `/accounting/client-statement` incluyen `company_id`; mobile no carga statement si no hay empresa seleccionada y muestra mensaje claro.
+- Hardening posterior Web: se revirtieron los cambios generados por `npm run build` en `dist/`; quedan sucios solo archivos fuente.
+- Validacion hardening API: `php -l src/Services/ClientStatementService.php`, `php -l src/Controllers/AccountingController.php`, `php -l src/Controllers/InvoicesController.php`, `php -l tests/Controllers/ClientStatementControllerTest.php` -> PASS.
+- Validacion hardening API: `vendor/bin/phpunit tests/Services/ClientStatementServiceTest.php` -> PASS (5 tests, 16 assertions); `vendor/bin/phpunit tests/Services/ReceiptApplicationServiceTest.php` -> PASS (16 tests, 56 assertions); `vendor/bin/phpunit tests/Controllers/ClientStatementControllerTest.php` -> PASS (4 tests, 7 assertions); `vendor/bin/phpunit tests/Controllers/AccountingControllerTransactionSmokeTest.php` -> PASS (3 tests, 68 assertions).
+- Validacion hardening Web: `npm run lint` -> PASS; `npm run build` -> PASS con warning preexistente de chunks grandes de Vite.
+- Validacion hardening UI mobile: `npm run lint` -> PASS.
 
 ## SISA API - cierre transaccional recibos y pagos
 
