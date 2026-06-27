@@ -1,5 +1,39 @@
 # Estado QA
 
+## SISA API - sync contable seguro para recibos y pagos
+
+Estado: implementado localmente con validacion focalizada.
+
+- API: `AccountingFlowService::syncReceiptEntries` ahora valida `receiptId`, empresa, cuenta contraparte, caja/cuenta e importe, y arma un plan de asientos antes de anular asientos previos.
+- API: `AccountingFlowService::syncPaymentEntries` ahora valida `paymentId`, empresa, caja/cuenta, cuenta contraparte e importe, y arma un plan de asientos antes de anular asientos previos.
+- API: si el plan de recibo/pago queda vacio o invalido, el sync devuelve `false` sin llamar a `voidOriginEntries`, por lo que los asientos activos anteriores quedan intactos.
+- API: si el plan es valido, anula/recrea dentro de una transaccion; si cualquier `recordEntry` falla despues de anular, el rollback conserva los asientos anteriores activos.
+- API: `ReceiptsController`, `PaymentsController` y `ReceiptInstrumentLifecycleService` ya no ignoran `false` en sync de recibos/pagos; convierten la falla contable en error explicito.
+- Test: recibo valido -> sync invalido sin empresa/caja conserva 2 asientos activos previos y no marca `deleted_at`/`voided_at`.
+- Test: recibo valido -> sync valido modificado anula 2 asientos previos y crea 2 nuevos, sin delete fisico.
+- Test: pago valido -> sync invalido sin empresa/caja conserva 2 asientos activos previos y no marca `deleted_at`/`voided_at`.
+- Test: pago valido -> sync valido modificado anula 2 asientos previos y crea 2 nuevos, sin delete fisico.
+- Validacion: `php -l src/Services/AccountingFlowService.php`, `php -l src/Controllers/ReceiptsController.php`, `php -l src/Controllers/PaymentsController.php`, `php -l src/Services/ReceiptInstrumentLifecycleService.php` y `php -l tests/Services/AccountingFlowServiceTest.php` en `sisa.api` -> PASS.
+- Validacion: `vendor/bin/phpunit tests/Services/AccountingFlowServiceTest.php` en `sisa.api` -> PASS (13 tests, 117 assertions).
+- Validacion: `vendor/bin/phpunit tests/Controllers/InvoicesOfflineFirstSmokeTest.php` en `sisa.api` -> PASS (3 tests, 14 assertions).
+- Punto ciego: los controladores de creacion/actualizacion de recibos/pagos aun tienen efectos secundarios post-commit; este cambio evita exito silencioso, pero no convierte esos flujos completos en una unica transaccion HTTP.
+
+## SISA API - facturas sin encabezados contables legacy
+
+Estado: implementado localmente con validacion focalizada.
+
+- API: `InvoicesController::addInvoice` ya no invoca `AccountingService::createEntry` para facturas; evita crear encabezados legacy en `accounting_entries` con `account_id` nulo/0 y `amount` 0.
+- API: la creacion contable de facturas queda a cargo de `AccountingFlowService::syncInvoiceEntries`, que genera los asientos operativos reales con `origin_type='invoice'` y `origin_id`.
+- API: `syncInvoiceEntries` ahora se ejecuta antes del `commit` de `addInvoice`; si falla la contabilidad, se hace rollback de la creacion de factura/items/historial/eventos de esa transaccion.
+- Test: se agregaron verificaciones para factura emitida nueva con subtotal 1000, IVA 210 y total 1210: no hay encabezado legacy y existen 3 asientos operativos activos con importes 1210 debit, 1000 credit y 210 credit.
+- Test: se agrego cobertura de factura draft nueva: no crea asientos activos ni encabezado legacy.
+- Test: se agrego guardia para que `addInvoice` no vuelva a llamar `AccountingService::createEntry` y para que `syncInvoiceEntries` quede antes del commit.
+- Validacion: `php -l src/Controllers/InvoicesController.php`, `php -l src/Services/AccountingFlowService.php`, `php -l src/Services/AccountingService.php`, `php -l tests/Services/AccountingFlowServiceTest.php` y `php -l tests/Controllers/InvoicesOfflineFirstSmokeTest.php` en `sisa.api` -> PASS.
+- Validacion: `vendor/bin/phpunit tests/Services/AccountingFlowServiceTest.php` en `sisa.api` -> PASS (9 tests, 79 assertions).
+- Validacion: `vendor/bin/phpunit tests/Controllers/InvoicesOfflineFirstSmokeTest.php` en `sisa.api` -> PASS (3 tests, 14 assertions).
+- Correccion posterior: la deuda tecnica de `syncReceiptEntries` y `syncPaymentEntries` anulando antes de validar queda cerrada en el hito `SISA API - sync contable seguro para recibos y pagos`.
+- Punto ciego: no se hizo limpieza de filas legacy ya existentes en bases de prueba/produccion; este cambio solo evita nuevas filas basura por el flujo actual de creacion de facturas.
+
 ## SISA API - updateInvoice sin idempotencia por timestamp
 
 Estado: implementado localmente con validacion focalizada.
