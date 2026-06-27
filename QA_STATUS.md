@@ -1,5 +1,19 @@
 # Estado QA
 
+## SISA API - updateInvoice sin idempotencia por timestamp
+
+Estado: implementado localmente con validacion focalizada.
+
+- API: `InvoicesController::updateInvoice` ya no hace early return por `InvoicesHistory::findByOperationAndTimestamp('UPDATE', ...)`; el timestamp queda reservado para auditoria/historial, no como clave de idempotencia.
+- API: se separo `timestampForHistory` de `operation_uuid`/`idempotency_key`; como `invoices_history` aun no tiene lookup confiable por clave explicita, no se activa deduplicacion para updates de factura.
+- Riesgo cubierto: dos updates web consecutivos en el mismo segundo ya no descartan falsamente el segundo cambio, evitando dejar asientos activos al pasar una factura emitida a borrador despues de cambiar importes.
+- Test: se agrego regresion de precio emitido -> precio actualizado -> borrador, verificando que no quedan `accounting_entries` activos, que los asientos quedan anulados con `deleted_at`/`voided_at`/`void_reason` y que no hay delete fisico.
+- Test: se agrego guardia focalizada para que `updateInvoice` no vuelva a usar historial por timestamp como gate de duplicado.
+- Validacion: `php -l src/Controllers/InvoicesController.php`, `php -l tests/Services/AccountingFlowServiceTest.php` y `php -l tests/Controllers/InvoicesOfflineFirstSmokeTest.php` en `sisa.api` -> PASS.
+- Validacion: `vendor/bin/phpunit tests/Services/AccountingFlowServiceTest.php` en `sisa.api` -> PASS (8 tests, 70 assertions).
+- Validacion: `vendor/bin/phpunit tests/Controllers/InvoicesOfflineFirstSmokeTest.php` en `sisa.api` -> PASS (2 tests, 11 assertions).
+- Punto ciego: no se implemento idempotencia real por `operation_uuid`/`idempotency_key`; queda pendiente agregar columna/indice/lookup confiable antes de reactivar early return para sync/offline.
+
 ## SISA API - persistencia de IVA global en facturas
 
 Estado: implementado localmente con validacion focalizada. Correccion web agregada posteriormente.
