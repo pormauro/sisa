@@ -2,13 +2,18 @@
 
 ## SISA API/Web/UI - visibilidad fina por permisos
 
-Estado: implementado parcialmente con hardening incremental; validacion pendiente al cierre de este turno.
+Estado: implementado parcialmente con hardening incremental y cierre fino de cargas auxiliares/accesos cruzados; QA manual pendiente.
 
 - API auditada: `PermissionsMiddleware` resuelve permiso contra token autenticado y `company_id` desde query/header/body o permiso por id; superusuario `id=1` conserva acceso total. `/permissions` exige `company_id`; `/permissions/user/{user_id}` exige `company_id`, permite consultar permisos propios y restringe permisos de terceros a `listPermissionsByUser`; la respuesta incluye `is_company_admin` para owner/admin aprobado de la empresa activa. La API sigue siendo autoridad final con 403.
 - Web auditada: `PermissionsProvider` carga permisos por `selectedCompanyId` confirmado y usuario autenticado; sidebar, mobile tabbar, dashboard y rutas protegidas ya filtran por permisos. Se agregaron helpers `useCan`, `useCanAny`, `useCanAll`, `PermissionGate` y `ActionButtonGuard` para nuevas vistas.
 - Web hardening: clientes, empleados, facturas y trabajos ahora ocultan acciones principales de crear/editar/eliminar, PDF, vincular/quitar recibos, items, worklogs, adjuntos y facturacion segun permisos. Las rutas directas siguen pasando por `ProtectedRoute`, que redirige a onboarding sin empresa activa y muestra `AccessDenied` sin permiso.
+- Permisos - cierre fino de cargas auxiliares y accesos cruzados Web: se agrego `runIfCan()` para no disparar endpoints auxiliares sin permiso desde `Promise.allSettled`/cargas de soporte. `ClientsPage` ya no carga trabajos, facturas, recibos, pagos, carpetas, estados, tarifas ni statement contable sin permisos; ademas oculta metricas, paneles y accesos cruzados contables/operativos relacionados.
+- Permisos - cierre fino de trabajos Web: `JobsPage` condiciona cargas de clientes, empresas, estados, prioridades, usuarios, empleados, productos/servicios, tarifas, pagos, carpetas, items, worklogs, participantes y adjuntos. Las tabs internas de items, participantes, worklogs, archivos, informe y costos se muestran solo cuando hay permisos suficientes, y el tab activo se corrige si deja de estar permitido.
+- Permisos - cierre fino de facturacion Web: `InvoicesPage`, `ReceiptsPage` y `PaymentsPage` condicionan datos de soporte, selectores, columnas, paneles auxiliares, aplicaciones, instrumentos, PDF y adjuntos segun permisos. Recibos no sincroniza aplicaciones a facturas si falta visibilidad de facturas, evitando mutar datos auxiliares no visibles.
+- Permisos - cierre fino adjuntos Web: `PanelCargaAdjuntos` acepta `onAgregarArchivos` opcional y no muestra dropzone cuando no hay permiso/handler de carga, manteniendo la vista de adjuntos cuando solo corresponde descarga.
 - App auditada: `PermissionsContext` scopea permisos por `AuthContext.activeCompanyId`; `usePermissions` expone `can`, `canAny`, `canAll`; Home y `BottomNavigationBar` filtran modulos; `_layout.tsx` usa `routePermissions` para deep-links y no monta utilidades operativas sin empresa activa. Se agrego `PermissionRequiredState` reutilizable para pantallas que quieran estado local explicito.
 - App hardening existente: `routePermissions` cubre clientes, trabajos/worklogs/items, carpetas, productos/servicios, proveedores, permisos, usuarios, citas, plantillas de pago, pagos, recibos, facturas, presupuestos, cajas, cuentas, transferencias, cierres, categorias, tarifas, estados, prioridades, reportes, accounting, analytics, tracking y notificaciones.
+- App hardening focalizado: facturas mobile ahora condiciona cargas auxiliares evidentes (`jobs`, prioridades, productos/servicios, tarifas, carpetas y pagos) segun permisos en listado, creacion y detalle/edicion, evitando requests no permitidos aunque la ruta principal este habilitada.
 - Matriz de permisos operativos auditada:
 
 | Modulo | Ver | Crear | Editar | Eliminar | Exportar/PDF | Reportes | Permiso requerido |
@@ -37,8 +42,8 @@ Estado: implementado parcialmente con hardening incremental; validacion pendient
 - Validacion API: no se modificaron archivos PHP; `vendor/bin/phpunit tests/Services/CompanyAccessServiceTest.php` -> PASS (1 test, 3 assertions). No existen tests `*Permission*.php` dedicados en `sisa.api/tests`.
 - Validacion Web: `npm run lint` -> PASS; `npm run build` -> PASS con warning baseline de chunks grandes de Vite. Los artefactos generados en `dist/` y `tsconfig.tsbuildinfo` fueron limpiados.
 - Validacion UI mobile: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188` (`selectedJobRecord` sin uso); `npm run check:cache` -> PASS; `npm run check:sync-smoke` -> PASS.
-- Validacion typecheck UI mobile: `npx tsc --noEmit --pretty false` sigue bloqueado por deuda TypeScript baseline en `clients/finalizedJobs`, `companies/memberships`, `invoices/[id]`, `job-priorities`, `jobs`, `receipts`, `tracking`, `CircleImagePicker`, `BootstrapContext`, `InvoicesContext` y hooks/cache de sync. No aparecen errores atribuibles a `components/PermissionRequiredState.tsx`.
-- Punto ciego: el barrido de botones se concentro en modulos web/app principales ya auditados; quedan pantallas catalogo secundarias que deben seguir migrando a los helpers comunes en loops pequenos.
+- Validacion typecheck UI mobile: `npx tsc --noEmit --pretty false` sigue bloqueado por deuda TypeScript baseline en `clients/finalizedJobs`, `companies/memberships`, `invoices/[id]`, `job-priorities`, `jobs`, `receipts`, `tracking`, `CircleImagePicker`, `BootstrapContext`, `InvoicesContext` y hooks/cache de sync. El error de `app/invoices/[id].tsx` ya era deuda conocida y solo cambio de linea por el ajuste focalizado de facturas.
+- Punto ciego: el barrido de botones se concentro en modulos web/app principales ya auditados; quedan pantallas catalogo secundarias que deben seguir migrando a los helpers comunes en loops pequenos. En app mobile solo se reviso facturas por patron evidente, no se reabrio toda la app.
 
 ## SISA API/Web - onboarding multiempresa inicial
 
