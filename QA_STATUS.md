@@ -59,6 +59,11 @@ Estado: implementado localmente con validacion focalizada; QA manual pendiente.
 - UI mobile: se endurecieron deep-links de clientes, jobs, facturas, recibos, pagos, citas, tracking nearby, carpetas, proveedores, plantillas de pago, cajas y reportes para cortar loads, refreshes, sync, fetches directos y mutaciones sin `activeCompanyId`.
 - UI mobile: create/detail de recibos, pagos, proveedores, cajas y plantillas de pago validan empresa antes de mutar; fetches directos de historial/asientos/movimientos agregan `company_id` cuando aplica.
 - UI mobile: `app/company-onboarding.tsx` permite buscar/solicitar acceso a otra empresa aun cuando el usuario ya tenga empresas aprobadas.
+- Auditoria mecanica final: `selected-company-id` aparece 12 veces en codigo fuente revisado (`app`, `contexts`, `src`, `components`, `hooks`, `utils`): 11 permitidas en `AuthContext` escribiendo/limpiando cache derivado y 1 permitida en `BootstrapContext` para compatibilidad de bootstrap validada contra `AuthContext.activeCompanyId`.
+- Auditoria mecanica final: `rg/getItem/getCachedData` equivalentes no encuentran lecturas directas de `selected-company-id`; tampoco quedan apariciones en `app/*`.
+- Auditoria mecanica final: se migraron 2 referencias no permitidas de `selected-company-id` en `CompaniesContext` y `MemberCompaniesContext` a `AuthContext.activeCompanyId`.
+- Auditoria mecanica final: se agrego guard visual a auxiliares operativos que faltaban: `payments/viewModal`, `receipts/viewModal`, `tracking/queue`, `tracking/gps-config`, `tracking/daily-route` y `reports/[id]`; `tracking/daily-route` agrega `company_id` al request.
+- Auditoria mecanica final: rutas criticas revisadas (`jobs`, `invoices`, `clients/accounting`, `appointments/create`, `payments/*`, `receipts/*`, `tracking/*`, `reports/*`, `quotes/create`) usan `useRequireActiveCompany`/`activeCompanyId`, cortan cargas o acciones sin empresa activa y muestran `ActiveCompanyRequiredState` o quedan cubiertas por el gate global.
 - Riesgo cubierto: un usuario autenticado sin empresa activa ya no debe disparar requests operativos ni mostrar datos persistidos de una empresa anterior por cache local.
 - Validacion UI mobile: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188` (`selectedJobRecord` sin uso).
 - Validacion UI mobile: `npm run check:cache` -> PASS.
