@@ -1,5 +1,45 @@
 # Estado QA
 
+## SISA API/Web/UI - visibilidad fina por permisos
+
+Estado: implementado parcialmente con hardening incremental; validacion pendiente al cierre de este turno.
+
+- API auditada: `PermissionsMiddleware` resuelve permiso contra token autenticado y `company_id` desde query/header/body o permiso por id; superusuario `id=1` conserva acceso total. `/permissions` exige `company_id`; `/permissions/user/{user_id}` exige `company_id`, permite consultar permisos propios y restringe permisos de terceros a `listPermissionsByUser`; la respuesta incluye `is_company_admin` para owner/admin aprobado de la empresa activa. La API sigue siendo autoridad final con 403.
+- Web auditada: `PermissionsProvider` carga permisos por `selectedCompanyId` confirmado y usuario autenticado; sidebar, mobile tabbar, dashboard y rutas protegidas ya filtran por permisos. Se agregaron helpers `useCan`, `useCanAny`, `useCanAll`, `PermissionGate` y `ActionButtonGuard` para nuevas vistas.
+- Web hardening: clientes, empleados, facturas y trabajos ahora ocultan acciones principales de crear/editar/eliminar, PDF, vincular/quitar recibos, items, worklogs, adjuntos y facturacion segun permisos. Las rutas directas siguen pasando por `ProtectedRoute`, que redirige a onboarding sin empresa activa y muestra `AccessDenied` sin permiso.
+- App auditada: `PermissionsContext` scopea permisos por `AuthContext.activeCompanyId`; `usePermissions` expone `can`, `canAny`, `canAll`; Home y `BottomNavigationBar` filtran modulos; `_layout.tsx` usa `routePermissions` para deep-links y no monta utilidades operativas sin empresa activa. Se agrego `PermissionRequiredState` reutilizable para pantallas que quieran estado local explicito.
+- App hardening existente: `routePermissions` cubre clientes, trabajos/worklogs/items, carpetas, productos/servicios, proveedores, permisos, usuarios, citas, plantillas de pago, pagos, recibos, facturas, presupuestos, cajas, cuentas, transferencias, cierres, categorias, tarifas, estados, prioridades, reportes, accounting, analytics, tracking y notificaciones.
+- Matriz de permisos operativos auditada:
+
+| Modulo | Ver | Crear | Editar | Eliminar | Exportar/PDF | Reportes | Permiso requerido |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Clientes | `listClients`/`getClient` | `addClient` | `updateClient` | `deleteClient` | `viewClientStatement`/`viewClientAccounting` equivalente, o report endpoint contable existente | `listReports`/`viewClientStatement` | Cliente contable usa permiso existente equivalente: `viewClientStatement`, `viewClientAccounting`, `listInvoices` o `listReceipts` segun pantalla. |
+| Trabajos | `listJobs`/`getJob` | `addJob` | `updateJob`/`changeJobStatus` | `deleteJob` | `exportClientJobsPdf` | `exportClientJobsPdf` | Items: `listJobItems`/`addJobItem`/`updateJobItem`/`deleteJobItem`; worklogs: `listWorkLogs`/`addWorkLog`/`updateWorkLog`/`deleteWorkLog`. |
+| Facturas | `listInvoices`/`getInvoice` | `addInvoice` | `updateInvoice` | `deleteInvoice` o anulacion via `updateInvoice` | `exportInvoicePdf` o `downloadInvoicePdf` | `listInvoiceHistory`/reportes contables existentes | Vinculos recibos: `attachInvoiceReceipts`/`detachInvoiceReceipts`; items: `addInvoiceItem`/`updateInvoiceItem`/`deleteInvoiceItem`. |
+| Recibos | `listReceipts`/`getReceipt` | `addReceipt` | `updateReceipt` | `deleteReceipt` | PDF protegido hoy por `listReceiptInvoices` | `listReceiptHistory` | Instrumentos: `confirmBankTransfer`, `rejectBankTransfer`, `depositCheck`, `clearCheck`, `rejectCheck`. |
+| Pagos | `listPayments`/`getPayment` | `addPayment` | `updatePayment` | `deletePayment` | n/a | historial/listados contables existentes | Templates: `listPaymentTemplates`/`addPaymentTemplate`/`updatePaymentTemplate`/`deletePaymentTemplate`. |
+| Cajas | `listCashBoxes`/`getCashBox` | `addCashBox` | `updateCashBox` | `deleteCashBox` | n/a | `viewAccountingSummary`, `listClosings`, `listReports` | Movimientos usan `getCashBox`. |
+| Carpetas | `listFolders`/`getFolder` | `addFolder` | `updateFolder` | `deleteFolder` | n/a | `listFolderHistory` | Por cliente: `listFoldersByClient`. |
+| Productos/Servicios | `listProductsServices`/`getProductService` | `addProductService` | `updateProductService` | `deleteProductService` | n/a | `listProductServiceHistory` | App/web usan `listProductsServices` para mostrar modulo. |
+| Proveedores | `listProviders`/`getProvider` | `addProvider` | `updateProvider` | `deleteProvider` | n/a | `listProviderHistory` | Tracking nearby providers reutiliza `listProviders`. |
+| Empleados | `listEmployees`/`getEmployee` | `addEmployee` | `updateEmployee` | `deleteEmployee` | n/a | n/a | Acciones web endurecidas en este loop. |
+| Reportes | `listReports` | `generatePaymentReport` segun reporte | n/a | n/a | `generatePaymentReport`/permisos PDF especificos | `viewAccountingSummary`/`viewAccountingReport` equivalente | Si falta permiso dedicado real, usar el permiso de endpoint existente y documentar antes de crear uno nuevo. |
+| Empresas | busqueda permitida a usuario autenticado | `createCompany`/`addCompany` segun cliente | `updateCompany` | permisos existentes de delete si aplica | n/a | `manageCompanyJoinRequests`/`listCompanyMembers` | Buscar/unirse no requiere permiso operativo; solicitudes solo admin/owner o permiso existente. |
+| Permisos | `listPermissions`/`listPermissionsByUser` | `addPermission` | n/a | `deletePermission` | n/a | n/a | Siempre con `company_id` de empresa activa; no usar `selected-company-id` como autoridad. |
+| Tracking | `getTrackingPolicy`/`getTrackingStatus`/`listNearbyClients`/`listTrackingAssignments` | `createTrackingPolicy`/`createTrackingAssignment`/`uploadTrackingPoints` | `updateTrackingPolicy`/`updateTrackingAssignment` | fallback actual `listTrackingAssignments` en time-blocks | n/a | timeline/rutas: `listTrackingAssignments` | Hay fallbacks conservadores documentados en rutas de time-blocks hasta sembrar permisos dedicados. |
+
+- QA manual minimo pendiente:
+- Caso A: usuario sin permisos operativos debe iniciar sesion, seleccionar empresa y no ver modulos restringidos en Home/sidebar/dashboard; deep-link operativo debe mostrar “Sin permisos”.
+- Caso B: usuario solo lectura debe ver listados permitidos y no ver botones crear/editar/eliminar/PDF/exportar/mutaciones.
+- Caso C: usuario tecnico debe ver trabajos/worklogs segun permisos y no ver contabilidad general ni reporte contable de empresa sin permiso.
+- Caso D: usuario admin debe ver menu completo segun permisos, aprobar solicitudes, editar empresa y gestionar miembros/permisos solo con permisos correspondientes.
+- Caso E: al cambiar empresa, permisos y menus deben recalcularse y no deben quedar acciones visibles de la empresa anterior.
+- Validacion API: no se modificaron archivos PHP; `vendor/bin/phpunit tests/Services/CompanyAccessServiceTest.php` -> PASS (1 test, 3 assertions). No existen tests `*Permission*.php` dedicados en `sisa.api/tests`.
+- Validacion Web: `npm run lint` -> PASS; `npm run build` -> PASS con warning baseline de chunks grandes de Vite. Los artefactos generados en `dist/` y `tsconfig.tsbuildinfo` fueron limpiados.
+- Validacion UI mobile: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188` (`selectedJobRecord` sin uso); `npm run check:cache` -> PASS; `npm run check:sync-smoke` -> PASS.
+- Validacion typecheck UI mobile: `npx tsc --noEmit --pretty false` sigue bloqueado por deuda TypeScript baseline en `clients/finalizedJobs`, `companies/memberships`, `invoices/[id]`, `job-priorities`, `jobs`, `receipts`, `tracking`, `CircleImagePicker`, `BootstrapContext`, `InvoicesContext` y hooks/cache de sync. No aparecen errores atribuibles a `components/PermissionRequiredState.tsx`.
+- Punto ciego: el barrido de botones se concentro en modulos web/app principales ya auditados; quedan pantallas catalogo secundarias que deben seguir migrando a los helpers comunes en loops pequenos.
+
 ## SISA API/Web - onboarding multiempresa inicial
 
 Estado: implementado localmente con validacion focalizada.
