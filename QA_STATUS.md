@@ -1,5 +1,27 @@
 # Estado QA
 
+## SISA API/Web/UI - resumen comercial de cuenta cliente
+
+Estado: implementado localmente con validacion focalizada; QA manual pendiente.
+
+- Politica de visibilidad cliente: el resumen de cuenta visible para cliente/usuario practico usa lenguaje comercial y muestra facturas emitidas, recibos/pagos aplicados, saldo pendiente, saldo a favor, recibos pendientes/rechazados, fecha, comprobante, descripcion comercial, importe y saldo.
+- Campos publicos del statement: `summary.total_invoiced`, `summary.total_paid`, `summary.pending_balance`, `summary.customer_credit`, `summary.pending_receipts_total`, `summary.rejected_receipts_total` y `movements[]` con `date`, `type_label`, `document_label`, `description`, `amount`, `balance_after` y `commercial_status`.
+- Campos internos/no publicos en resumen cliente: `debit`, `credit`, `Debe`, `Haber`, asientos, partidas, cuentas contables internas, metadata tecnica, sync/debug/source_device_id, tracking/GPS, tecnicos/participantes internos y estado/tipo interno de trabajo. `ClientStatementService` conserva calculo interno pero mapea la salida publica a `summary`/`movements` comerciales.
+- API: `ClientStatementPdfGenerator` ahora genera “Resumen de cuenta del cliente” con empresa, cliente, CUIT si existe, fecha de emision, resumen superior y tabla Fecha/Comprobante/Detalle/Importe/Saldo. El PDF ya no imprime Debe/Haber ni columnas contables tecnicas.
+- API: `AccountingController::clientStatementReport` actualiza titulos, filename y descripcion del reporte a resumen comercial de cliente.
+- API: el generador legacy `JobReportsController` mantiene variantes existentes, pero `client_account_statement` y `accounting_general` ahora exigen `viewAccountingSummary` ademas de `exportClientJobsPdf` si se fuerzan por API.
+- Web: `ClientsPage` consume `summary`/`movements`, cambia “Saldo contable/real” por “Saldo pendiente”, muestra saldo a favor, recibos pendientes y ultimo movimiento, y elimina Debe/Haber del timeline de cliente.
+- Web: el modal del cliente ya no muestra link generico “Reportes”; conserva “Descargar resumen del cliente” y accesos filtrados a trabajos/facturas/recibos/pagos/carpetas segun permisos. El reporte contable general queda fuera del cliente y debe operarse desde Reportes/contabilidad general de empresa.
+- UI mobile: `app/clients/accounting.tsx`, `app/clients/index.tsx` y `app/clients/unpaidInvoices.tsx` cambian textos visibles a resumen/saldo pendiente y consumen `summary`/`movements` con fallback legacy. La descarga del PDF de resumen cliente solo se muestra si hay permiso contable compatible con el backend.
+- UI mobile: `ClientReportModal` oculta `accounting_general` y `landscape_summary` del modal de reportes por cliente. Estado del resumen horizontal: variante legacy/dudosa de jobs, no conectada al statement comercial actual; se esconde hasta redisenarla o migrarla con datos/permiso claros.
+- Permisos: no existe permiso backend dedicado `viewClientStatement`/`viewClientAccounting` en `Permission::ACCOUNTING_PERMISSIONS`; el resumen cliente sigue protegido por `viewAccountingSummary`. Pendiente real: sembrar permiso especifico de resumen cliente si se quiere separar de contabilidad general de empresa.
+- Validacion API: `php -l` en `src/Services/ClientStatementService.php`, `src/Services/ClientStatementPdfGenerator.php`, `src/Controllers/AccountingController.php`, `src/Controllers/JobReportsController.php`, `tests/Services/ClientStatementServiceTest.php`, `tests/Services/ClientStatementPdfGeneratorTest.php`, `tests/Controllers/ClientStatementControllerTest.php`, `tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` -> PASS.
+- Validacion API: `vendor/bin/phpunit tests/Services/ClientStatementServiceTest.php` -> PASS (11 tests, 43 assertions); `tests/Services/ClientStatementPdfGeneratorTest.php` -> PASS (2 tests, 21 assertions); `tests/Controllers/ClientStatementControllerTest.php` -> PASS (8 tests, 19 assertions); `tests/Controllers/JobsControllerClientJobsPdfFiltersTest.php` -> PASS (20 tests, 78 assertions); `tests/Controllers/AccountingControllerTransactionSmokeTest.php` -> PASS (3 tests, 68 assertions).
+- Validacion Web: `npm run lint` -> PASS; `npm run build` -> PASS con warning baseline de chunks grandes de Vite. Los artefactos generados en `dist/` y `tsconfig.tsbuildinfo` fueron limpiados.
+- Validacion UI mobile: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188`; `npm run check:cache` -> PASS; `npm run check:sync-smoke` -> PASS.
+- Validacion typecheck UI mobile: `npx tsc --noEmit --pretty false` sigue bloqueado por deuda TypeScript baseline en `clients/finalizedJobs`, `companies/memberships`, `invoices/[id]`, `job-priorities`, `jobs`, `receipts`, `tracking`, `CircleImagePicker`, `BootstrapContext`, `InvoicesContext` y hooks/cache de sync. No aparecen errores propios en archivos tocados de cliente/contabilidad.
+- QA manual pendiente: abrir detalle de cliente en web/app con usuario con `viewAccountingSummary`, verificar que no aparezcan Debe/Haber/asientos/metadata y que el PDF descargado muestre solo resumen comercial. Verificar que usuario sin `viewAccountingSummary` no vea descarga/resumen cliente aunque conserve accesos a facturas/recibos por sus permisos propios.
+
 ## SISA API/Web/UI - visibilidad fina por permisos
 
 Estado: implementado parcialmente con hardening incremental y cierre fino de cargas auxiliares/accesos cruzados; QA manual pendiente.
