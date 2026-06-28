@@ -1,5 +1,30 @@
 # Estado QA
 
+## SISA UI - loop permisos listos antes de menu
+
+Estado: implementado localmente con validacion focalizada; QA manual pendiente.
+
+- UI mobile: `PermissionsContext` expone `permissionsReady`, `permissionsLoading`, `permissionsScopeCompanyId`, `permissionsSource`, `permissionsForNavigation` y `permissionsForActions`. `permissionsReady` solo queda true con empresa activa, hidratacion completa, carga finalizada, scope igual a `activeCompanyId` y fuente confiable `snapshot`/`sqlite`/`server`/`cache`.
+- UI mobile: al cambiar `userId`/empresa activa, permisos, admin flag, scope y fuente se limpian inmediatamente; el menu no puede reutilizar permisos de la empresa anterior.
+- UI mobile: cache confiable de permisos queda separado por `permissions-snapshot:${userId}:${companyId}` y SQLite por `userId/companyId`. Snapshot solo se acepta como fuente confiable si tiene `fetchedAt`; SQLite solo si existe `lastUpdatedAt` para ese scope, permitiendo usuarios con cero permisos reales sin confundirlos con cache ausente.
+- UI mobile: se separan permisos de navegacion y permisos de acciones. Navegacion puede usar cache confiable de empresa; acciones siguen usando `can()` con filtrado sensible cuando falta validacion online reciente.
+- UI mobile: `src/permissions/permissions.ts` agrega `isPermissionPending()` y `shouldRenderPermissionFilteredUi()`; `can()` conserva fallo seguro si el estado no esta listo.
+- UI mobile: `BottomNavigationBar` filtra con `canNavigate()` solo cuando `permissionsReady=true`. Mientras espera muestra estado estable minimo (`Inicio`, `Empresas`, `Cargando permisos...`) si llegara a montarse; el gate global normalmente oculta la barra hasta permisos listos.
+- UI mobile: `app/_layout.tsx` no muestra bottom nav, no marca shell usable, no evalua `routeAccess` ni muestra `AccessDeniedScreen` mientras hay empresa activa e `isReady=true` pero `permissionsReady=false`. Rutas login/root/onboarding quedan fuera del bloqueo operativo.
+- UI mobile: `app/Home.tsx` muestra espera `Cargando permisos...` antes de calcular menu, metricas, dashboard, jobs, invoices, appointments o statuses. El dashboard filtrado se renderiza solo con permisos finales listos.
+- UI mobile: Bootstrap optimista ahora exige `permissionsReady` y `permissionsScopeCompanyId === selectedCompanyId` para considerar completo el snapshot local; `isReady` ya no implica shell operativo si permisos no estan listos.
+- Trazas agregadas/ampliadas: `permissions.snapshot.loaded`, `permissions.sqlite.loaded`, `permissions.server.fetch.start`, `permissions.server.fetch.finish`, `permissions.ready`, `bottomNavigation.waitingPermissions` y `bottomNavigation.ready`.
+- QA manual pendiente A - cold start con cache: abrir app y verificar que no aparezca menu parcial; debe verse menu final inmediato desde cache o loading breve.
+- QA manual pendiente B - cold start sin cache: login debe mostrar `Cargando permisos...` y luego menu correcto; nunca menu parcial.
+- QA manual pendiente C - cambio empresa A -> B: menu se oculta o muestra loading y luego aparece menu de B; nunca se ven permisos de A en B.
+- QA manual pendiente D - usuario con permisos limitados: menu final muestra solo lo permitido sin flicker de botones.
+- QA manual pendiente E - offline: con cache validado, menu segun cache; sin cache, mensaje/loading claro y no menu roto.
+- Validacion UI mobile: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188` (`selectedJobRecord` sin uso).
+- Validacion UI mobile: `npm run check:cache` -> PASS.
+- Validacion UI mobile: `npm run check:sync-smoke` -> PASS.
+- Validacion typecheck UI mobile: `npx tsc --noEmit --pretty false` sigue bloqueado por deuda TypeScript baseline. No aparecen errores nuevos en archivos tocados del loop (`PermissionsContext`, `usePermissions`, `permissions.ts`, `BottomNavigationBar`, `Home`, `_layout`).
+- Deuda TS baseline exacta por modulo: `app/clients/finalizedJobs.tsx` usa `Job` sin `uuid` donde requiere `FinalizedJobListItem`; `app/companies/memberships.tsx` importa `CompanyMembershipStatus` inexistente; `app/invoices/[id].tsx` usa `resolvedInvoiceClient` antes de declararlo; `app/job-priorities/[id].tsx` y `create.tsx` mezclan tuple de `useState` como key/render; `app/jobs/[id].tsx` pasa callback que retorna `Promise<JobRecord | null>` donde se espera `void`; `app/jobs/index.tsx` conserva errores de folders/statuses/variables antes de declarar/implicit any/priority; `app/jobs/worklogs.tsx` referencia estilos inexistentes; `app/receipts/[id].tsx` y `create.tsx` construyen payments sin `id`; `app/tracking/nearby-clients.tsx` asume `uuid` en `Job` y navega con string no tipado; `components/CircleImagePicker.tsx` pasa `null` a props `string|number|undefined`; `contexts/BootstrapContext.tsx` pasa `ReferenceEntityType` incluyendo `invoices` a union de referencias acotada; `contexts/InvoicesContext.tsx` mantiene nullability/type predicate incompatible en receipt applications; `src/modules/jobs/presentation/hooks/useJobStatusHistory.ts`, `useRootCauses.ts`, `usePullJobsSync.ts` y `sync/referenceCache.ts` conservan desalineaciones entre records SQLite/cache y tipos de dominio.
+
 ## SISA API/Web/UI - resumen comercial de cuenta cliente
 
 Estado: implementado localmente con validacion focalizada; QA manual pendiente.
