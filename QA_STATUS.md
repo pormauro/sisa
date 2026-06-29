@@ -10,6 +10,10 @@ Estado: ejecutado en ambiente vivo `sistema-test.depros.com.ar` por API real con
 
 Estado: fix implementado localmente; validacion focalizada en curso.
 
+- Incidencia UI mobile login/startup: se corrigio un loop de navegacion post-login que podia disparar `Maximum update depth exceeded` en React Navigation. `app/login/Login.tsx` ya no ejecuta `router.replace('/Home')`; la navegacion post-auth queda centralizada en `app/_layout.tsx`, que tambien respeta bootstrap, permisos y onboarding.
+- Ajuste adicional UI mobile startup: `app/_layout.tsx` ahora deduplica redirects automaticos pendientes (`/Home`, `/company-onboarding`, `/login/Login`) para no repetir `router.replace()` mientras React Navigation todavia no actualizo `pathname`; `app/Home.tsx` usa `navigation.replaceUnique('/company-onboarding')` para el fallback sin empresa. No se cambiaron condiciones de auth, bootstrap, permisos ni onboarding.
+- Guardia QA UI mobile: `scripts/startup-stability-smoke.js` fue actualizado a la estructura actual del codigo (push logger lazy, guards por empresa/permisos y callbacks `runWhenIdle` async) para seguir protegiendo estabilidad de arranque sin exigir literales obsoletos.
+- Validacion UI mobile login/startup: `npm run check:startup-stability` -> PASS; `npm run lint` -> PASS con warning baseline existente `app/appointments/create.tsx:188 selectedJobRecord`.
 - Bug QA visual: en Clientes el listado mostraba `Saldo pendiente: $100,00` para el cliente QA, pero el detalle/resumen del mismo cliente mostraba `Saldo pendiente: $0,00` y `Saldo a favor: $9.900,00`.
 - Causa: el listado consumia `clients.accounting_balance` del endpoint `/clients`, calculado como deuda bruta de facturas/cargos sin descontar recibos confirmados; el detalle consumia `/accounting/client-statement`, que calcula saldo comercial neto y separa `pending_balance` de `customer_credit`.
 - API: `Clients::buildAccountingSummarySubquery()` y la hidratacion focalizada de summaries ahora descuentan recibos confirmados del cliente para que `accounting_balance` represente el neto comercial real; si hay saldo a favor, el valor queda negativo.
