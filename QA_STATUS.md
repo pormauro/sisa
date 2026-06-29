@@ -1,5 +1,20 @@
 # Estado QA
 
+## SISA API/Web - loop comercial 1.2.1 emision dedicada de factura
+
+Estado: implementado localmente con validacion focalizada; QA manual end-to-end con API/web vivos y PDF real pendiente.
+
+- API: se corrigio `InvoicesController::changeInvoiceStatus()`, usado por `/invoices/{id}/issue`, para mantener paridad con `addInvoice`/`updateInvoice`: cuando la factura persistida queda `issued` o `paid`, ahora marca los trabajos vinculados como facturados.
+- API: el endpoint dedicado de emision ahora opera en transaccion, recarga la factura persistida con items, mantiene `syncInvoiceEntries()`, calcula trabajos desde la factura almacenada mediante `collectInvoiceJobIds($storedInvoice)` y devuelve `job_status_updates` en la respuesta.
+- API: `cancelled` no usa el nuevo marcado de emision; cancelacion/anulacion sigue delegada en `InvoiceCancellationService`, que libera trabajos a completado/finalizado solo cuando no estan referenciados por otra factura activa.
+- API: se agregaron seams protegidos minimos en `InvoicesController` para poder testear `issueInvoice()` con SQLite sin depender de sync/MySQL real: creacion de modelo, flujo contable, historial y registro de sync/historial/eventos.
+- API smoke funcional: `InvoicesOfflineFirstSmokeTest::testIssueInvoiceEndpointMarksLinkedJobAsInvoiced` llama al controller `issueInvoice()`, verifica respuesta `issued`, `job_status_updates` y cambio real de `jobs.status_id`, `version` y `updated_by`.
+- API cancelacion: `InvoiceCancellationServiceTest` queda reforzado con fixture SQLite y no-op de sync para cubrir anulacion/liberacion de trabajos y caso de trabajo referenciado por otra factura activa.
+- Web: `InvoicesPage` fue revisada y actualmente emite desde UI mediante `updateInvoice()`/`PUT /invoices/{id}` con `status`, no por `/invoices/{id}/issue`; no se modifico web porque el camino existente ya estaba cubierto y el bug estaba en el endpoint dedicado.
+- Validacion API php-l: `php -l src/Controllers/InvoicesController.php`, `php -l tests/Controllers/InvoicesOfflineFirstSmokeTest.php`, `php -l tests/Services/AccountingFunctionalFlowTest.php`, `php -l tests/Services/InvoiceLineNormalizerTest.php`, `php -l tests/Services/InvoiceCancellationServiceTest.php` -> PASS.
+- Validacion API PHPUnit: `vendor/bin/phpunit tests/Controllers/InvoicesOfflineFirstSmokeTest.php` -> PASS (6 tests, 34 assertions); `vendor/bin/phpunit tests/Services/InvoiceCancellationServiceTest.php` -> PASS (5 tests, 32 assertions). Validaciones focalizadas previas del loop: `tests/Services/AccountingFunctionalFlowTest.php` -> PASS (7 tests, 75 assertions); `tests/Services/InvoiceLineNormalizerTest.php` -> PASS (8 tests, 24 assertions).
+- Pendiente real: QA manual con API/web vivos para confirmar emision por endpoint dedicado `/invoices/{id}/issue`, emision desde web por `PUT /invoices/{id}`, estado visual del trabajo facturado, anulacion/liberacion visual y PDF real descargado sin terminos internos.
+
 ## SISA API/Web/UI - loop comercial 1.2 consistencia real
 
 Estado: implementado localmente con validacion focalizada; QA manual end-to-end con PDF real pendiente.
