@@ -1,5 +1,24 @@
 # Estado QA
 
+## SISA API/Web/UI - loop comercial 1.2 consistencia real
+
+Estado: implementado localmente con validacion focalizada; QA manual end-to-end con PDF real pendiente.
+
+- API: `InvoicesController` ahora marca trabajos como facturados solo cuando la factura persistida queda en estado publicable (`issued` o `paid`). Una factura `draft` ya no intenta pasar trabajos a facturado aunque venga `job_ids`.
+- API: el marcado comercial del trabajo ahora toma los trabajos desde la factura persistida, incluyendo `invoice_items.job_id` y `invoice_items` de tipo `jobs`, no solo desde `job_ids` del payload. Esto cubre el flujo web actual `Preparar factura` que crea items con `job_id`.
+- API: `updateInvoice` tambien devuelve `job_status_updates` y aplica marcado de trabajo cuando una factura existente pasa a estado emitido/pagado. Cancelacion/anulacion sigue delegada en `InvoiceCancellationService`, que libera jobs a estado completado si no estan referenciados por otra factura activa.
+- API: `InvoiceLineNormalizer` ya validaba y queda cubierto por test que `invoice_items.job_id` corresponde a un trabajo activo de la misma empresa y mismo cliente de la factura. Un trabajo de otro cliente se rechaza con `Job code does not belong to the selected client.`
+- API smoke funcional: `AccountingFunctionalFlowTest::testCommercialLoopFromJobInvoicePartialAndFinalReceiptStatement` simula cliente, carpeta, trabajo, factura emitida con item vinculado a `job_id`, cobro parcial, saldo parcial en statement, segundo cobro, saldo cero/cobrada y movimientos con `invoice_id`/`receipt_id` navegables para web.
+- PDF/statement: se reforzo la expectativa comercial del resumen PDF: usa `Total facturado`, `Total pagado`, `Saldo pendiente`, `Confirmado` y no `Debe`/`Haber`. Los tests existentes de PDF de factura siguen verificando que no se expongan `status_id`, `status_attribute`, `metadata_json`, `source_device_id`, `Tracking/GPS` ni tecnico interno.
+- Web: `scripts/commercial-flow-smoke.js` sube a 11 checks y ahora tambien protege que acciones de recibo dependan de `addReceipt`/`updateReceipt` y que el resumen cliente dependa de `viewClientStatement` o fallbacks vigentes `viewClientAccounting`/`viewAccountingSummary`.
+- Permisos involucrados: `addInvoice`, `updateInvoice`, `listInvoices`, `addReceipt`, `updateReceipt`, `listReceipts`, `listJobs`, `viewClientStatement`, `viewClientAccounting`, `viewAccountingSummary`, `exportInvoicePdf`, `downloadInvoicePdf`.
+- Rutas tocadas: `sisa.api/src/Controllers/InvoicesController.php`, `sisa.api/tests/Controllers/InvoicesOfflineFirstSmokeTest.php`, `sisa.api/tests/Services/InvoiceLineNormalizerTest.php`, `sisa.api/tests/Services/AccountingFunctionalFlowTest.php`, `sisa.web/scripts/commercial-flow-smoke.js`.
+- Validacion API php-l: `php -l src/Controllers/InvoicesController.php`, `php -l tests/Controllers/InvoicesOfflineFirstSmokeTest.php`, `php -l tests/Services/InvoiceLineNormalizerTest.php`, `php -l tests/Services/AccountingFunctionalFlowTest.php` -> PASS.
+- Validacion API PHPUnit: `vendor/bin/phpunit tests/Controllers/InvoicesOfflineFirstSmokeTest.php` -> PASS (5 tests, 25 assertions); `tests/Services/InvoiceLineNormalizerTest.php` -> PASS (8 tests, 24 assertions); `tests/Services/AccountingFunctionalFlowTest.php` -> PASS (7 tests, 75 assertions); `tests/Services/ReceiptApplicationServiceTest.php` -> PASS (19 tests, 72 assertions); `tests/Services/ClientStatementServiceTest.php` -> PASS (11 tests, 43 assertions); `tests/Services/ClientStatementPdfGeneratorTest.php` -> PASS (2 tests, 21 assertions); `tests/Controllers/InvoicesControllerPdfRegressionTest.php` -> PASS (4 tests, 21 assertions) con notice baseline de PHPUnit result cache `Permission denied` antes de ejecutar.
+- Validacion Web: `npm run check:commercial-flow` -> PASS (11 checks); `npm run lint` -> PASS; `npm run build` -> PASS con warning baseline de chunks grandes de Vite. No quedaron cambios en `dist/` ni `tsconfig.tsbuildinfo` despues del build.
+- Validacion UI mobile: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188` (`selectedJobRecord` sin uso); `npm run check:cache` -> PASS. No se tocaron archivos de `sisa.ui` en esta etapa.
+- Deuda real pendiente: QA manual end-to-end con API/web vivos para confirmar creacion real desde formulario web, emision, PDF generado/descargado con numero de trabajo/carpeta comercial si aplica, anulacion de factura y liberacion visual de estado de trabajo, y usuario sin permisos verificando ausencia de botones sin 403 visual. El soporte de carpeta en PDF existe via `enrichInvoiceItemsForPdf` cuando el job tiene `folder_id`; no se agrego migracion ni campo nuevo.
+
 ## SISA Web/UI - loop comercial navegable cliente-trabajo-factura-cobro
 
 Estado: implementado localmente con validacion focalizada; QA manual end-to-end pendiente.
