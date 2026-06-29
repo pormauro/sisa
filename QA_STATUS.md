@@ -1,5 +1,27 @@
 # Estado QA
 
+## SISA API/Web/UI - loop comercial 1.3 QA vivo producto salida al mercado
+
+Fecha: 2026-06-29.
+
+Estado: bloqueado por falta de credenciales/ambiente QA autorizado; no cerrado. No se ejecutaron pruebas destructivas ni se creo/anulo informacion en ambiente vivo.
+
+- Ambiente detectado: `sisa.ui/config/Index.ts` apunta a `https://sistema-test.depros.com.ar`; el host responde y `/profile` devuelve 401 sin Bearer, por lo que el ambiente test esta accesible y protegido.
+- Ambiente local: no existe `.env` en el workspace para `sisa.api`; la API local requiere MySQL via `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`. En la maquina no esta disponible el comando `mysql`, por lo que no se pudo preparar una base local real desde `install.php`.
+- Credenciales: se requiere un set QA autorizado para admin, tecnico y solo lectura. No se usaron credenciales encontradas en documentacion/colecciones ni se intentaron logins con secretos existentes sin confirmacion explicita.
+- Datos minimos reales: pendiente crear o identificar empresa activa, usuario administrativo, usuario tecnico, usuario solo lectura, cliente de prueba, carpeta de cliente y trabajo del cliente.
+- App movil tecnico: pendiente validar login tecnico, entrada al trabajo, alta de worklog, adjunto de evidencia, finalizacion, ausencia de acciones contables profundas y ausencia de facturacion desde detalle movil.
+- Web admin: pendiente validar cliente -> trabajos -> trabajo -> `Preparar factura`, `client_id`, `job_id`, descripcion comercial, importe sugerido y gastos cobrables.
+- Emision por PUT: pendiente validar desde UI web que `PUT /invoices/{id}` con `status=issued` deja factura emitida, trabajo visualmente facturado y resumen cliente actualizado.
+- Emision dedicada: pendiente validar por HTTP real `POST /invoices/{id}/issue` con status 200, `invoice.status=issued`, `job_status_updates` coherente, trabajo facturado y resumen actualizado.
+- Cobros: pendiente validar cobro parcial, saldo pendiente real, segundo cobro por saldo, factura `paid` o `payment_status=paid` segun regla vigente, saldo cliente cero y navegacion entre movimientos, factura y recibos.
+- PDF factura real: pendiente descargar y revisar visualmente empresa, cliente, comprobante, trabajo, carpeta/ubicacion, descripcion comercial, importes y total; tambien verificar que no exponga estado/tipo interno, `status_id`, `status_attribute`, `metadata_json`, `source_device_id`, GPS, Tracking, debug, tecnico interno, participantes internos ni detalle privado `Facturado`.
+- PDF/resumen real: pendiente validar movimientos ordenados, factura, cobros, saldo final, lenguaje comercial y ausencia de Debe/Haber/contabilidad interna en vista simple.
+- Anulacion: pendiente validar factura `cancelled`, trabajo liberado a completado/finalizado si corresponde, resumen sin deuda falsa, PDF/navegacion sin roturas y no liberar si otra factura activa referencia el mismo trabajo.
+- Permisos reales: pendiente validar tecnico, administrativo y solo lectura, incluyendo ausencia de botones falsos y ausencia de 403 evitables por acciones visibles.
+- Correcciones aplicadas: ninguna en este intento; no hubo ejecucion viva suficiente para detectar bug de producto.
+- Criterio de salida: sigue abierto. Loop 1.3 no debe cerrarse hasta demostrar en vivo app tecnico -> trabajo -> worklog/evidencia -> finalizar; web admin -> preparar factura -> emitir -> cobrar parcial -> cobrar total -> resumen saldo cero -> PDF limpio; anular factura -> trabajo liberado; usuarios sin permisos -> sin botones falsos ni errores evitables.
+
 ## SISA API/Web - loop comercial 1.2.1 emision dedicada de factura
 
 Estado: implementado localmente con validacion focalizada; QA manual end-to-end con API/web vivos y PDF real pendiente.
