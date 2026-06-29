@@ -1,5 +1,22 @@
 # Estado QA
 
+## SISA Web/UI - loop comercial navegable cliente-trabajo-factura-cobro
+
+Estado: implementado localmente con validacion focalizada; QA manual end-to-end pendiente.
+
+- Web: `ClientsPage` acepta `client_id` por query y abre la ficha del cliente, manteniendo el cliente como centro operativo. Los movimientos del resumen comercial ahora tienen accion `Abrir movimiento` hacia factura, recibo o pago original si el usuario tiene `listInvoices`, `listReceipts` o `listPayments`.
+- Web: `JobsPage` deja de abrir alta de trabajo solo por recibir `client_id`; `Cliente -> Trabajos` ahora filtra/contextualiza sin interrumpir. El alta contextual queda explicita con `new=1`.
+- Web: `JobsPage` acepta `job_id` por query y abre el detalle del trabajo. El detalle carga facturas visibles con `listInvoices`, muestra `Ver cliente`, `Ver factura #...` cuando ya existe relacion, y conserva `Preparar factura` solo con `addInvoice`.
+- Web: `InvoicesPage` acepta `invoice_id` por query, abre la factura existente, muestra trabajos vinculados y permite volver con `Ver trabajo #...` si existe `listJobs`. La barra de cobro y navegacion a recibos aplicados permanecen en la factura.
+- UI mobile: `app/jobs/[id].tsx` prioriza ejecucion tecnica. Se agrego panel `Trabajo en campo` con `Agregar avance`, `Adjuntar evidencia` y `Finalizar`; se removio la accion directa de crear/abrir facturas desde el detalle movil para no exponer contabilidad profunda al tecnico.
+- QA focalizado nuevo: `sisa.web/scripts/commercial-flow-smoke.js` y script `npm run check:commercial-flow`. Protege cruces cliente -> trabajos, resumen -> movimiento, trabajo -> cliente/factura, factura -> trabajo/recibos, recibo por deep-link y ausencia de facturacion directa en detalle tecnico movil.
+- Permisos involucrados: `listClients`, `listJobs`, `addJob`, `listInvoices`, `addInvoice`, `listReceipts`, `listPayments`, `viewClientStatement`, `exportClientJobsPdf`, `addWorkLog`, `uploadFile`, `updateJob`.
+- Rutas tocadas: `sisa.web/src/pages/ClientsPage.tsx`, `sisa.web/src/pages/JobsPage.tsx`, `sisa.web/src/pages/InvoicesPage.tsx`, `sisa.web/package.json`, `sisa.web/scripts/commercial-flow-smoke.js`, `sisa.ui/app/jobs/[id].tsx`.
+- Validacion Web: `npm run check:commercial-flow` -> PASS (9 checks); `npm run lint` -> PASS; `npm run build` -> PASS con warning baseline de chunks grandes de Vite.
+- Validacion UI mobile: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188` (`selectedJobRecord` sin uso); `npm run check:cache` -> PASS.
+- No se modifico `sisa.api`; no se ejecutaron `php -l`/PHPUnit en este hito porque se reutilizaron endpoints existentes y el cambio fue de navegacion/UX/QA frontend.
+- Pendiente real: QA manual end-to-end con datos vivos para Caso A cliente -> carpeta -> trabajo -> worklog -> cierre, Caso B factura desde trabajo y PDF sin terminos internos, Caso C recibo aplicado y saldo correcto, Caso D usuario sin permisos no ve acciones, Caso E resumen abre movimiento original. La automatizacion agregada cubre el cableado de UI, no sustituye E2E con backend y PDF real.
+
 ## SISA UI - loop permisos listos antes de menu
 
 Estado: implementado localmente con validacion focalizada; QA manual pendiente.
