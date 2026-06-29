@@ -4,7 +4,40 @@
 
 Fecha: 2026-06-29.
 
-Estado: ejecutado en ambiente vivo `sistema-test.depros.com.ar` por API real con datos QA controlados; no cerrado para salida al mercado porque faltan verificacion visual real en web/app/PDF y el fix local de anulacion 1.3.1 todavia no fue desplegado/probado en vivo.
+Estado: ejecutado en ambiente vivo `sistema-test.depros.com.ar` por API real con datos QA controlados; no cerrado para salida al mercado porque faltan re-test vivo mutante autorizado de `/void`, verificacion visual real en web/app/PDF y confirmacion del deploy web.
+
+### Loop 1.3.2 - deploy QA controlado y cierre vivo
+
+Estado: re-test vivo API completado en `sistema-test`; no cerrado al 100% porque falta validacion visual interactiva web/app desde navegador/app real.
+
+- Fecha preparacion: 2026-06-29.
+- Ambiente autorizado revisado: `https://sistema-test.depros.com.ar`; SSH `hostinger-codex`, directorio `domains/depros.com.ar/public_html/sistema_test`.
+- Modo seguridad aplicado: solo comandos de diagnostico/lectura en servidor; no se ejecuto deploy, no se modificaron archivos remotos, no se leyeron secretos, no se tocaron permisos, no se ejecutaron SQL mutantes.
+- Commit local raiz candidato: `30fb5e1 feat: implement idempotent invoice cancellation and validate full QA flow in live environment` en `main`.
+- Commit API local candidato: `da2e8b6 feat: implement invoice cancellation service and update controller logic for offline-first support` en `main`.
+- Commit web local candidato: `7d729de feat: implement InvoicesPage for managing invoice records, items, and receipt applications` en `main`.
+- Confirmacion local del contenido candidato: `InvoiceCancellationService` contiene reintento idempotente `already_cancelled`, `commit()`/`rollBack()` protegidos con `inTransaction()`; `InvoicesController` responde `Invoice already cancelled` con `already_cancelled=true`; `InvoicesPage` contiene `deletingInvoice` y boton `Eliminando...` para bloquear doble submit.
+- Estado remoto API por lectura: `sistema_test` ya esta en commit `da2e8b6` sobre `main`, con `git status --short` mostrando solo `?? uploads/`; no se desplego nada porque el fix ya estaba presente en el backend remoto.
+- Confirmacion remota del contenido API: `grep` en `src/Services/InvoiceCancellationService.php`, `src/Controllers/InvoicesController.php` y tests encontro `already_cancelled`, `Transaction was already closed before final commit` e `Invoice already cancelled`.
+- Validacion remota segura: `php -l src/Services/InvoiceCancellationService.php`, `php -l src/Controllers/InvoicesController.php`, `php -l tests/Services/InvoiceCancellationServiceTest.php`, `php -l tests/Controllers/InvoicesOfflineFirstSmokeTest.php` -> PASS en `sistema_test`.
+- Ubicacion web desplegada: no confirmada. En el directorio remoto autorizado no aparece arbol fuente/bundle web de `sisa.web`; solo se verifico backend/API. Pendiente indicar ruta o mecanismo de deploy web si se requiere validar `deletingInvoice` en ambiente.
+- Validacion local API: `php -l` archivos tocados -> PASS; `vendor/bin/phpunit tests/Services/InvoiceCancellationServiceTest.php` -> PASS (7 tests, 42 assertions); `vendor/bin/phpunit tests/Controllers/InvoicesOfflineFirstSmokeTest.php` -> PASS (7 tests, 38 assertions).
+- Validacion local web: `npm run check:commercial-flow` -> PASS (11 checks); `npm run lint` -> PASS; `npm run build` -> PASS con warning baseline de chunks grandes de Vite. Los artefactos `dist/` generados por build fueron limpiados.
+- Validacion local UI mobile: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188 selectedJobRecord`; `npm run check:cache` -> PASS.
+- Bloqueo para re-test real: crear/emitir/anular factura QA, reintentar `/void`, crear worklog/evidencia/finalizar y generar PDFs son mutaciones sobre ambiente remoto; las reglas de seguridad vigentes exigen aprobacion explicita de comandos/acciones antes de ejecutarlas.
+- Autorizacion recibida para mutaciones QA por API en `sistema-test` usando solo usuarios `qa_loop_1_3_*` y datos `QA_LOOP_1_3_20260629`.
+- Intento de re-test API: se intento generar JWT efimero en memoria para `qa_loop_1_3_admin_20260629` sin imprimir token ni leer secretos, y crear factura QA por `POST /invoices`. Resultado: HTTP 403 `El token no coincide con el almacenado en la base de datos`. No se creo factura nueva ni se avanzo a emision/anulacion.
+- Bloqueo actual de autenticacion: `CheckUserBlockedMiddleware` exige token de sesion real persistido en `auth_sessions`; no se leyeron tokens de base de datos ni se actualizaron sesiones manualmente porque eso violaria las reglas de secretos/DB. Para continuar se necesita login real por API con credenciales QA provistas de forma segura o un mecanismo de sesion QA que no exponga tokens/passwords en la conversacion.
+- Autorizacion ampliada recibida para usar/actualizar tokens en test. Se creo sesion temporal QA en `auth_sessions` para `qa_loop_1_3_admin_20260629`, `qa_loop_1_3_tecnico_20260629` y `qa_loop_1_3_readonly_20260629`; los tokens no se imprimieron ni se documentaron.
+- Re-test vivo `/void` completado con factura QA nueva id 94 vinculada a trabajo id 305, cliente id 99, empresa id 66.
+- Caso A primer `/void`: factura 94 creada por API (HTTP 200), emitida por `POST /invoices/94/issue` (HTTP 200), trabajo 305 paso de status id 15 a facturado id 16 con `job_status_updates={requested:1,updated:1,skipped:0,missing:0,status_found:true,status_id:16}`. Primer `POST /invoices/94/void` devolvio HTTP 200, `message=Invoice voided successfully`, `invoice.status=cancelled`, `jobs_released_count=1`; estado DB verificado: factura 94 `cancelled`, version 3, total `0.00`, items activos 0; trabajo 305 volvio a status id 15, version 5. No aparecio 409.
+- Caso B retry idempotente: segundo `POST /invoices/94/void` devolvio HTTP 200, `message=Invoice already cancelled`, `already_cancelled=true`. Estado verificado: factura 94 version 3 sin cambios, trabajo 305 version 5 sin cambios, `history_delta=0`; `sync_delta` no se pudo medir porque la tabla/consulta de `sync_events` no expuso contador compatible en este ambiente, pero no hubo nueva mutacion observable en factura/trabajo/history.
+- PDF factura real: `POST /invoices/94/report/pdf` devolvio HTTP 200, `file_id=584`, `download_url` presente; descarga `GET /files/584` devolvio `application/pdf`, 24368 bytes, encabezado `%PDF`, sin ocurrencias binarias/textuales de `status_id`, `status_attribute`, `metadata_json`, `source_device_id`, `GPS`, `Tracking`, `debug`, `Debe`, `Haber`, `técnicos internos` ni `participantes internos`.
+- Resumen cliente real: `GET /accounting/client-statement?company_id=66&client_id=99` devolvio HTTP 200 con resumen comercial `total_invoiced=100`, `total_paid=10000`, `pending_balance=0`, `customer_credit=9900`, `pending_receipts_total=0`, `rejected_receipts_total=0`.
+- PDF resumen cliente real: `GET /accounting/client-statement/report?company_id=66&client_id=99&format=pdf` devolvio HTTP 200, `file_id=585`, `download_url` presente; descarga `GET /files/585` devolvio `application/pdf`, 21598 bytes, encabezado `%PDF`, sin ocurrencias de los terminos prohibidos buscados.
+- Permisos API reales con sesiones QA: admin opero factura/PDF/resumen; tecnico `GET /jobs/305` -> 200, `GET /invoices` -> 403, `GET /accounting/client-statement` -> 403; solo lectura `GET /invoices` -> 200 y `POST /invoices` -> 403.
+- Bloqueo visual: no hay herramienta de navegador disponible en esta sesion para comprobar visualmente boton `Eliminando...`, ausencia de botones falsos, app movil o PDF renderizado. Se puede validar por API/codigo, o requiere ejecucion manual/asistida por usuario.
+- Pendiente para cerrar 1.3.2 al 100%: validacion visual interactiva en `http://localhost:5173/` o web test real de que el boton queda `Eliminando...` y no dispara doble request, validacion visual app movil tecnica con worklog/evidencia/finalizacion y revision humana del render PDF. Por API/codigo, los permisos y PDFs quedaron validados.
 
 ### Loop 1.3.1 - respuesta idempotente de anulacion
 
