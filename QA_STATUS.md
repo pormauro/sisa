@@ -1,5 +1,65 @@
 # Estado QA
 
+## LOOP 8 - QA automatica visual web
+
+Fecha: 2026-07-01.
+
+Estado: scaffolding Playwright implementado localmente en `sisa.web` y validado sin credenciales QA. La ejecucion real contra `sistema_test` queda pendiente hasta contar con `QA_BASE_URL` y password seguro por entorno.
+
+Objetivo:
+
+- Cubrir una primera matriz visual/read-only de permisos web por perfiles QA seed, sin crear ni mutar datos durante la prueba.
+- Capturar evidencia local de fallos con screenshots, video y traces/report HTML, sin guardar cookies, storageState, tokens ni secretos.
+- Mantener los tests seguros para maquinas de desarrollo: si faltan `QA_BASE_URL` y `QA_PASSWORD`/`QA_PASSWORD_QA_*`, la suite se marca como skipped.
+
+Cambios en `sisa.web`:
+
+- Se agrego `@playwright/test` como devDependency mediante `npm install --save-dev @playwright/test`.
+- Se agregaron scripts:
+  - `npm run qa:e2e`
+  - `npm run qa:e2e:headed`
+  - `npm run qa:e2e:ui`
+  - `npm run qa:e2e:report`
+- Se agrego `playwright.config.ts` con `QA_BASE_URL`, `test-results/qa-e2e`, screenshots on failure, video retain-on-failure, trace on-first-retry y report HTML/list.
+- Se actualizo `.gitignore` para excluir `test-results/`, `playwright-report/` y `.auth/`.
+- Se agregaron helpers E2E:
+  - `tests/e2e/helpers/auth.ts`: perfiles QA, login sin hardcodear password y guardas de runtime QA.
+  - `tests/e2e/helpers/navigation.ts`: busqueda de menu, asserts de menu y cambio de empresa.
+  - `tests/e2e/helpers/assertions.ts`: captura de 401/403, screenshots adjuntos y assert de acceso restringido.
+- Se agregaron specs read-only:
+  - `tests/e2e/qa-profiles.spec.ts`: owner/admin, tecnico, admin caja y sin permisos.
+  - `tests/e2e/qa-commercial-flow.spec.ts`: recorrido visual clientes, trabajos, facturas, recibos, pagos y analytics.
+  - `tests/e2e/qa-multiempresa.spec.ts`: cambio A/B y no filtracion de permisos de finanzas en empresa B.
+
+Variables esperadas para ejecucion real:
+
+- `QA_BASE_URL`: URL del ambiente QA/staging web.
+- `QA_PASSWORD`: password comun de perfiles QA, o passwords por perfil con `QA_PASSWORD_QA_OWNER_ADMIN`, `QA_PASSWORD_QA_TECNICO`, etc.
+- Opcionales multiempresa: `QA_COMPANY_A_NAME`, `QA_COMPANY_B_NAME`, `QA_COMPANY_B_ID` para ambientes donde cambien nombres/ids seed.
+- No registrar ni commitear passwords, tokens, cookies, storageState ni headers `Authorization`.
+
+Validacion local ejecutada:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+
+Riesgos/deuda detectada:
+
+- `npm install` reporto `4 vulnerabilities (2 low, 1 moderate, 1 high)`. No se ejecuto `npm audit fix` para evitar cambios no solicitados en dependencias.
+- Los E2E reales todavia no fueron ejecutados contra remoto porque no se pasaron `QA_BASE_URL` y password seguro en esta sesion.
+- La cobertura es visual/read-only inicial; no reemplaza la matriz manual ni valida mutaciones comerciales.
+
+Pendiente para cerrar LOOP 8 con QA real:
+
+- Confirmar que el seed remoto corregido de LOOP 7.1 esta aplicado y verificado por SELECT con `clients`, `invoices`, `invoice_items`, `receipts`, `payments`, `jobs` y `work_logs` >= 1 en A/B.
+- Ejecutar `npm run qa:e2e:headed` con `QA_BASE_URL` y password seguro provistos por entorno fuera del repo.
+- Revisar `playwright-report/` y `test-results/qa-e2e` localmente; no commitear artefactos.
+- Si falla una ruta por selector/texto real, ajustar el spec al comportamiento observado sin ampliar permisos para hacer pasar la prueba.
+
 ## LOOP 7.1 - Correccion seed comercial clients/invoices
 
 Fecha: 2026-07-01.
