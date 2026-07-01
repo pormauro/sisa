@@ -1,5 +1,84 @@
 # Estado QA
 
+## LOOP 6 - Preparacion QA real
+
+Fecha: 2026-07-01.
+
+Estado: preparado localmente sin ejecutar mutaciones. Se agregaron script seguro de seed y checklist manual; no se resetearon passwords, no se emitieron tokens, no se tocaron datos vivos. Validacion local final ejecutada.
+
+Ambiente elegido:
+
+- Ambiente objetivo: `sistema-test` o staging/base test equivalente.
+- No usar datos productivos reales.
+- El seed aborta si no detecta ambiente test/staging/qa/local/dev o confirmacion explicita `QA_CONFIRM_DB_NAME`.
+- El seed exige `QA_ALLOW_SEED=1` antes de cualquier modo y `QA_PASSWORD` para mutar usuarios.
+- Passwords, tokens y secretos no se imprimen ni se documentan.
+
+Script QA:
+
+- Archivo: `sisa.api/scripts/qa/seed-qa-users.php`.
+- Dry-run: `QA_ALLOW_SEED=1 php scripts/qa/seed-qa-users.php --dry-run`.
+- Seed real autorizado: `QA_ALLOW_SEED=1 QA_PASSWORD=<secreto-fuera-del-repo> php scripts/qa/seed-qa-users.php --apply`.
+- Password por perfil opcional: `QA_PASSWORD_QA_TECNICO`, `QA_PASSWORD_QA_ADMIN_CAJA`, etc.; si no existe usa `QA_PASSWORD`.
+- Limpieza autorizada: `QA_ALLOW_SEED=1 php scripts/qa/seed-qa-users.php --cleanup --apply`.
+- El script carga `.env`, conecta a DB, valida ambiente seguro, crea/actualiza empresas QA A/B, usuarios, membresias approved, permisos por perfil y datos minimos.
+- `qa_superadmin` es superadmin delegado por permisos amplios; no reemplaza la prueba hardcoded de `user_id=1`, que debe ejecutarse con cuenta superadmin existente y autorizada.
+
+Perfiles planificados:
+
+| Perfil | Username/email | Empresa | Rol/membresia | Permisos esperados | Debe ver | No debe ver |
+|---|---|---|---|---|---|---|
+| Superadmin delegado | `qa_superadmin` / `qa_superadmin@sisa-qa.invalid` | QA A | owner approved | Permisos operativos amplios incluyendo `purgeSyncOperations` | Todos los modulos operativos | No valida bypass hardcoded `user_id=1` |
+| Owner/admin | `qa_owner_admin` / `qa_owner_admin@sisa-qa.invalid` | QA A | owner approved | Permisos operativos amplios sin purge | Dashboard, clientes, jobs, facturas, recibos, pagos, analytics, settings | Sync purge |
+| Tecnico | `qa_tecnico` / `qa_tecnico@sisa-qa.invalid` | QA A | member approved | Clientes lectura, jobs, job items, worklogs, adjuntos, estados/prioridades | Operacion tecnica y adjuntos | Caja/contabilidad mutante, settings contables |
+| Admin caja | `qa_admin_caja` / `qa_admin_caja@sisa-qa.invalid` | QA A | admin approved | Caja, pagos, recibos, facturas, resumen cliente, analytics/settings contables | Flujos administrativos y caja | Mutacion tecnica de jobs/worklogs |
+| Sin permisos sensibles | `qa_sin_permisos` / `qa_sin_permisos@sisa-qa.invalid` | QA A | member approved | Sin permisos operativos | Perfil/settings basicos | Modulos sensibles y acciones CRUD |
+| Multiempresa | `qa_multiempresa` / `qa_multiempresa@sisa-qa.invalid` | QA A y QA B | A admin approved, B member approved | A caja/contabilidad; B lectura limitada | A: admin caja; B: lectura | Permisos de A aplicados en B |
+
+Datos seed planificados:
+
+- Empresas: `SISA QA LOOP 6 Empresa A` (`QA-LOOP6-A`) y `SISA QA LOOP 6 Empresa B` (`QA-LOOP6-B`).
+- Usuarios QA anteriores con emails `@sisa-qa.invalid` se actualizan idempotentemente.
+- Membresias approved por perfil.
+- Permisos reemplazados por usuario/empresa para evitar permisos residuales.
+- Datos minimos por empresa cuando existen tablas/columnas compatibles: cliente QA, carpeta QA, trabajo QA, worklog QA, producto/servicio QA, caja QA, factura QA, item de factura QA, recibo QA y pago QA.
+- Adjunto QA queda opcional/manual para evitar subir archivos o tocar storage durante seed.
+
+Reversion/limpieza:
+
+- `QA_ALLOW_SEED=1 php scripts/qa/seed-qa-users.php --cleanup --apply` elimina usuarios QA, permisos, membresias, empresas QA A/B y datos company-scoped asociados.
+- La limpieza identifica usuarios por emails `@sisa-qa.invalid` y empresas por `nro_doc` `QA-LOOP6-A/B`.
+- Ejecutar limpieza solo en test/staging y con autorizacion.
+
+Checklist manual:
+
+- Archivo agregado: `docs/QA_MANUAL_CHECKLIST.md`.
+- Cubre Web: login, cambio empresa, dashboard, clientes, trabajos, preparar factura, PDF, recibos, pagos, resumen cliente, adjuntos, analytics/settings y permisos ocultos.
+- Cubre Mobile: login, cambio empresa, rutas sensibles, detalle trabajo, worklogs, adjuntos, recibos/pagos, tracking/nearby y deep links bloqueados.
+- Cubre Multiempresa: permisos A/B divergentes, limpieza de cache/menu/permisos al cambiar empresa y verificacion de `company_id`/`X-Company-Id`.
+
+No ejecutado en LOOP 6:
+
+- No se corrio `--apply`.
+- No se resetearon passwords.
+- No se crearon sesiones ni tokens.
+- No se modifico ambiente remoto.
+- No se hizo QA real por navegador/dispositivo; queda para LOOP 7 o ejecucion autorizada posterior.
+
+Validacion local LOOP 6:
+
+- `sisa.api`: `php -l scripts/qa/seed-qa-users.php` -> PASS.
+- `sisa.api`: `php -l src/Routes/api.php` -> PASS.
+- `sisa.api`: `php -l tests/Routes/ApiPermissionsCoverageTest.php` -> PASS.
+- `sisa.api`: `vendor/bin/phpunit tests/Routes/ApiPermissionsCoverageTest.php` -> PASS (20 tests, 88 assertions) con warning PHPUnit baseline.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS.
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (15 checks).
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.ui`: `npm run check:permissions-audit` -> PASS.
+- `sisa.ui`: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188 selectedJobRecord`.
+- `sisa.ui`: `npm run check:cache` -> PASS.
+
 ## LOOP 5 - QA real por perfiles y flujo comercial completo
 
 Fecha: 2026-07-01.
