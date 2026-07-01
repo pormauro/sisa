@@ -1,5 +1,55 @@
 # Estado QA
 
+## Blindaje permisos y multiempresa
+
+Fecha: 2026-06-30.
+
+Estado: LOOP 1 auditoria y mapa de brechas completado localmente; se agregaron guardias estaticas minimas sin cambiar semantica funcional de UI/API. No se avanzo a ocultamiento masivo de UI.
+
+| repo | archivo/ruta | estado | permiso esperado | riesgo | accion recomendada |
+|---|---|---|---|---|---|
+| sisa.web | `src/App.tsx` rutas live privadas | cubierto | `ProtectedRoute` + permiso de navegacion | Bajo: las rutas live privadas estan protegidas; `placeholderModules` queda sin `ProtectedRoute` si aparecen modulos planned futuros. | En LOOP 2 envolver placeholders o no montar planned sin permiso explicito. |
+| sisa.web | `src/navigation/app-navigation.ts` | cubierto/parcial | `permission` o `anyOf` por item live | Bajo/medio: los items live tienen metadata salvo rutas intencionales `companies/profile/settings`; `dashboard` omite `listCompanies`. | Ajustar dashboard si debe abrirse solo por `listCompanies`; revisar rutas intencionales. |
+| sisa.web | `src/pages/DashboardPage.tsx` | cubierto | permisos por card/metrica | Bajo: dashboard carga/cards mayormente gated; no se detecto exposicion principal sin permiso. | Mantener smoke y revisar cards nuevas. |
+| sisa.web | `src/pages/AttachmentsPage.tsx` | faltante | `downloadFile`, `uploadFile`, `listJobs`, `listPayments`, `listReceipts`, `listWorkLogs` segun fuente | Alto: usuario con `uploadFile` puede entrar por nav y ver/descargar adjuntos operativos/financieros. | Separar permiso de lectura/descarga de subida y gatear fuentes/acciones. |
+| sisa.web | `src/pages/ProvidersPage.tsx` | faltante | `addProvider`, `updateProvider`, `deleteProvider` | Medio: usuario solo lista podria crear/editar/eliminar proveedores. | Agregar `usePermissions` y ocultar acciones mutantes. |
+| sisa.web | `src/pages/QuotesPage.tsx` | faltante | `addQuote`, `updateQuote`, `deleteQuote`, permisos de items/PDF | Alto: acciones de presupuesto, estado, PDF e items no estan separadas de lista. | Gatear cada accion sensible y revisar nav `listQuotes` vs `addQuote`. |
+| sisa.web | `src/pages/ReferenceCatalogsPages.tsx` | faltante | `add/update/deleteCashBox`, `add/update/deleteCategory`, `add/update/deleteProductsService`, `add/update/deleteTariff`, `uploadFile` | Alto: catalogos financieros/productivos mutables por usuarios de lista. | Convertir paginas a read-only sin permiso de accion. |
+| sisa.web | `src/pages/FinanceCatalogsPages.tsx` transferencias/cierres | faltante | `addTransfer`, `addClosing`, `updateClosing`, `voidAccountingClosing`/equivalente | Alto: movimientos contables/cierres pueden exponerse con permisos de lectura. | Gatear crear/anular/regularizar y definir permisos faltantes si no existen. |
+| sisa.web | `src/pages/AnalyticsPage.tsx`, `src/pages/SettingsPage.tsx` | intencional/parcial | permiso dedicado de settings contables o rol owner/admin documentado | Medio: cierre de dia contable usa rol, no permiso granular, desde rutas con permisos de lectura/configuracion. | Decidir politica: permiso dedicado o documentar excepcion owner/admin. |
+| sisa.web | `scripts/permissions-audit.js`, `package.json` | cubierto | guardia estatica de rutas/nav y brechas conocidas | Bajo: detecta rutas privadas sin `ProtectedRoute`, nav sin metadata y deuda conocida. | Correr `npm run check:permissions-audit` en revisiones de permisos. |
+| sisa.ui | `app/_layout.tsx`, `components/BottomNavigationBar.tsx`, `app/Home.tsx` | cubierto | `permissionsReady`, `canNavigate` para nav | Bajo: shell, bottom nav y Home no muestran menu operativo mientras permisos no estan listos. | Mantener regla; no agregar menus fuera del gate. |
+| sisa.ui | `src/permissions/routePermissions.ts` | faltante | permisos especificos por ruta sensible | Alto: faltan entradas explicitas para `/jobs/create`, `/jobs/worklog-form`, `/jobs/sync`, `/jobs/groups`, `/jobs/root-causes`, `/clients/accounting`, `/clients/finalizedJobs`, `/clients/unpaidInvoices`, `/clients/calendar`, `/journal_entries`, `/network/logs`. | Agregar entradas antes de prefijos amplios y validar deep-links. |
+| sisa.ui | `app/receipts/index.tsx`, `app/receipts/viewModal.tsx` | faltante | `updateReceipt` para editar | Medio: long press/boton editar visibles sin permiso de accion. | Usar `can('updateReceipt')`; no asumir `listReceipts`. |
+| sisa.ui | `app/payments/index.tsx`, `app/payments/viewModal.tsx` | faltante | `updatePayment` para editar | Medio: long press/boton editar visibles sin permiso de accion. | Usar `can('updatePayment')`; no asumir `listPayments`. |
+| sisa.ui | `app/tracking/index.tsx` | faltante | permisos de tracking por card y bloqueo real de press | Medio: cards deshabilitadas visualmente pueden seguir navegando. | No renderizar cards sin permiso o implementar `disabled` real en `MenuButton`. |
+| sisa.ui | `app/tracking/nearby-clients.tsx` | faltante | `addJob`, `listJobs/getJob`, `addPayment` segun accion | Alto: acciones para crear trabajos/pagos o abrir trabajos no usan permisos de accion/navegacion. | Gatear cada boton con `can()`/`canNavigate()`. |
+| sisa.ui | `Home.tsx`, `app/menu/[section].tsx`, pantallas varias | faltante/parcial | `canNavigate` para menu, `can` para acciones | Medio: hay uso directo de `permissions.includes`/`can` para navegacion, saltando convencion de permisos de navegacion vs accion. | Migrar menus a `canNavigate`; acciones a `can/canAny/canAll`. |
+| sisa.ui | `scripts/permissions-audit.js`, `package.json` | cubierto | guardia estatica de routePermissions y brechas conocidas | Bajo: enumera rutas sensibles faltantes y acciones sin permiso dedicado. | Correr `npm run check:permissions-audit` junto a lint/cache. |
+| sisa.api | `src/Routes/api.php` rutas con `PermissionsMiddleware` | cubierto/parcial | middleware por endpoint de dominio | Medio: la mayoria de CRUD/dominio esta protegido por permiso especifico. | Mantener test de cobertura y agregar permisos a gaps. |
+| sisa.api | `/token/refresh`, `/profile`, `/user_profile`, `/user_configurations`, `/companies/my`, `/companies/active`, `/devices`, membership request propias | intencional | autenticado propio / self-service | Bajo/medio: aceptable si controladores fuerzan usuario propio y membresia aprobada. | Mantener allowlist con razon; confirmar deletes de perfil/configuracion. |
+| sisa.api | `/sync/*`, `/sync/v2/*`, `/sync/v3/*`, `/bootstrap` | intencional/parcial | bootstrap/sync autenticado; permiso tecnico si aplica | Medio/alto en `/sync/*/purge`: necesario para offline pero de alto impacto. | Documentar contrato; considerar permiso/admin/device guard para purge. |
+| sisa.api | `GET /permissions/user/{user_id}` | faltante | `listPermissions` o `listUserPermissions`, preferible `allowGlobal=false` | Alto: expone permisos de otro usuario sin middleware de permiso. | Agregar `PermissionsMiddleware` dedicado y scope de empresa. |
+| sisa.api | `GET /file_attachments` | faltante | `downloadFile` o `listFileAttachments` | Medio: metadata de adjuntos sin permiso funcional. | Agregar permiso o documentar metadata como intencional. |
+| sisa.api | `GET /companies/{companyId}/users` | faltante | `listCompanyMembers` | Medio: directorio de usuarios de empresa sin middleware de permiso. | Agregar permiso o documentar directorio visible a miembros. |
+| sisa.api | join requests company/admin aliases | faltante | `listCompanyMembers`/`manageCompanyMemberships` | Medio: controlador puede validar admin, pero falta capa estandar de permisos. | Agregar middleware en rutas de listar/aprobar/rechazar. |
+| sisa.api | `src/Middleware/PermissionsMiddleware.php` company resolution | faltante | resolver `company_id`, `companyId`, body/header/query y recurso; fail-closed cuando corresponda | Alto: si `company_id` queda null, `hasPermission` puede validar contra cualquier empresa/global y permitir por admin de otra empresa antes de que el controller haga scope. | LOOP 2: resolver argumentos explicitos, dejar de interpretar `{id}` generico como permiso salvo rutas de permisos, y definir rutas globales reales. |
+| sisa.api | `tests/Routes/ApiPermissionsCoverageTest.php` | cubierto | allowlist clasificada + gaps documentados | Bajo: enumera rutas autenticadas sin `PermissionsMiddleware` y mantiene visible el riesgo de `company_id` null. | Ejecutar PHPUnit focalizado cuando cambie `api.php`/middleware. |
+
+Validaciones de auditoria agregadas:
+
+- `sisa.web`: `npm run check:permissions-audit` -> PASS; reporta brechas conocidas para LOOP 2.
+- `sisa.ui`: `npm run check:permissions-audit` -> PASS; reporta brechas conocidas para LOOP 2.
+- `sisa.api`: `php -l tests/Routes/ApiPermissionsCoverageTest.php` -> PASS; `vendor/bin/phpunit tests/Routes/ApiPermissionsCoverageTest.php` -> PASS con warnings PHPUnit baseline de configuracion/cobertura.
+
+Queda para LOOP 2:
+
+- Corregir primero `PermissionsMiddleware` para scope de empresa y fail-closed razonable sin romper superadmin/company admin.
+- Agregar middleware a gaps API reales o dejar allowlist intencional con decision de producto.
+- En web/mobile, ocultar acciones sensibles por permisos de accion, no por permisos de lista.
+- Agregar entradas faltantes en `routePermissions.ts` antes de prefijos amplios y revisar deep-links.
+- Revisar cache/scope viejo con pruebas multiempresa focalizadas despues de los cambios de middleware/UI.
+
 ## SISA API/Web/UI - loop comercial 1.3 QA vivo producto salida al mercado
 
 Fecha: 2026-06-29.
