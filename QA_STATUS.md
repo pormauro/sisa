@@ -1,5 +1,47 @@
 # Estado QA
 
+## LOOP 2.1 - Bootstrap de permisos propio sin reabrir multiempresa
+
+Fecha: 2026-07-01.
+
+Estado: implementado localmente en `sisa.api`; correccion focalizada para no bloquear el bootstrap de permisos de web/mobile.
+
+Motivo:
+
+- `GET /permissions/user/{user_id}` es usado por web/mobile para hidratar permisos propios al iniciar sesion.
+- En LOOP 2 habia quedado protegido con `PermissionsMiddleware('listPermissions')`, lo que bloqueaba a usuarios comunes antes de poder cargar sus propios permisos.
+- No se reabre la brecha multiempresa: `company_id` sigue siendo obligatorio y la autorizacion fina queda en `PermissionsController::listPermissionsByUser`.
+
+Decision tomada:
+
+- `GET /permissions/user/{user_id}` vuelve a tener solo `CheckUserBlockedMiddleware` en ruta.
+- `PermissionsController::listPermissionsByUser` permite consultar permisos propios si `requestingUserId === userId`.
+- Para consultar permisos de otro usuario se exige permiso delegado unico `listPermissions`, scoped al `company_id` solicitado.
+- Se deja de usar `listPermissionsByUser` para no mezclar permisos ni depender de un permiso no catalogado.
+- Superadmin `user_id=1` sigue pudiendo consultar permisos de otros usuarios.
+
+Tests agregados/ajustados:
+
+- Usuario comun puede consultar `/permissions/user/{same_user_id}?company_id=X` sin `listPermissions`.
+- Usuario comun no puede consultar permisos de otro usuario sin `listPermissions`.
+- Usuario con `listPermissions` puede consultar otro usuario de la misma empresa.
+- Falta `company_id` devuelve 400.
+- Permiso en otra empresa no autoriza consulta usando un `company_id` distinto.
+- Superadmin sigue funcionando.
+- La auditoria estatica clasifica `/permissions/user/{user_id}` como endpoint autenticado intencional ownership-aware, no como gap abierto.
+
+Revalidacion de rutas cerradas:
+
+- `GET /file_attachments` conserva `PermissionsMiddleware('downloadFile')`; requiere `company_id` o `X-Company-Id` porque el scope no esta en la ruta y el controlador ademas valida `attachable_type`/`attachable_uuid` contra empresas del usuario.
+- `POST /companies/join-requests/{request_id}/approve` y `/reject` conservan `PermissionsMiddleware('manageCompanyMemberships')`; al no incluir `company_id` en la ruta, requieren `company_id` o `X-Company-Id`. Pendiente para un loop posterior: agregar alias con empresa explicita `/companies/{company_id}/join-requests/{request_id}/approve|reject` si se quiere evitar dependencia del header/query.
+
+Validacion local:
+
+- `php -l src/Routes/api.php` -> PASS.
+- `php -l src/Controllers/PermissionsController.php` -> PASS.
+- `php -l tests/Routes/ApiPermissionsCoverageTest.php` -> PASS.
+- `vendor/bin/phpunit tests/Routes/ApiPermissionsCoverageTest.php` -> PASS (17 tests, 59 assertions) con warning PHPUnit baseline.
+
 ## LOOP 2 - API permisos y multiempresa
 
 Fecha: 2026-07-01.
