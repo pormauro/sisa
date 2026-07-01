@@ -1,5 +1,39 @@
 # Estado QA
 
+## LOOP 7 - QA real autorizada con seed QA
+
+Fecha: 2026-07-01.
+
+Estado: bloqueado antes de ejecutar mutaciones. No se ejecuto `--apply`, no se resetearon passwords, no se emitieron tokens, no se tocaron datos remotos y no se realizo QA manual real.
+
+Intento ejecutado:
+
+- Comando seguro desde `sisa.api`: `QA_ALLOW_SEED=1 php scripts/qa/seed-qa-users.php --dry-run`.
+- Resultado: BLOCKED. El loader reporto que no encontro `.env` en el workspace y la conexion MySQL local fue rechazada (`SQLSTATE[HY000] [2002]`).
+- Verificacion adicional por nombres de archivo: no hay `.env`, `.env.*` ni ejemplos de env en el workspace. No se leyo ningun secreto.
+
+Impacto:
+
+- No se pudo confirmar DB/host/env.
+- No se pudo validar que el ambiente conectado sea test/staging.
+- No se pudo ejecutar seed QA.
+- No se pudo ejecutar matriz manual real por perfiles.
+
+Pendiente para desbloquear:
+
+- Proveer un entorno test/staging accesible localmente o `SISA_ENV_PATH` apuntando a un `.env` de test/staging fuera del repo.
+- Confirmar `APP_ENV`/`DB_NAME`/`DB_HOST` seguros o usar `QA_CONFIRM_DB_NAME` si el nombre no contiene `test`, `staging`, `qa`, `local` o `dev`.
+- Proveer `QA_PASSWORD` por variable de entorno fuera del repo solo cuando se autorice `--apply`.
+- Reejecutar dry-run y revisar plan antes de cualquier seed real.
+
+Matriz real:
+
+- No ejecutada. No declarar release-ready hasta completar `docs/QA_MANUAL_CHECKLIST.md` con los perfiles `qa_superadmin`, `qa_owner_admin`, `qa_company_admin`, `qa_tecnico`, `qa_admin_caja`, `qa_sin_permisos` y `qa_multiempresa`.
+
+Datos QA:
+
+- No creados. No hay cleanup aplicado ni necesario desde este intento.
+
 ## LOOP 6.1 - Correccion de perfiles QA y bypass owner/admin
 
 Fecha: 2026-07-01.
