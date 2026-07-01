@@ -1,5 +1,57 @@
 # Estado QA
 
+## LOOP 6.1 - Correccion de perfiles QA y bypass owner/admin
+
+Fecha: 2026-07-01.
+
+Estado: implementado localmente en script/documentacion. No se ejecuto `--apply`, no se resetearon passwords, no se emitieron tokens y no se modifico ambiente remoto. Validacion local final ejecutada.
+
+Motivo:
+
+- `Permission::hasPermission()` devuelve `true` para cualquier membresia `approved` con rol `owner` o `admin` dentro de la empresa antes de revisar permisos explicitos.
+- Por ese diseno, un perfil `owner/admin` no sirve para validar restricciones finas como "no debe ver purge" o "no debe mutar jobs".
+- No se cambio `Permission::hasPermission`; cualquier excepcion como exigir `purgeSyncOperations` incluso a owner/admin requiere decision explicita de producto.
+
+Cambios en seed:
+
+- `qa_owner_admin` queda como `owner` y se documenta como perfil de bypass amplio dentro de empresa; ya no tiene expectativas `hidden`.
+- Se agrega `qa_company_admin` como `admin` para validar bypass real de company admin dentro de empresa; no tiene expectativas `hidden`.
+- `qa_admin_caja` cambia de `admin` a `member` con permisos explicitos de caja/contabilidad, para validar que no tenga mutaciones tecnicas.
+- `qa_multiempresa` cambia empresa A de `admin` a `member`; empresa B sigue `member`. Ahora valida permisos finos divergentes A/B.
+- Se agrega guardia `assertProfileMatrixIsHonest()`: si un perfil tiene rol `owner`/`admin` y expectativas `hidden`, el seed aborta incluso en dry-run para evitar matrices falsas.
+
+Perfiles de bypass amplio:
+
+- `qa_superadmin`: owner con permisos amplios delegados; no reemplaza prueba hardcoded `user_id=1`.
+- `qa_owner_admin`: owner aprobado; valida bypass owner dentro de empresa.
+- `qa_company_admin`: admin aprobado; valida bypass admin dentro de empresa.
+
+Perfiles de permisos finos:
+
+- `qa_tecnico`: member con permisos tecnicos.
+- `qa_admin_caja`: member con permisos caja/contabilidad.
+- `qa_sin_permisos`: member sin permisos operativos.
+- `qa_multiempresa`: member en A con caja/contabilidad y member en B readonly.
+
+Documentacion:
+
+- `docs/QA_MANUAL_CHECKLIST.md` corrige dry-run a `QA_ALLOW_SEED=1 php scripts/qa/seed-qa-users.php --dry-run`.
+- La tabla de perfiles aclara que `owner/admin` valida bypass de rol y que las restricciones finas se prueban con perfiles `member`.
+
+Validacion local LOOP 6.1:
+
+- API: `php -l scripts/qa/seed-qa-users.php` -> PASS.
+- API: `php -l src/Routes/api.php` -> PASS.
+- API: `php -l tests/Routes/ApiPermissionsCoverageTest.php` -> PASS.
+- API: `vendor/bin/phpunit tests/Routes/ApiPermissionsCoverageTest.php` -> PASS (20 tests, 88 assertions) con warning PHPUnit baseline.
+- Web: `npm run check:permissions-audit` -> PASS.
+- Web: `npm run check:commercial-flow` -> PASS (15 checks).
+- Web: `npm run lint` -> PASS.
+- Web: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- Mobile: `npm run check:permissions-audit` -> PASS.
+- Mobile: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188 selectedJobRecord`.
+- Mobile: `npm run check:cache` -> PASS.
+
 ## LOOP 6 - Preparacion QA real
 
 Fecha: 2026-07-01.
@@ -29,11 +81,12 @@ Perfiles planificados:
 | Perfil | Username/email | Empresa | Rol/membresia | Permisos esperados | Debe ver | No debe ver |
 |---|---|---|---|---|---|---|
 | Superadmin delegado | `qa_superadmin` / `qa_superadmin@sisa-qa.invalid` | QA A | owner approved | Permisos operativos amplios incluyendo `purgeSyncOperations` | Todos los modulos operativos | No valida bypass hardcoded `user_id=1` |
-| Owner/admin | `qa_owner_admin` / `qa_owner_admin@sisa-qa.invalid` | QA A | owner approved | Permisos operativos amplios sin purge | Dashboard, clientes, jobs, facturas, recibos, pagos, analytics, settings | Sync purge |
+| Owner/admin | `qa_owner_admin` / `qa_owner_admin@sisa-qa.invalid` | QA A | owner approved | Bypass owner dentro de empresa | Todos los modulos por rol owner | No usar para restricciones finas |
+| Company admin | `qa_company_admin` / `qa_company_admin@sisa-qa.invalid` | QA A | admin approved | Bypass admin dentro de empresa | Todos los modulos por rol admin | No usar para restricciones finas |
 | Tecnico | `qa_tecnico` / `qa_tecnico@sisa-qa.invalid` | QA A | member approved | Clientes lectura, jobs, job items, worklogs, adjuntos, estados/prioridades | Operacion tecnica y adjuntos | Caja/contabilidad mutante, settings contables |
-| Admin caja | `qa_admin_caja` / `qa_admin_caja@sisa-qa.invalid` | QA A | admin approved | Caja, pagos, recibos, facturas, resumen cliente, analytics/settings contables | Flujos administrativos y caja | Mutacion tecnica de jobs/worklogs |
+| Admin caja | `qa_admin_caja` / `qa_admin_caja@sisa-qa.invalid` | QA A | member approved | Caja, pagos, recibos, facturas, resumen cliente, analytics/settings contables | Flujos administrativos y caja | Mutacion tecnica de jobs/worklogs |
 | Sin permisos sensibles | `qa_sin_permisos` / `qa_sin_permisos@sisa-qa.invalid` | QA A | member approved | Sin permisos operativos | Perfil/settings basicos | Modulos sensibles y acciones CRUD |
-| Multiempresa | `qa_multiempresa` / `qa_multiempresa@sisa-qa.invalid` | QA A y QA B | A admin approved, B member approved | A caja/contabilidad; B lectura limitada | A: admin caja; B: lectura | Permisos de A aplicados en B |
+| Multiempresa | `qa_multiempresa` / `qa_multiempresa@sisa-qa.invalid` | QA A y QA B | A member approved, B member approved | A caja/contabilidad; B lectura limitada | A: admin caja por permisos; B: lectura | Permisos de A aplicados en B |
 
 Datos seed planificados:
 

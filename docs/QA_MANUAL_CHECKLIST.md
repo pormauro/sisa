@@ -8,7 +8,7 @@ Checklist para ejecutar QA real por perfiles en ambiente test/staging. No usar d
 
 - Confirmar ambiente: `sistema-test`, staging o base test equivalente.
 - Confirmar que `QA_ALLOW_SEED=1` solo se usa contra DB test/staging.
-- Ejecutar seed en dry-run primero desde `sisa.api`: `php scripts/qa/seed-qa-users.php --dry-run`.
+- Ejecutar seed en dry-run primero desde `sisa.api`: `QA_ALLOW_SEED=1 php scripts/qa/seed-qa-users.php --dry-run`.
 - Ejecutar seed real solo con autorizacion: `QA_ALLOW_SEED=1 QA_PASSWORD=<valor-no-commiteado> php scripts/qa/seed-qa-users.php --apply`.
 - Guardar passwords temporales en canal seguro externo al repo.
 - Si se necesita limpiar: `QA_ALLOW_SEED=1 php scripts/qa/seed-qa-users.php --cleanup --apply`.
@@ -18,11 +18,14 @@ Checklist para ejecutar QA real por perfiles en ambiente test/staging. No usar d
 | Perfil | Usuario | Empresa | Debe ver | No debe ver |
 |---|---|---|---|---|
 | Superadmin delegado QA | `qa_superadmin` | QA A | Todos los modulos operativos y purge por permiso | No reemplaza prueba hardcoded `user_id=1` |
-| Owner/admin | `qa_owner_admin` | QA A | Dashboard, clientes, jobs, facturas, recibos, pagos, analytics, settings | Sync purge si no tiene `purgeSyncOperations` |
+| Owner/admin | `qa_owner_admin` | QA A | Bypass de rol owner dentro de la empresa | No usar para validar restricciones finas |
+| Company admin | `qa_company_admin` | QA A | Bypass de rol admin dentro de la empresa | No usar para validar restricciones finas |
 | Tecnico | `qa_tecnico` | QA A | Clientes lectura, jobs, worklogs, adjuntos tecnicos | Pagos, recibos, mutacion contable, settings contables |
 | Admin caja | `qa_admin_caja` | QA A | Caja, pagos, recibos, facturas, resumen cliente, analytics | Mutacion tecnica de jobs/worklogs |
 | Sin permisos sensibles | `qa_sin_permisos` | QA A | Perfil/settings basicos | Modulos sensibles y acciones CRUD |
 | Multiempresa | `qa_multiempresa` | QA A y QA B | A: caja/contabilidad; B: lectura limitada | B: mutaciones de caja/contabilidad y permisos heredados de A |
+
+`owner` y `admin` tienen bypass efectivo de permisos por backend dentro de su empresa. Usar perfiles `member` con permisos explicitos (`qa_tecnico`, `qa_admin_caja`, `qa_sin_permisos`, `qa_multiempresa`) para validar restricciones finas.
 
 ## Web
 
