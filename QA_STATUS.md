@@ -1,5 +1,71 @@
 # Estado QA
 
+## LOOP 7.1 - Correccion seed comercial clients/invoices
+
+Fecha: 2026-07-01.
+
+Estado: correccion implementada localmente en `sisa.api/scripts/qa/seed-qa-users.php`; validacion local final ejecutada. No se ejecuto cleanup/apply remoto en este loop sin autorizacion explicita adicional para mutar nuevamente datos remotos.
+
+Causa del bloqueo:
+
+- El seed comercial usaba `upsertNamed()` para `clients` e `invoices`.
+- `upsertNamed()` solo funciona con tablas que tienen `name`, `title`, `description` o `business_name`.
+- En el esquema remoto verificado, `clients` no tiene columna nominal y representa el vinculo entre empresa emisora y empresa cliente via `company_id` + `client_company_id`/`empresa_id`.
+- `invoices` tampoco tiene columna nominal; usa `company_id`, `client_id`, `invoice_number`, fechas, montos, `status`, `payment_status`, etc.
+- Resultado anterior: A/B, usuarios, membresias y permisos estaban correctos, pero `clients=0` e `invoices=0` por empresa.
+
+Helpers dedicados agregados:
+
+- `upsertQaClientCompany(int $ownerCompanyId, string $suffix)`: crea/actualiza empresa cliente QA A/B con `nro_doc` numerico estable `990000010001/990000010002`.
+- `upsertQaClient(int $companyId, int $clientCompanyId, int $userId)`: crea/actualiza `clients` por `company_id + client_company_id` o `empresa_id`, sin depender de nombre.
+- `upsertQaInvoice(int $companyId, int $clientId, int $userId, string $suffix)`: crea/actualiza factura por `company_id + invoice_number` (`QA-LOOP7-A-0001` / `QA-LOOP7-B-0001`).
+- `upsertQaInvoiceItem(int $companyId, int $invoiceId, int $productId, int $jobId, int $userId)`: crea/actualiza item con columnas reales (`invoice_id`, `quantity`, `unit_price`, `total_amount`, `description`, `entity_type`, `code`, `job_id`, `product_id` cuando existen).
+- `upsertQaReceipt(...)` y `upsertQaPayment(...)`: crean/actualizan por `company_id + source_device_id`, sin depender de columnas nominales.
+- Utilidades internas nuevas: `findOneByCriteria()`, `countRows()`, `stableUuid()`.
+
+Validacion post-seed agregada:
+
+- Luego de sembrar A/B, `assertCommercialSeedComplete()` imprime conteos por empresa y aborta transaccion con `QA commercial seed incomplete` si falta cualquiera de:
+  - `clients >= 1`
+  - `invoices >= 1`
+  - `invoice_items >= 1`
+  - `receipts >= 1`
+  - `payments >= 1`
+  - `jobs >= 1`
+  - `work_logs >= 1`
+
+Cleanup actualizado:
+
+- Captura tambien empresas cliente QA por `nro_doc=990000010001/990000010002` y el registro roto anterior `nro_doc=0`/razon social QA LOOP 6.
+- Mantiene limpieza de datos company-scoped antes de borrar empresas/usuarios QA.
+
+Dry-run:
+
+- El plan ahora explicita que por cada empresa se espera: empresa cliente QA, row `clients`, carpeta, trabajo, worklog, producto/servicio, caja, factura, item, recibo y pago.
+
+Validacion local ejecutada:
+
+- `sisa.api`: `php -l scripts/qa/seed-qa-users.php` -> PASS.
+- `sisa.api`: `php -l src/Routes/api.php` -> PASS.
+- `sisa.api`: `php -l tests/Routes/ApiPermissionsCoverageTest.php` -> PASS.
+- `sisa.api`: `vendor/bin/phpunit tests/Routes/ApiPermissionsCoverageTest.php` -> PASS (20 tests, 88 assertions) con warning PHPUnit baseline.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS.
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (15 checks).
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.ui`: `npm run check:permissions-audit` -> PASS.
+- `sisa.ui`: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188 selectedJobRecord`.
+- `sisa.ui`: `npm run check:cache` -> PASS.
+
+Pendiente para completar LOOP 7.1 remoto:
+
+- Subir el script corregido al servidor autorizado.
+- Ejecutar `php -l scripts/qa/seed-qa-users.php` remoto.
+- Ejecutar dry-run remoto.
+- Con autorizacion explicita para mutar: `QA_ALLOW_SEED=1 php scripts/qa/seed-qa-users.php --cleanup --apply` y luego `QA_ALLOW_SEED=1 QA_PASSWORD=<secreto-fuera-del-repo> php scripts/qa/seed-qa-users.php --apply`.
+- Verificar por `SELECT` que Empresa A/B tengan `clients`, `invoices`, `invoice_items`, `jobs`, `work_logs`, `receipts` y `payments` con conteos >= 1.
+- No declarar QA real completa hasta que esos conteos pasen y se ejecute la matriz manual.
+
 ## LOOP 7 - QA real autorizada con seed QA
 
 Fecha: 2026-07-01.
