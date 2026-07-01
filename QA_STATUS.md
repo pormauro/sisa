@@ -1,5 +1,93 @@
 # Estado QA
 
+## LOOP 5 - QA real por perfiles y flujo comercial completo
+
+Fecha: 2026-07-01.
+
+Estado: parcialmente ejecutado. Se completo QA automatizada local y smoke comercial estatico; la ejecucion real por perfiles en `sistema-test` queda bloqueada porque no hay credenciales activas documentadas ni autorizacion vigente para resetear passwords, emitir tokens o mutar datos vivos.
+
+Alcance ejecutado:
+
+- `sisa.api`: validacion focalizada de rutas/permisos multiempresa con `ApiPermissionsCoverageTest`.
+- `sisa.web`: auditoria de permisos, lint, build y smoke comercial estatico (`cliente -> trabajo -> factura -> recibo/resumen`, guards de permisos y enlaces principales).
+- `sisa.ui`: auditoria de permisos mobile, lint y guardia de cache.
+- `sisa`: documentacion de matriz, bloqueos y decision de `dist` en este estado.
+
+Matriz de perfiles solicitados:
+
+| Perfil | Estado LOOP 5 | Evidencia ejecutada | Pendiente real |
+|---|---|---|---|
+| Superadmin `user_id=1` | No ejecutado en vivo | PHPUnit cubre bypass superadmin en middleware y permisos propios/de terceros | Login real, dashboard, purge, permisos, flujo comercial completo |
+| Owner/admin empresa | No ejecutado en vivo | Defaults y permisos `updateCompanyAccountingSettings` cubiertos por tests; auditorias web/mobile PASS | Crear/editar flujo comercial completo y settings contables en empresa real |
+| Tecnico/operativo limitado | No ejecutado en vivo | Auditoria mobile cubre deep-links y acciones nearby; smoke web cubre acciones tecnicas/flujo comercial estatico | Validar trabajo/worklog/adjuntos en web/app con permisos limitados |
+| Administrativo caja/contabilidad sin tecnicos | No ejecutado en vivo | Auditorias web cubren Payments/Receipts/Invoices/Analytics/Settings; API separa lectura/mutacion settings | Validar caja/contabilidad sin menus tecnicos ni requests tecnicos |
+| Usuario sin permisos sensibles | No ejecutado en vivo | Auditorias verifican ocultamiento de acciones y rutas sensibles | Validar dashboard vacio/controlado, sin botones ni requests no autorizadas |
+| Usuario miembro de dos empresas | No ejecutado en vivo | Middleware/test cubre scope explicito, no fallback por `id`, fail-closed sin company scope | Cambiar empresa A/B, confirmar limpieza de permisos/cache y ausencia de permisos cruzados |
+
+API - estado:
+
+- Endpoints con `PermissionsMiddleware` siguen exigiendo scope por `company_id`, `X-Company-Id`, body o route arg explicito; la cobertura automatizada valida fail-closed cuando falta scope.
+- Rutas legacy join requests sin `company_id` mantienen `PermissionsMiddleware('manageCompanyMemberships')`; deben fallar cerrado si no se envia scope. Pendiente confirmar con HTTP real.
+- Aliases `/companies/{company_id}/join-requests/{request_id}/approve|reject` estan cubiertos por test de ruta/middleware y controller valida pertenencia de `request_id` a empresa; pendiente HTTP real.
+- `/sync/v2/purge` y `/sync/v3/purge` requieren `purgeSyncOperations`; cobertura estatica valida middleware. Pendiente HTTP real con usuario comun, usuario con permiso y superadmin.
+- `GET /company-accounting-settings` acepta `viewAccountingSummary`, `listCompanies` o `updateCompanyAccountingSettings`; `PUT` solo `updateCompanyAccountingSettings`. Cubierto por test especifico.
+- `/permissions/user/{user_id}` mantiene permisos propios solo con membresia `approved` y delegacion por `listPermissions`; cubierto por tests focalizados.
+
+Web - estado:
+
+- Dashboard, Providers, Quotes, Payments, Receipts, Invoices, Jobs, Clients, Catalogs, Attachments, Analytics y Settings quedan cubiertos por auditoria estatica de permisos y/o smoke comercial; no reemplaza navegacion real.
+- `AttachmentsPage` no debe cargar fuentes no autorizadas segun permisos de dominio + `downloadFile`; cubierto por auditoria estatica, pendiente confirmar requests reales en Network tab.
+- Analytics queda separado: lectura con `viewAccountingSummary`/`listWorkLogs`, lectura settings con `viewAccountingSummary`/`listCompanies`/`updateCompanyAccountingSettings`, mutacion solo `updateCompanyAccountingSettings`. Cubierto por auditoria y build.
+- Settings contables lee solo con permisos compatibles y guarda solo con `updateCompanyAccountingSettings`. Cubierto por auditoria y build.
+
+Mobile - estado:
+
+- `routePermissions` y auditoria cubren deep links sensibles: `/jobs/create`, `/jobs/worklog-form`, `/clients/accounting`, `/journal_entries`, `/network/logs`, `/tracking/nearby-clients`.
+- Cards sin permiso no deben navegar; recibos/pagos editan solo con `updateReceipt`/`updatePayment`; `nearby-clients` no propone job sin `addJob`, no carga/renderiza proveedores sin `addPayment`, y no abre job sin `getJob`/`listJobs`. Cubierto por auditoria estatica, pendiente prueba real en dispositivo/simulador con perfiles.
+
+Flujo comercial principal:
+
+- Smoke estatico web PASS para enlaces y guards principales de cliente, trabajos, facturas, recibos, resumen y detalle tecnico mobile.
+- No se ejecuto flujo real `cliente -> carpeta -> trabajo -> worklog -> factura -> recibo/cobro -> pago -> resumen de cuenta -> adjuntos -> reportes/PDF` porque requiere credenciales y datos QA activos.
+
+Bugs encontrados:
+
+- No se detectaron bugs nuevos durante las validaciones automatizadas de LOOP 5.
+- Bloqueo operativo: falta sesion/credenciales autorizadas para ejecutar matriz real por perfiles y mutaciones controladas en ambiente vivo.
+
+Cambios minimos aplicados:
+
+- No se aplicaron cambios de codigo en LOOP 5. Solo se actualizo `QA_STATUS.md` con resultados, bloqueos y decision de `dist`.
+
+Decision sobre `sisa.web/dist`:
+
+- Decision actual: mantener `dist` versionado para releases web mientras Hostinger despliegue por copia de `dist/index.html` y assets generados, porque no hay workflow/pipeline documentado que construya en servidor.
+- Si se incorpora deploy con build remoto/CI, la decision debe cambiar a revertir `dist` generado localmente y agregarlo a `.gitignore` o al mecanismo equivalente.
+- En el estado actual, los cambios de `dist` generados por `npm run build` deben revisarse como artefactos de release, no como fuente manual.
+
+Validacion local LOOP 5:
+
+- `sisa.api`: `php -l src/Routes/api.php` -> PASS.
+- `sisa.api`: `php -l tests/Routes/ApiPermissionsCoverageTest.php` -> PASS.
+- `sisa.api`: `vendor/bin/phpunit tests/Routes/ApiPermissionsCoverageTest.php` -> PASS (20 tests, 88 assertions) con warning PHPUnit baseline.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS.
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (15 checks).
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.ui`: `npm run check:permissions-audit` -> PASS.
+- `sisa.ui`: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188 selectedJobRecord`.
+- `sisa.ui`: `npm run check:cache` -> PASS.
+
+Pendientes para release:
+
+- Obtener credenciales QA activas o autorizacion explicita para resetear passwords/emitir sesiones temporales sin imprimir secretos.
+- Ejecutar matriz real por los seis perfiles en `sistema-test` o ambiente equivalente.
+- Ejecutar flujo comercial completo con datos QA controlados y evidencia de responses/PDF/adjuntos.
+- Confirmar en Network tab o logs que todos los endpoints indirectos envian `company_id` o `X-Company-Id` con la empresa activa.
+- Probar multiempresa A/B con permisos divergentes y confirmar que cambio de empresa limpia permisos/cache/menus.
+- Probar mobile en dispositivo/simulador con deep links y perfiles reales.
+- Decidir antes de commit/release si los artefactos `sisa.web/dist` generados en este workspace forman parte del paquete a desplegar.
+
 ## LOOP 4.1 - Separacion lectura/mutacion Analytics settings
 
 Fecha: 2026-07-01.
