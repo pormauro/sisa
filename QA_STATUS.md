@@ -63,6 +63,25 @@ Seed real ejecutado por operador y diagnostico posterior:
 - No se continuo QA real porque hacerlo validaria una matriz falsa. Antes de continuar hay que corregir el seed para usar identificadores numericos validos o una clave textual real, limpiar los datos QA creados y reseedear con A/B separados.
 - Pendiente de seguridad operativa: si el password temporal fue expuesto en algun canal no seguro, rotarlo antes de continuar QA manual.
 
+Correccion numerica autorizada y reseed:
+
+- Se corrigio `scripts/qa/seed-qa-users.php` para usar `nro_doc` numericos: Empresa A `990000000001`, Empresa B `990000000002`.
+- Se amplio cleanup para capturar el registro roto anterior con `nro_doc=0` y razon social QA LOOP 6.
+- Se subio el script corregido al servidor autorizado y `php -l scripts/qa/seed-qa-users.php` remoto -> PASS.
+- El operador ejecuto cleanup y apply remoto. Resultado informado: `Company A=70`, `Company B=71`; usuarios QA recreados `user_id=14..20`.
+- Verificacion remota solo lectura confirma dos empresas separadas:
+  - Empresa A: `id=70`, `nro_doc=990000000001`.
+  - Empresa B: `id=71`, `nro_doc=990000000002`.
+- Verificacion remota solo lectura confirma membresias:
+  - `qa_superadmin` owner en A.
+  - `qa_owner_admin` owner en A.
+  - `qa_company_admin` admin en A.
+  - `qa_tecnico`, `qa_admin_caja`, `qa_sin_permisos` member en A.
+  - `qa_multiempresa` member en A y member en B.
+- Verificacion remota solo lectura confirma permisos divergentes: `qa_multiempresa` tiene 25 permisos en A y 8 en B.
+- Nuevo bloqueo detectado: el seed no creo `clients` ni `invoices` por empresa (`count=0` en A/B). Causa: el helper generico `upsertNamed()` requiere columna `name/title/description/business_name`; `clients` e `invoices` remotos no tienen esas columnas (`clients` usa IDs/scope y `invoices` no tiene columna nominal). Algunos datos dependientes quedaron creados parcialmente, pero el flujo comercial completo no es valido todavia.
+- No se continuo QA comercial completa. Pendiente corregir el seed para crear cliente/factura usando columnas reales de esas tablas, limpiar y reseedear antes de ejecutar la matriz manual.
+
 ## LOOP 6.1 - Correccion de perfiles QA y bypass owner/admin
 
 Fecha: 2026-07-01.
@@ -153,7 +172,7 @@ Perfiles planificados:
 
 Datos seed planificados:
 
-- Empresas: `SISA QA LOOP 6 Empresa A` (`QA-LOOP6-A`) y `SISA QA LOOP 6 Empresa B` (`QA-LOOP6-B`).
+- Empresas: `SISA QA LOOP 6 Empresa A` (`nro_doc=990000000001`) y `SISA QA LOOP 6 Empresa B` (`nro_doc=990000000002`).
 - Usuarios QA anteriores con emails `@sisa-qa.invalid` se actualizan idempotentemente.
 - Membresias approved por perfil.
 - Permisos reemplazados por usuario/empresa para evitar permisos residuales.
@@ -163,7 +182,7 @@ Datos seed planificados:
 Reversion/limpieza:
 
 - `QA_ALLOW_SEED=1 php scripts/qa/seed-qa-users.php --cleanup --apply` elimina usuarios QA, permisos, membresias, empresas QA A/B y datos company-scoped asociados.
-- La limpieza identifica usuarios por emails `@sisa-qa.invalid` y empresas por `nro_doc` `QA-LOOP6-A/B`.
+- La limpieza identifica usuarios por emails `@sisa-qa.invalid` y empresas por `nro_doc` `990000000001/990000000002`; tambien captura el registro roto anterior con `nro_doc=0` y razon social QA LOOP 6 si existiera.
 - Ejecutar limpieza solo en test/staging y con autorizacion.
 
 Checklist manual:
