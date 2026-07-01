@@ -1,5 +1,47 @@
 # Estado QA
 
+## LOOP 4.1 - Separacion lectura/mutacion Analytics settings
+
+Fecha: 2026-07-01.
+
+Estado: implementado localmente en `sisa.api` y `sisa.web`; `sisa.ui` no requirio cambios; validacion final ejecutada.
+
+Motivo:
+
+- LOOP 4 introdujo un bug funcional: `AnalyticsPage.loadAnalytics()` exigia `updateCompanyAccountingSettings`, bloqueando lectura de Analytics a usuarios con `viewAccountingSummary` o `listWorkLogs` pero sin permiso de mutacion.
+- `GET /company-accounting-settings` no aceptaba `updateCompanyAccountingSettings`, aunque un usuario que puede guardar necesita leer el valor actual antes de modificarlo.
+
+API:
+
+- `GET /company-accounting-settings` ahora acepta `viewAccountingSummary`, `listCompanies` o `updateCompanyAccountingSettings`.
+- `PUT /company-accounting-settings` sigue aceptando solo `updateCompanyAccountingSettings`.
+- `ApiPermissionsCoverageTest` verifica que GET incluya lectura complementaria con `updateCompanyAccountingSettings` y que `viewAccountingSummary`/`listCompanies` no habiliten PUT.
+
+Web:
+
+- `AnalyticsPage` separa permisos:
+  - Lectura de Analytics: `viewAccountingSummary` o `listWorkLogs`.
+  - Lectura de settings contables: `viewAccountingSummary`, `listCompanies` o `updateCompanyAccountingSettings`.
+  - Mutacion de settings contables: solo `updateCompanyAccountingSettings`.
+- `loadAnalytics()` ya no exige permiso de mutacion para cargar datos; carga analytics si hay permiso de lectura y carga settings solo si hay permiso compatible.
+- Si el usuario no puede leer settings contables, la UI conserva el valor visual por defecto y no intenta leerlo.
+- Si el usuario no tiene permisos de lectura para Analytics, la pagina muestra `EmptyState` explicito en vez de quedar vacia.
+- `SettingsPage` solo llama `getCompanyAccountingSettings` si hay permiso de lectura compatible, evitando 403 silenciosos; guardar sigue protegido exclusivamente por `updateCompanyAccountingSettings`.
+- `scripts/permissions-audit.js` falla si `loadAnalytics()` vuelve a depender de `canUpdateAccountingSettings`, si faltan permisos separados de lectura/mutacion o si GET settings deja de aceptar `updateCompanyAccountingSettings`.
+
+Dist:
+
+- `sisa.web/dist` ya estaba modificado por `npm run build` de LOOP 4 y `npm run build` de LOOP 4.1 volvio a refrescar hashes. Queda pendiente decision explicita de versionado/deploy: commitear assets generados o revertirlos antes de commit. LOOP 4.1 no modifica `dist` manualmente.
+
+Validacion local:
+
+- `sisa.api`: `php -l src/Routes/api.php` -> PASS.
+- `sisa.api`: `php -l tests/Routes/ApiPermissionsCoverageTest.php` -> PASS.
+- `sisa.api`: `vendor/bin/phpunit tests/Routes/ApiPermissionsCoverageTest.php` -> PASS (20 tests, 88 assertions) con warning PHPUnit baseline.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB; refresco assets en `dist`.
+
 ## LOOP 4 - Endurecimiento final permisos/sync/settings
 
 Fecha: 2026-07-01.
