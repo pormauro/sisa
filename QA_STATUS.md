@@ -34,6 +34,35 @@ Datos QA:
 
 - No creados. No hay cleanup aplicado ni necesario desde este intento.
 
+Actualizacion remota posterior:
+
+- Se accedio por SSH a `hostinger-codex` en `domains/depros.com.ar/public_html/sistema_test` solo en modo lectura/diagnostico.
+- Archivos remotos presentes: `scripts/qa/seed-qa-users.php` y `tests/Routes/ApiPermissionsCoverageTest.php`.
+- Validacion remota de sintaxis: `php -l scripts/qa/seed-qa-users.php`, `php -l src/Routes/api.php`, `php -l tests/Routes/ApiPermissionsCoverageTest.php` -> PASS.
+- Dry-run remoto ejecutado: `QA_ALLOW_SEED=1 php scripts/qa/seed-qa-users.php --dry-run` -> PASS; mostro empresas QA A/B y perfiles `qa_superadmin`, `qa_owner_admin`, `qa_company_admin`, `qa_tecnico`, `qa_admin_caja`, `qa_sin_permisos`, `qa_multiempresa` con roles esperados.
+- PHPUnit remoto no pudo ejecutarse porque `vendor/bin/phpunit` no esta presente como archivo ejecutable/invocable en ese servidor.
+- No se ejecuto `--apply`, no se pasaron passwords, no se emitieron tokens, no se modifico base de datos, no se modificaron archivos remotos y no se ejecuto QA manual real.
+- Para continuar con seed real hace falta aprobacion explicita para el comando mutante y `QA_PASSWORD` provisto fuera del repo/sin imprimirlo.
+
+Intento `--apply` autorizado posterior:
+
+- Se verifico que existia una variable de shell `QA_PASSWORD`, pero no estaba exportada al entorno (`printenv QA_PASSWORD` no la veia).
+- Comando ejecutado: `QA_ALLOW_SEED=1 php scripts/qa/seed-qa-users.php --apply`.
+- Resultado: el script aborto antes de mutar con `QA_PASSWORD is required for --apply. It is never printed.`
+- No se creo ni modifico ningun dato QA en este intento.
+- Para ejecutar seed real, `QA_PASSWORD` debe estar exportado al entorno del comando PHP o pasarse inline por un canal seguro sin mostrar su valor en logs.
+
+Seed real ejecutado por operador y diagnostico posterior:
+
+- El operador ejecuto manualmente `QA_ALLOW_SEED=1 php scripts/qa/seed-qa-users.php --apply` con `QA_PASSWORD` en su sesion SSH. El valor del password no se registra aqui.
+- Resultado informado por el seed: usuarios QA creados `user_id=7..13`, pero `Company A=69` y `Company B=69`.
+- Diagnostico remoto posterior solo lectura (`SELECT`/`DESCRIBE`) confirmo que solo existe una empresa QA LOOP 6: `id=69`, `razon_social=SISA QA LOOP 6 Empresa B`, `nro_doc=0`.
+- Causa probable confirmada por `DESCRIBE empresas`: `nro_doc` es `bigint(20) unsigned`; el seed uso documentos alfanumericos `QA-LOOP6-A/B`, MySQL los coerciono a `0` y el upsert termino colapsando A/B en un unico registro.
+- Usuarios QA existen y estan activados: `qa_superadmin` `7`, `qa_owner_admin` `8`, `qa_company_admin` `9`, `qa_tecnico` `10`, `qa_admin_caja` `11`, `qa_sin_permisos` `12`, `qa_multiempresa` `13`.
+- Membresias QA existen solo contra `empresa_id=69`; `qa_multiempresa` no tiene dos empresas reales, por lo que la matriz multiempresa A/B queda invalida.
+- No se continuo QA real porque hacerlo validaria una matriz falsa. Antes de continuar hay que corregir el seed para usar identificadores numericos validos o una clave textual real, limpiar los datos QA creados y reseedear con A/B separados.
+- Pendiente de seguridad operativa: si el password temporal fue expuesto en algun canal no seguro, rotarlo antes de continuar QA manual.
+
 ## LOOP 6.1 - Correccion de perfiles QA y bypass owner/admin
 
 Fecha: 2026-07-01.
