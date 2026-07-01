@@ -1,5 +1,57 @@
 # Estado QA
 
+## LOOP 3 - Acciones sensibles web/mobile y cierre menor API 2.1
+
+Fecha: 2026-07-01.
+
+Estado: implementado localmente en `sisa.api`, `sisa.web` y `sisa.ui` con cambios focalizados, sin rediseño masivo.
+
+API - cierre menor LOOP 2.1:
+
+- `QA_STATUS.md` existe en la raiz compartida del workspace; no se creo `docs/QA_STATUS.md` duplicado.
+- `PermissionsController::listPermissionsByUser` mantiene `company_id` obligatorio.
+- Un usuario comun puede consultar sus propios permisos sin `listPermissions` solo si tiene membresia `approved` en esa empresa.
+- Si consulta sus propios permisos para una empresa donde no es miembro aprobado, responde `403` con `code=COMPANY_MEMBERSHIP_REQUIRED`.
+- Para consultar permisos de otro usuario se mantiene permiso delegado unico `listPermissions` scoped al `company_id` solicitado.
+- Superadmin `user_id=1` sigue permitido.
+- Tests API agregados: propio con membresia approved, propio sin membresia approved, otro sin permiso, otro con `listPermissions`, falta `company_id`, permiso de otra empresa y superadmin.
+
+Web - acciones ocultas por permiso de accion:
+
+- `ProvidersPage`: crear/guardar/eliminar proveedor ahora requiere `addProvider`/`updateProvider`/`deleteProvider`; filas no abren editor si el usuario no puede editar/eliminar.
+- `AttachmentsPage`: la bandeja ya no carga todas las fuentes solo por estar autenticado. Carga trabajos/items/worklogs/pagos/recibos solo si existen permisos de dominio y `downloadFile`; no muestra secciones ni filtros de entidades no permitidas. Informe fiscal/IVA requiere permisos contables o de pagos y `downloadFile`.
+- `QuotesPage`: crear, editar cabecera, cambiar estado, exportar PDF, eliminar, crear/editar/eliminar/reordenar items quedan condicionados por permisos de accion (`addQuote`, `updateQuote`, `changeQuoteStatus`, `exportQuotePdf`, `deleteQuote`, `add/update/deleteQuoteItem`).
+- `ReferenceCatalogsPages`: cajas, categorias, productos/servicios y tarifas ocultan crear/guardar/eliminar por permisos `add/update/delete*`; la imagen de caja requiere ademas `uploadFile`.
+- `FinanceCatalogsPages`: nueva transferencia requiere `addTransfer`; crear/anular/regularizar cierres queda condicionado por `addClosing`, `updateClosing` y `resolveClosingDifference`/`updateClosing`.
+- `scripts/permissions-audit.js` ahora falla si vuelven rutas privadas sin `ProtectedRoute`, nav live sin permiso o las brechas de acciones sensibles conocidas.
+
+Mobile - rutas y acciones blindadas:
+
+- `routePermissions.ts` agrega rutas sensibles antes de prefijos amplios: `/jobs/create`, `/jobs/worklog-form`, `/jobs/sync`, `/jobs/groups`, `/jobs/root-causes`, `/clients/accounting`, `/clients/finalizedJobs`, `/clients/unpaidInvoices`, `/clients/calendar`, `/journal_entries`, `/network/logs`.
+- `receipts/index.tsx` y `receipts/viewModal.tsx`: editar recibo requiere `updateReceipt`; long press y boton editar no existen sin permiso.
+- `payments/index.tsx` y `payments/viewModal.tsx`: editar pago requiere `updatePayment`; long press y boton editar no existen sin permiso.
+- `tracking/index.tsx`: cards sin permiso dejan de renderizar; ya no son tarjetas deshabilitadas visualmente con `onPress` activo.
+- `tracking/nearby-clients.tsx`: crear trabajo requiere `addJob`, abrir trabajo requiere `getJob`/`listJobs`, registrar compra/pago requiere `addPayment`.
+- `scripts/permissions-audit.js` ahora falla si faltan route permissions sensibles, si vuelve edit receipt/payment sin permisos de update, si tracking usa disabled navegable o si nearby crea jobs/pagos sin permisos de accion.
+
+Decision Analytics/Settings web:
+
+- Queda pendiente para LOOP 4 definir permiso dedicado `updateCompanyAccountingSettings` o dejar excepcion owner/admin documentada. No se cambio semantica en este loop para evitar romper configuracion contable existente.
+
+Pendientes para LOOP 4:
+
+- Endurecer o decidir politica final para `/sync/v2/purge` y `/sync/v3/purge`.
+- Agregar alias API con empresa explicita para approve/reject join requests: `/companies/{company_id}/join-requests/{request_id}/approve|reject`.
+- Revisar con QA real que todos los clientes web/mobile envien `company_id` o `X-Company-Id` en endpoints indirectos como `file_attachments`.
+- Completar permiso dedicado para settings contables si producto no acepta excepcion owner/admin.
+- Ampliar auditorias estaticas a mas paginas, incluyendo `PaymentsPage`, `ReceiptsPage`, `InvoicesPage`, `JobsPage`, `ClientsPage`, `DashboardPage`, `AnalyticsPage` y `SettingsPage`, mas alla de las brechas ya cerradas.
+
+Validacion local parcial ya ejecutada:
+
+- `sisa.api`: `php -l src/Controllers/PermissionsController.php`, `php -l tests/Routes/ApiPermissionsCoverageTest.php`, `vendor/bin/phpunit tests/Routes/ApiPermissionsCoverageTest.php` -> PASS (18 tests, 63 assertions) con warning PHPUnit baseline.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS; `npm run lint` -> PASS; `npm run build` -> PASS con warning baseline de chunks grandes.
+- `sisa.ui`: `npm run check:permissions-audit` -> PASS; `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188 selectedJobRecord`; `npm run check:cache` -> PASS.
+
 ## LOOP 2.1 - Bootstrap de permisos propio sin reabrir multiempresa
 
 Fecha: 2026-07-01.
