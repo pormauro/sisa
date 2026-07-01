@@ -1,5 +1,46 @@
 # Estado QA
 
+## LOOP 4 - Endurecimiento final permisos/sync/settings
+
+Fecha: 2026-07-01.
+
+Estado: implementado localmente en `sisa.api`, `sisa.web` y `sisa.ui`; validacion completa final ejecutada.
+
+API:
+
+- `/sync/v2/purge` y `/sync/v3/purge` dejaron de estar en allowlist bootstrap y ahora requieren `PermissionsMiddleware('purgeSyncOperations')` scoped por empresa.
+- Se agregaron aliases explicitos scoped para approve/reject de join requests: `/companies/{company_id}/join-requests/{request_id}/approve` y `/reject`.
+- Las rutas legacy `/companies/join-requests/{request_id}/approve|reject` se mantienen, pero siguen requiriendo scope por `company_id`/`X-Company-Id`/body mediante middleware.
+- `CompanyUsersController::approveJoinRequest` y `rejectJoinRequest` validan que `request_id` pertenezca al `company_id` de la ruta explicita; si no coincide, responden 404.
+- `PUT /company-accounting-settings` ahora requiere `updateCompanyAccountingSettings`; `GET /company-accounting-settings` conserva permisos de lectura.
+- `Permission::ACCOUNTING_PERMISSIONS` registra `updateCompanyAccountingSettings`; `Permission::ACCOUNTING_LEDGER_PERMISSIONS` registra `purgeSyncOperations`.
+- `updateCompanyAccountingSettings` se agrega a defaults `owner` y `admin` para no romper company admins existentes; `purgeSyncOperations` queda catalogado pero no concedido por default.
+- `ApiPermissionsCoverageTest` ahora exige middleware para purge, join aliases y settings contables, y verifica el registro/defaults de los permisos nuevos.
+
+Web:
+
+- `AnalyticsPage` y `SettingsPage` dejan de depender de rol owner/admin para mutar cierre contable y usan `can('updateCompanyAccountingSettings')`.
+- Los handlers de guardado contable retornan sin ejecutar si falta `updateCompanyAccountingSettings`; los botones de guardado no se renderizan sin permiso.
+- `AttachmentsPage` cierra automaticamente el modal fiscal y limpia el filtro de facturas contables si se pierde permiso; export/print fiscal tambien retornan si falta permiso.
+- `scripts/permissions-audit.js` amplia checks a `PaymentsPage`, `ReceiptsPage`, `InvoicesPage`, `JobsPage`, `ClientsPage`, `DashboardPage`, `AnalyticsPage`, `SettingsPage` y `AttachmentsPage`.
+
+Mobile:
+
+- `src/constants/permissionCatalog.ts` incluye `updateCompanyAccountingSettings`, `purgeSyncOperations` y `listNetworkLogs`.
+- `tracking/nearby-clients.tsx` ya no carga ni renderiza proveedores cercanos si falta `addPayment`; sigue mostrando acciones de job solo con `addJob`/`getJob`/`listJobs`.
+- `scripts/permissions-audit.js` agrega guardia para detectar carga/render de proveedores cercanos sin `addPayment`.
+
+Validacion local:
+
+- `sisa.web`: `npm run check:permissions-audit` -> PASS.
+- `sisa.ui`: `npm run check:permissions-audit` -> PASS.
+- `sisa.api`: `php -l src/Routes/api.php`, `php -l src/Controllers/PermissionsController.php`, `php -l src/Controllers/CompanyUsersController.php`, `php -l src/Models/Permission.php`, `php -l tests/Routes/ApiPermissionsCoverageTest.php` -> PASS.
+- `sisa.api`: `vendor/bin/phpunit tests/Routes/ApiPermissionsCoverageTest.php` -> PASS (19 tests, 79 assertions) con warning PHPUnit baseline.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.ui`: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188 selectedJobRecord`.
+- `sisa.ui`: `npm run check:cache` -> PASS.
+
 ## LOOP 3 - Acciones sensibles web/mobile y cierre menor API 2.1
 
 Fecha: 2026-07-01.
