@@ -1,5 +1,61 @@
 # Estado QA
 
+## LOOP 2 - API permisos y multiempresa
+
+Fecha: 2026-07-01.
+
+Estado: implementado localmente en `sisa.api`; cambios limitados a middleware, rutas API, tests de cobertura y documentacion. No se tocaron web/mobile.
+
+Endpoints cerrados:
+
+- `GET /permissions/user/{user_id}` ahora usa `PermissionsMiddleware('listPermissions')` y requiere scope de empresa por `company_id`/`X-Company-Id`/body. El controlador conserva validacion adicional para consulta propia/delegada por empresa.
+- `GET /file_attachments` ahora usa `PermissionsMiddleware('downloadFile')`. Como el scope real viene de `attachable_type`/`attachable_uuid`, el middleware no intenta inferirlo; el cliente debe enviar `company_id` o `X-Company-Id` y el controlador sigue resolviendo/validando la entidad adjunta contra el scope del usuario.
+- `GET /companies/{companyId}/users` ahora usa `PermissionsMiddleware('listCompanyMembers')` y el middleware resuelve `companyId` desde la ruta.
+- `GET /companies/{company_id:[0-9]+}/join-requests` ahora usa `PermissionsMiddleware('listCompanyMembers')` y el middleware resuelve `company_id` desde la ruta.
+- `POST /companies/join-requests/{request_id:[0-9]+}/approve` ahora usa `PermissionsMiddleware('manageCompanyMemberships')`. Requiere `company_id` por query/header/body porque la ruta no contiene empresa.
+- `POST /companies/join-requests/{request_id:[0-9]+}/reject` ahora usa `PermissionsMiddleware('manageCompanyMemberships')`. Requiere `company_id` por query/header/body porque la ruta no contiene empresa.
+
+Endpoints intencionales:
+
+- Se mantiene allowlist autenticada para self-service/session/device: refresh token, perfil propio, configuraciones propias, empresas propias/activas, solicitudes propias de membresia y dispositivos propios.
+- Se mantiene allowlist bootstrap/sync para `/sync/*`, `/sync/v2/*`, `/sync/v3/*` y `/bootstrap` por necesidad offline-first.
+- `/sync/v2/purge` y `/sync/v3/purge` quedan marcados como high-risk allowlist hasta decision final de permiso/admin/device guard dedicado.
+- `PermissionsMiddleware(..., false)` queda como flag legacy para rutas administrativas/sistema explicitamente unscoped (`publishAppUpdate`, permisos admin, `sendNotifications`). No debe usarse para nuevos endpoints de dominio sin justificacion.
+
+Decision sobre `allowGlobal` y company scope:
+
+- Las rutas con `PermissionsMiddleware` default ahora son company-scoped y fallan cerrado con HTTP 400 y `code=COMPANY_SCOPE_MISSING` si no se puede resolver empresa.
+- El middleware resuelve scope desde query `company_id`, header `X-Company-Id`, body `company_id`, route argument `company_id` y route argument `companyId`.
+- Se elimino el fallback inseguro que trataba cualquier route argument `id` como permission id. El middleware ya no llama `Permission::getById($id)` para resolver scope generico.
+- `Permission::hasPermission(..., allowGlobal=false, companyId=null)` ahora devuelve `false` antes de expandir a todas las empresas aprobadas. La expansion unscoped solo queda disponible cuando el caller la permite explicitamente.
+- Superadmin `user_id=1` sigue pasando antes de validacion de scope y permisos.
+
+Tests agregados/actualizados:
+
+- `tests/Routes/ApiPermissionsCoverageTest.php` ahora verifica que no queden rutas autenticadas sin `PermissionsMiddleware` fuera de allowlist.
+- El test mueve los gaps reales fuera de `DOCUMENTED_PERMISSION_GAPS` y exige los permisos esperados en las rutas cerradas.
+- Cubre resolucion de `company_id` y `companyId` desde route args.
+- Cubre que `id` generico no se usa como permission id.
+- Cubre fail-closed con `COMPANY_SCOPE_MISSING` cuando falta scope.
+- Cubre que no se valida contra otra empresa si falta `company_id`.
+- Cubre que superadmin sigue permitido sin scope.
+- Cubre rutas legacy unscoped declaradas con flag `false`.
+- Cubre que `Permission::hasPermission` no expande scope si `allowGlobal=false` y `companyId=null`.
+
+Riesgos pendientes:
+
+- Los clientes web/mobile/API que llamen endpoints protegidos por recurso indirecto sin `company_id`/`X-Company-Id` recibiran `COMPANY_SCOPE_MISSING`. Para LOOP 3 corresponde ajustar clientes si aparece algun flujo real sin header/scope.
+- Muchas rutas `/{id}` de dominio ahora dependen de `company_id` explicito porque el middleware ya no infiere empresa desde ids genericos. Esto es intencional para evitar autorizacion cruzada por empresa, pero requiere validar los clientes consumidores.
+- Falta decision final para endurecer `/sync/v2/purge` y `/sync/v3/purge`.
+
+Validacion local:
+
+- `php -l src/Middleware/PermissionsMiddleware.php` -> PASS.
+- `php -l src/Models/Permission.php` -> PASS.
+- `php -l src/Routes/api.php` -> PASS.
+- `php -l tests/Routes/ApiPermissionsCoverageTest.php` -> PASS.
+- `vendor/bin/phpunit tests/Routes/ApiPermissionsCoverageTest.php` -> PASS (11 tests, 42 assertions) con warning PHPUnit baseline.
+
 ## Blindaje permisos y multiempresa
 
 Fecha: 2026-06-30.
