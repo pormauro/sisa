@@ -1,5 +1,34 @@
 # Estado QA
 
+## LOOP 8.2 - Correccion selector password Playwright
+
+Fecha: 2026-07-01.
+
+Estado: fix aplicado localmente en `sisa.web/tests/e2e/helpers/auth.ts`. Validacion local segura ejecutada; ejecucion real headed no se corrio porque el entorno no tenia `QA_BASE_URL` y password QA disponibles.
+
+Causa:
+
+- Los 7 tests E2E fallaban en login porque `page.getByLabel('Clave')` resolvia dos elementos.
+- En `LoginPage.tsx`, el label `Clave` envuelve tanto el input de password como el boton de mostrar/ocultar clave (`Mostrar clave` / `Ver`).
+- Playwright exige un locator unico para `fill()`, por eso el selector por label era ambiguo.
+
+Fix aplicado:
+
+- Se cambio el fill de password en `loginAs()` de `page.getByLabel('Clave')` a `page.locator('input[type="password"]')`.
+- Se mantiene el origen seguro del secreto via `QA_PASSWORD` o `QA_PASSWORD_QA_*`.
+- No se hardcodeo, imprimio ni registro ningun password/token/cookie.
+
+Validacion solicitada:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.web`: `npm run qa:e2e:headed` con QA real -> NO EJECUTADO en esta sesion porque no hay `QA_BASE_URL` y `QA_PASSWORD`/`QA_PASSWORD_QA_*` en el entorno.
+- No commitear `playwright-report/` ni `test-results/`.
+
 ## LOOP 8 - QA automatica visual web
 
 Fecha: 2026-07-01.
