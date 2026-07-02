@@ -4,7 +4,7 @@
 
 Fecha: 2026-07-01.
 
-Estado: scaffolding Playwright implementado localmente en `sisa.web` y validado sin credenciales QA. La ejecucion real contra `sistema_test` queda pendiente hasta contar con `QA_BASE_URL` y password seguro por entorno.
+Estado: scaffolding Playwright implementado localmente en `sisa.web`, validado sin credenciales QA y listo para ejecucion contra `sistema_test` con el seed real ya aplicado. La ejecucion real E2E queda pendiente hasta correr con `QA_BASE_URL` y password seguro por entorno.
 
 Objetivo:
 
@@ -20,7 +20,7 @@ Cambios en `sisa.web`:
   - `npm run qa:e2e:headed`
   - `npm run qa:e2e:ui`
   - `npm run qa:e2e:report`
-- Se agrego `playwright.config.ts` con `QA_BASE_URL`, `test-results/qa-e2e`, screenshots on failure, video retain-on-failure, trace on-first-retry y report HTML/list.
+- Se agrego `playwright.config.ts` con `QA_BASE_URL`, `test-results/qa-e2e`, screenshots on failure, video retain-on-failure, trace retain-on-failure y report HTML/list.
 - Se actualizo `.gitignore` para excluir `test-results/`, `playwright-report/` y `.auth/`.
 - Se agregaron helpers E2E:
   - `tests/e2e/helpers/auth.ts`: perfiles QA, login sin hardcodear password y guardas de runtime QA.
@@ -37,6 +37,21 @@ Variables esperadas para ejecucion real:
 - `QA_PASSWORD`: password comun de perfiles QA, o passwords por perfil con `QA_PASSWORD_QA_OWNER_ADMIN`, `QA_PASSWORD_QA_TECNICO`, etc.
 - Opcionales multiempresa: `QA_COMPANY_A_NAME`, `QA_COMPANY_B_NAME`, `QA_COMPANY_B_ID` para ambientes donde cambien nombres/ids seed.
 - No registrar ni commitear passwords, tokens, cookies, storageState ni headers `Authorization`.
+
+Comandos PowerShell para ejecucion real:
+
+```powershell
+$env:QA_BASE_URL="..."
+$env:QA_PASSWORD="..."
+$env:QA_COMPANY_B_ID="73"
+npm run qa:e2e:headed
+npm run qa:e2e:report
+```
+
+Notas operativas:
+
+- Reemplazar `...` por valores locales/seguros, sin imprimir passwords en logs ni commitearlos.
+- `playwright-report/` y `test-results/qa-e2e/` son artefactos locales ignorados por Git y no deben commitearse.
 
 Validacion local ejecutada:
 
@@ -55,8 +70,7 @@ Riesgos/deuda detectada:
 
 Pendiente para cerrar LOOP 8 con QA real:
 
-- Confirmar que el seed remoto corregido de LOOP 7.1 esta aplicado y verificado por SELECT con `clients`, `invoices`, `invoice_items`, `receipts`, `payments`, `jobs` y `work_logs` >= 1 en A/B.
-- Ejecutar `npm run qa:e2e:headed` con `QA_BASE_URL` y password seguro provistos por entorno fuera del repo.
+- Ejecutar `npm run qa:e2e:headed` con `QA_BASE_URL`, `QA_PASSWORD` y `QA_COMPANY_B_ID=73` provistos por entorno fuera del repo.
 - Revisar `playwright-report/` y `test-results/qa-e2e` localmente; no commitear artefactos.
 - Si falla una ruta por selector/texto real, ajustar el spec al comportamiento observado sin ampliar permisos para hacer pasar la prueba.
 
@@ -64,7 +78,7 @@ Pendiente para cerrar LOOP 8 con QA real:
 
 Fecha: 2026-07-01.
 
-Estado: correccion implementada localmente en `sisa.api/scripts/qa/seed-qa-users.php`; validacion local final ejecutada. No se ejecuto cleanup/apply remoto en este loop sin autorizacion explicita adicional para mutar nuevamente datos remotos.
+Estado: correccion implementada y seed real aplicado en remoto por operador autorizado. Cleanup y apply ejecutados correctamente; passwords no impresos ni registrados. Validacion local final ejecutada y conteos comerciales remotos informados como completos.
 
 Causa del bloqueo:
 
@@ -117,14 +131,33 @@ Validacion local ejecutada:
 - `sisa.ui`: `npm run lint` -> PASS con warning baseline `app/appointments/create.tsx:188 selectedJobRecord`.
 - `sisa.ui`: `npm run check:cache` -> PASS.
 
-Pendiente para completar LOOP 7.1 remoto:
+Apply real remoto ejecutado:
 
-- Subir el script corregido al servidor autorizado.
-- Ejecutar `php -l scripts/qa/seed-qa-users.php` remoto.
-- Ejecutar dry-run remoto.
-- Con autorizacion explicita para mutar: `QA_ALLOW_SEED=1 php scripts/qa/seed-qa-users.php --cleanup --apply` y luego `QA_ALLOW_SEED=1 QA_PASSWORD=<secreto-fuera-del-repo> php scripts/qa/seed-qa-users.php --apply`.
-- Verificar por `SELECT` que Empresa A/B tengan `clients`, `invoices`, `invoice_items`, `jobs`, `work_logs`, `receipts` y `payments` con conteos >= 1.
-- No declarar QA real completa hasta que esos conteos pasen y se ejecute la matriz manual.
+- Cleanup ejecutado correctamente antes del reseed.
+- Apply ejecutado correctamente con password provisto fuera del repo; passwords no impresos.
+- Empresa A: `Company A=72`.
+- Empresa B: `Company B=73`.
+- Usuarios QA recreados:
+  - `qa_superadmin` -> `user_id=21`.
+  - `qa_owner_admin` -> `user_id=22`.
+  - `qa_company_admin` -> `user_id=23`.
+  - `qa_tecnico` -> `user_id=24`.
+  - `qa_admin_caja` -> `user_id=25`.
+  - `qa_sin_permisos` -> `user_id=26`.
+  - `qa_multiempresa` -> `user_id=27`.
+- Conteos comerciales informados por empresa A/B:
+  - `clients=1`.
+  - `invoices=1`.
+  - `invoice_items=1`.
+  - `receipts=1`.
+  - `payments=1`.
+  - `jobs=1`.
+  - `work_logs=1`.
+
+Estado remoto posterior:
+
+- LOOP 7.1 ya no queda bloqueado por seed comercial incompleto.
+- Pendiente para QA real completa: ejecutar matriz manual y/o Playwright visual read-only contra `Company A=72` / `Company B=73`.
 
 ## LOOP 7 - QA real autorizada con seed QA
 
