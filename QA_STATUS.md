@@ -1,5 +1,86 @@
 # Estado QA
 
+## LOOP 8.13 - Diagnostico real de POST login perfiles QA restantes
+
+Fecha: 2026-07-01.
+
+Estado: diagnostico E2E de `POST /login` implementado localmente. Validacion local segura ejecutada; headed focalizado/completo no se corrio porque el proceso no tiene `QA_BASE_URL` y password QA disponibles.
+
+Contexto:
+
+- DB QA ya fue revisada readonly en LOOP 8.12.
+- `qa_company_admin`, `qa_tecnico`, `qa_admin_caja` y `qa_sin_permisos` existen, estan activados, sin `locked_until`, con membresias approved en company `72`.
+- `qa_company_admin` tiene role `admin`; `qa_tecnico` tiene `listClients` y `listJobs`; `qa_admin_caja` tiene permisos caja/finanzas.
+
+Foco del loop:
+
+- Pasar de diagnostico de seed/permisos a contrato real de login.
+- Determinar si `POST /login` falla por credencial/bloqueo o si responde 2xx con token y falla frontend/session.
+
+Fix aplicado:
+
+- `loginAs()` captura explicitamente la respuesta real de `POST /login`.
+- Si `POST /login` no devuelve 2xx, lanza error JSON seguro.
+- Si devuelve 2xx pero no hay campo tipo token, lanza error JSON seguro.
+- Si devuelve 2xx con token pero la pagina sigue en `/login`, lanza error JSON seguro.
+- Se elimino el assert final `expect(page).not.toHaveURL(/\/login$/)` para que no tape el motivo real.
+
+Diagnostico seguro incluido en error:
+
+- `profile`.
+- `username`.
+- `currentUrl`.
+- `loginStatus`.
+- `loginOk`.
+- `loginBody` sanitizado.
+- `hasToken`.
+- texto visible de error de login.
+- `permissionsResponse` con status/path si `/permissions/user/` se dispara.
+- Nunca incluye password, token, Authorization, cookies ni localStorage completo.
+
+Sanitizacion de payload login:
+
+- Redacta claves sensibles: `token`, `access_token`, `Authorization`, `authorization`, `password`, `api_token`, `bearer`, `jwt`.
+- `session_id` se convierte a booleano `hasSessionId`; no se guarda su valor.
+- Mantiene mensajes/codigos/errores no sensibles para diagnostico.
+
+Validacion real sugerida por perfil:
+
+```powershell
+npx playwright test tests/e2e/qa-profiles.spec.ts --headed --workers=1 --grep "qa_company_admin"
+npx playwright test tests/e2e/qa-profiles.spec.ts --headed --workers=1 --grep "qa_tecnico"
+npx playwright test tests/e2e/qa-profiles.spec.ts --headed --workers=1 --grep "qa_admin_caja"
+npx playwright test tests/e2e/qa-profiles.spec.ts --headed --workers=1 --grep "qa_sin_permisos"
+```
+
+Interpretacion esperada:
+
+- Si `POST /login` devuelve 401/403: no tocar frontend; problema de credencial/password real o campo de bloqueo no revisado.
+- Si `POST /login` devuelve 200/2xx sin token: revisar contrato backend/frontend de auth.
+- Si `POST /login` devuelve 200/2xx con token pero sigue en `/login`: revisar `loginRequest()`, `persist(nextSession)`, `bootstrapSession(nextSession)`, redireccion post-login y `AuthGuard`.
+- Si `qa_company_admin` o `qa_tecnico` entran pero no ven menu: revisar artefactos `selectedCompanyId`, membresias, `isCompanyAdmin`, `permissionsCount`, `permissionSectors` y `visibleNavLabels` agregados en LOOP 8.11.
+
+Pendiente si login falla por credenciales:
+
+- Re-ejecutar seed con el `QA_PASSWORD` actual o configurar:
+  - `QA_PASSWORD_QA_COMPANY_ADMIN`.
+  - `QA_PASSWORD_QA_TECNICO`.
+  - `QA_PASSWORD_QA_ADMIN_CAJA`.
+  - `QA_PASSWORD_QA_SIN_PERMISOS`.
+- No imprimir ni commitear esos valores.
+
+Validacion:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- Headed focalizados por perfil -> NO EJECUTADOS en esta sesion porque no hay `QA_BASE_URL` y `QA_PASSWORD`/`QA_PASSWORD_QA_*` en el entorno.
+- `npm run qa:e2e:headed` completo -> NO EJECUTADO por la misma razon.
+- No commitear `playwright-report/` ni `test-results/`.
+
 ## LOOP 8.12 - Diagnostico remoto readonly de perfiles QA restantes
 
 Fecha: 2026-07-01.
