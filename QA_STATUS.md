@@ -1,5 +1,147 @@
 # Estado QA
 
+## LOOP 8.11 - Diagnostico final perfiles QA permisos vs credenciales
+
+Fecha: 2026-07-01.
+
+Estado: diagnostico E2E seguro ampliado localmente. Validacion local segura ejecutada; ejecucion real headed no se corrio porque el entorno no tenia `QA_BASE_URL` y password QA disponibles.
+
+Resultado E2E real previo informado:
+
+- `npm run qa:e2e:headed`: `3 passed`, `4 failed`.
+- Pasaron: `qa_owner_admin commercial flow`, `qa_multiempresa switches A/B without leaking finance permissions`, `qa_owner_admin broad company admin surface`.
+
+Conclusiones:
+
+- Owner funciona.
+- Multiempresa A/B funciona.
+- Ya no hay leak financiero ni 403 raros en multiempresa.
+- Quedan 2 fallos de permisos/hidratacion (`qa_company_admin`, `qa_tecnico`) y 2 fallos de login/credenciales (`qa_admin_caja`, `qa_sin_permisos`).
+
+Fallas actuales a diagnosticar:
+
+- `qa_company_admin`: entra y aparece shell, pero no ve `Dashboard`. Este perfil deberia funcionar por bypass `admin` con `role=admin` y `status=approved`.
+- `qa_tecnico`: entra y aparece shell, pero no ve `Clientes`. Este perfil deberia tener `listClients`/`listJobs` por seed.
+- `qa_admin_caja` y `qa_sin_permisos`: no salen de `/login`; tratarlos como credenciales/bloqueo hasta probar lo contrario.
+
+Diagnostico E2E agregado:
+
+- `safe-session-debug` ahora incluye URL actual, `selectedCompanyId`, membresias (`companyId`, `role`, `status`), `visibleNavLinkCount` y `visibleNavLabels`.
+- Se agrego captura sanitizada de `/permissions/user/` con status, `isCompanyAdmin`, cantidad de permisos, sectores ordenados, `company_id` usado en query y `user_id` en URL.
+- `qa_company_admin` y `qa_tecnico` adjuntan `safe-session-debug`, `permissions-bootstrap-debug` y screenshot antes de los asserts de menu.
+- `loginAs()` ya adjunta diagnostico seguro si no sale de `/login`, incluyendo status/body sanitizado de `/login` y status de `/permissions/user/` si se dispara.
+- No se imprime ni adjunta password, token, cookies, localStorage completo ni headers `Authorization`.
+
+SQL manual sugerido para DB QA:
+
+```sql
+SELECT id, username, email, activated
+FROM users
+WHERE username IN ('qa_company_admin','qa_tecnico','qa_admin_caja','qa_sin_permisos');
+
+SELECT eu.user_id, u.username, eu.empresa_id, eu.rol, eu.estado
+FROM empresas_usuarios eu
+JOIN users u ON u.id = eu.user_id
+WHERE u.username IN ('qa_company_admin','qa_tecnico','qa_admin_caja','qa_sin_permisos');
+
+SELECT p.user_id, u.username, p.company_id, p.sector
+FROM permissions p
+JOIN users u ON u.id = p.user_id
+WHERE u.username IN ('qa_tecnico','qa_admin_caja')
+ORDER BY u.username, p.company_id, p.sector;
+```
+
+- Revisar columnas de bloqueo segun esquema real si existen: `login_attempts`, `locked_until`, `blocked_until`, `status`, `is_blocked`.
+- No consultar ni imprimir hashes/passwords/tokens.
+
+Pendiente si `qa_admin_caja` y `qa_sin_permisos` siguen sin login:
+
+- Re-ejecutar seed QA con `QA_PASSWORD` actual, o configurar:
+  - `QA_PASSWORD_QA_ADMIN_CAJA`.
+  - `QA_PASSWORD_QA_SIN_PERMISOS`.
+- No registrar ni imprimir esos valores.
+
+Validacion:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.web`: `npm run qa:e2e:headed` con QA real -> NO EJECUTADO en esta sesion porque no hay `QA_BASE_URL` y `QA_PASSWORD`/`QA_PASSWORD_QA_*` en el entorno.
+- No commitear `playwright-report/` ni `test-results/`.
+
+## LOOP 8.10 - Resolver 403 frontend multiempresa y diagnosticar login QA
+
+Fecha: 2026-07-01.
+
+Estado: ajustes aplicados localmente en `sisa.web`. Validacion local segura ejecutada; ejecucion real headed no se corrio porque el entorno no tenia `QA_BASE_URL` y password QA disponibles.
+
+Resultado E2E real previo informado:
+
+- `npm run qa:e2e:headed`: `2 passed`, `5 failed`.
+- Pasaron: `qa_owner_admin commercial flow` y `qa_owner_admin broad company admin surface`.
+
+Fallas actuales:
+
+- `qa_multiempresa`: expectativas de menu ya alineadas, pero aparecieron 403 inesperados:
+  - `/api/jobs?company_id=72`.
+  - `/api/payments?company_id=73`.
+- Perfiles `qa_company_admin`, `qa_tecnico`, `qa_admin_caja`, `qa_sin_permisos`: no salen de login.
+
+Interpretacion:
+
+- El backend probablemente esta rechazando correctamente endpoints sin permiso.
+- El bug esta en frontend si dispara fetches que el usuario no puede consumir.
+- En cambio de empresa, los permisos de Empresa A podian quedar disponibles por un render mientras `selectedCompanyId` ya era B, permitiendo disparar fetches con permisos de la empresa anterior.
+- Las fallas de login de perfiles no-owner siguen apuntando a password/seed/cuenta bloqueada, porque owner y multiempresa si autentican.
+
+Fix frontend aplicado:
+
+- `PermissionsProvider` ahora guarda `companyId` asociado a los permisos hidratados.
+- `can()`, `canAny()` y `canAll()` solo devuelven `true` si `permissions.companyId === selectedCompanyId`.
+- Al iniciar carga de permisos por cambio de empresa, `permissionsCompanyId` se limpia a `null`.
+- `AppShell`, `ProtectedRoute` y `DefaultAuthenticatedRoute` esperan que el scope de permisos coincida con la empresa activa antes de abrir navegacion/rutas.
+- Esto evita usar permisos de Empresa A para renderizar/cargar datos de Empresa B.
+
+Diagnostico seguro de login aplicado:
+
+- `loginAs()` captura status/body sanitizado de `/login` si no sale de `/login`.
+- El error incluye `profile`, `username`, URL actual, texto visible de error y respuesta auth sanitizada.
+- Nunca incluye password, token, cookies, localStorage completo ni headers `Authorization`.
+
+SQL seguro sugerido para diagnosticar cuentas QA:
+
+```sql
+SELECT id, username, email, activated, login_attempts, locked_until
+FROM users
+WHERE username IN ('qa_company_admin','qa_tecnico','qa_admin_caja','qa_sin_permisos');
+```
+
+- Adaptar nombres de columnas si el esquema usa otros campos para activacion/bloqueo.
+- No consultar ni imprimir hashes/passwords/tokens.
+
+Pendiente si los perfiles siguen fallando login:
+
+- Re-ejecutar seed QA con `QA_PASSWORD` actual, o configurar passwords por perfil:
+  - `QA_PASSWORD_QA_COMPANY_ADMIN`.
+  - `QA_PASSWORD_QA_TECNICO`.
+  - `QA_PASSWORD_QA_ADMIN_CAJA`.
+  - `QA_PASSWORD_QA_SIN_PERMISOS`.
+- No registrar ni imprimir esos valores.
+
+Validacion:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.web`: `npm run qa:e2e:headed` con QA real -> NO EJECUTADO en esta sesion porque no hay `QA_BASE_URL` y `QA_PASSWORD`/`QA_PASSWORD_QA_*` en el entorno.
+- No commitear `playwright-report/` ni `test-results/`.
+
 ## LOOP 8.9 - Expectativa multiempresa readonly y diagnostico de credenciales
 
 Fecha: 2026-07-01.
