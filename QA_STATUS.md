@@ -4,7 +4,7 @@
 
 Fecha: 2026-07-01.
 
-Estado: fix aplicado localmente en `sisa.web/tests/e2e/helpers/auth.ts`. Validacion local segura pendiente en esta sesion.
+Estado: fix aplicado localmente en `sisa.web/tests/e2e/helpers/auth.ts`. Validacion local segura ejecutada; headed real no se corrio porque el proceso no tiene `QA_BASE_URL` y password QA disponibles.
 
 Causa:
 
@@ -30,7 +30,14 @@ Fix aplicado:
 
 Validacion:
 
-- Pendiente de actualizar al final de la corrida LOOP 8.15.
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run lint` -> primer intento FAIL por `permissionsResponse` asignado y no usado; corregido manteniendo captura observacional con `void page.waitForResponse(...)`.
+- `sisa.web`: `npm run lint` -> PASS luego de la correccion.
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.web`: `npm run qa:e2e:headed` con QA real -> NO EJECUTADO en esta sesion porque no hay `QA_BASE_URL` y `QA_PASSWORD`/`QA_PASSWORD_QA_*` en el entorno.
 - No commitear `playwright-report/` ni `test-results/`.
 
 ## LOOP 8.14 - Deteccion de token por Authorization header en E2E
