@@ -1,5 +1,92 @@
 # Estado QA
 
+## LOOP 8.5 - Bloqueo de app hasta bootstrap de sesion
+
+Fecha: 2026-07-01.
+
+Estado: fix aplicado localmente en `sisa.web`. Validacion local segura ejecutada; ejecucion real headed no se corrio porque el entorno no tenia `QA_BASE_URL` y password QA disponibles.
+
+Causa:
+
+- `login()` persistia una sesion minima con token, pero sin `selectedCompanyId`, membresias ni empresas.
+- `bootstrapSession()` completaba esos datos asincronicamente despues.
+- Durante esa ventana `AuthGuard` consideraba al usuario autenticado y dejaba abrir la app, por lo que se podia iniciar con permisos/contexto incompletos antes de cargar el bootstrap real.
+
+Fix aplicado:
+
+- `SessionProvider` ahora expone `isBootstrapping`.
+- `bootstrapSession()` marca `isBootstrapping=true` mientras carga perfil, membresias, empresa activa, empresas y tema.
+- `AuthGuard` bloquea la app autenticada con `Verificando sesion...` hasta que termine el bootstrap inicial.
+- `AppShell` mantiene la espera de permisos agregada en LOOP 8.4, por lo que la app abre recien con sesion bootstrappeada y permisos hidratados.
+
+Validacion:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.web`: `npm run qa:e2e:headed` con QA real -> NO EJECUTADO en esta sesion porque no hay `QA_BASE_URL` y `QA_PASSWORD`/`QA_PASSWORD_QA_*` en el entorno.
+- No se generaron ni commitearon `playwright-report/` ni `test-results/`.
+
+## LOOP 8.4 - Espera real de permisos en web y Playwright
+
+Fecha: 2026-07-01.
+
+Estado: fix aplicado localmente en `sisa.web`. Validacion local segura ejecutada; ejecucion real headed no se corrio porque el entorno no tenia `QA_BASE_URL` y password QA disponibles.
+
+Causa:
+
+- Los E2E podian avanzar cuando aparecia `Verificando permisos...`, antes de que la navegacion estuviera filtrada con permisos reales.
+- `ProtectedRoute` ya esperaba permisos, pero `AppShell` podia renderizar shell/navegacion mientras `usePermissions()` seguia cargando.
+- Esto generaba una condicion de carrera: tests y usuario podian ver o consultar estado parcial antes de finalizar permisos.
+
+Fix aplicado:
+
+- `AppShell` ahora mantiene pantalla `Verificando permisos...` hasta que `permissions.hydrated && !permissions.loading`.
+- `loginAs()` ya no acepta `Verificando permisos...` como login completado; espera `Mapa operativo` con timeout de 45s.
+- Se mantiene el manejo seguro de password por `QA_PASSWORD` / `QA_PASSWORD_QA_*`, sin imprimir secretos.
+
+Validacion:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.web`: `npm run qa:e2e:headed` con QA real -> NO EJECUTADO en esta sesion porque no hay `QA_BASE_URL` y `QA_PASSWORD`/`QA_PASSWORD_QA_*` en el entorno.
+- No se generaron ni commitearon `playwright-report/` ni `test-results/`.
+
+## LOOP 8.3 - Login Playwright usa username
+
+Fecha: 2026-07-01.
+
+Estado: fix aplicado localmente en `sisa.web/tests/e2e/helpers/auth.ts`. Validacion local segura ejecutada; ejecucion real headed no se corrio porque el entorno no tenia `QA_BASE_URL` y password QA disponibles.
+
+Causa:
+
+- Los E2E no ingresaban porque el helper completaba `Usuario` con emails `@sisa-qa.invalid`.
+- El login QA real espera usernames como `qa_tecnico`, `qa_owner_admin`, etc.
+
+Fix aplicado:
+
+- Se reemplazo el mapa `emails` por `usernames`.
+- `loginAs()` ahora completa `Usuario` con el username QA correspondiente.
+- Se mantiene el password por `QA_PASSWORD` / `QA_PASSWORD_QA_*`, sin hardcodear ni imprimir secretos.
+
+Validacion:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.web`: `npm run qa:e2e:headed` con QA real -> NO EJECUTADO en esta sesion porque no hay `QA_BASE_URL` y `QA_PASSWORD`/`QA_PASSWORD_QA_*` en el entorno.
+- No se generaron ni commitearon `playwright-report/` ni `test-results/`.
+
 ## LOOP 8.2 - Correccion selector password Playwright
 
 Fecha: 2026-07-01.
