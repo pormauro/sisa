@@ -1,5 +1,40 @@
 # Estado QA
 
+## LOOP 8.16 - Fallback de empresa activa para membresias aprobadas
+
+Fecha: 2026-07-02.
+
+Estado: fix aplicado localmente en `sisa.web/src/services/authService.ts` con smoke de seleccion en `sisa.web/scripts/auth-bootstrap-smoke.js`. No se tocaron backend ni seed.
+
+Causa:
+
+- Usuarios QA con membresia aprobada pero sin `active_company_id`/`company_default_id` valido quedaban con `selectedCompanyId = null`.
+- El bootstrap solo aceptaba empresa configurada si coincidia con una membresia aprobada y no tenia fallback operativo.
+
+Impacto:
+
+- `PermissionsProvider` no llamaba `/permissions/user` sin `selectedCompanyId`.
+- El bypass admin no aplicaba porque comparaba la membresia contra `selectedCompanyId`.
+- `can()`/`canAny()` devolvian `false`, el menu quedaba vacio y la busqueda retenia texto sin resultados.
+
+Fix aplicado:
+
+- Se agrego seleccion pura `selectBootstrapCompanyId()`.
+- Prioridad: `active_company_id` valido, luego `company_default_id` valido, luego primera membresia `approved`.
+- No se eligen empresas `pending`, `rejected` ni `inactive`.
+
+Validacion:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:auth-bootstrap` -> PASS (`4 checks`).
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.web`: `npm run qa:e2e:headed` sin variables QA -> PASS controlado, `7 skipped`.
+- No commitear `playwright-report/` ni `test-results/`.
+
 ## LOOP 8.15 - Corregir falso negativo por waitForURL void
 
 Fecha: 2026-07-01.
