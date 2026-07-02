@@ -1,5 +1,59 @@
 # Estado QA
 
+## LOOP 8.18 - Cerrar qa_sin_permisos con empresa activa sin permisos explicitos
+
+Fecha: 2026-07-02.
+
+Estado: fix aplicado localmente en `sisa.web/src/services/authService.ts` y ajuste de espera E2E en `sisa.web/tests/e2e/helpers/assertions.ts`. No se tocaron backend ni seed.
+
+Estado real reportado previo:
+
+- `npm run qa:e2e:headed` -> `6 passed`, `1 failed`.
+- Pasaron: `qa_owner_admin commercial flow`, `qa_multiempresa A/B without leaking finance permissions`, `qa_owner_admin broad company admin surface`, `qa_company_admin broad company admin surface`, `qa_tecnico technical modules without finance mutation surface`, `qa_admin_caja finance modules without technical mutation surface`.
+- Unico fallo: `qa_sin_permisos gets controlled empty shell`, `selectedCompanyId = null`.
+
+Chequeo Git/GitHub local:
+
+- `sisa.web`: rama `main` alineada con `origin/main` antes del fix de este loop.
+- El report local corresponde a cambios LOOP 8.17 (`assertions.ts:262`), por lo que el fallo real se produjo con el diagnostico nuevo disponible.
+
+Diagnostico extraido del trace local sin registrar secretos:
+
+- `/profile` -> `200`.
+- `profile.active_company_id` -> `null`.
+- `/companies/member?status=approved&role=owner,admin,member` -> `200`.
+- `memberships count` -> `1`.
+- Membership sanitizada: `companyId=72`, `role=member`, `status=approved`.
+- `/user_configurations/default-company` no aparece como respuesta completada en el trace del fallo; `/user_configurations` de tema respondio `200` con `company_default_id=null` dentro de configuration.
+- `/user_profile` quedo pendiente/cancelado en el trace (`status=-1`).
+- `selectedCompanyId final` observado por el test -> `null`.
+- `visibleNavLabels` -> vacio/no hidratado; la pagina estaba en `Verificando sesion...`.
+
+Interpretacion:
+
+- El bug no era que `/companies/member` ocultara la membresia a `qa_sin_permisos`; la API devuelve la membresia approved de company `72`.
+- El bloqueo era frontend/bootstrap: `refreshSessionBootstrap()` esperaba endpoints opcionales dentro de `Promise.allSettled`; si `/user_profile` quedaba pendiente, no persistia membresias ni `selectedCompanyId` aunque `/companies/member` ya hubiera respondido.
+- Un usuario sin permisos explicitos no debe necesitar permisos de modulo para tener empresa activa y shell controlado.
+
+Fix aplicado:
+
+- Se agrego timeout defensivo de bootstrap para que datos opcionales no bloqueen la seleccion de empresa activa.
+- `refreshSessionBootstrap()` ahora limita `/profile`, `/user_profile`, tema, `/companies/member` y default-company a fallback seguro en bootstrap; en el caso diagnosticado, `/companies/member` responde antes del timeout y permite seleccionar company `72` aunque `/user_profile` siga pendiente.
+- `expectSelectedCompanyId()` ahora espera hasta `20s` a que `selectedCompanyId` exista en la sesion antes de fallar, evitando leer la sesion inicial inmediatamente despues del login.
+- No se imprimen secretos: no token, no `Authorization`, no cookies, no `localStorage` completo.
+
+Validacion:
+
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:auth-bootstrap` -> PASS (`4 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run qa:e2e:headed` sin variables QA -> PASS controlado, `7 skipped`.
+- No commitear `playwright-report/` ni `test-results/`.
+
 ## LOOP 8.17 - Cerrar AccessDenied strict mode y diagnosticar qa_sin_permisos
 
 Fecha: 2026-07-02.
