@@ -1,5 +1,38 @@
 # Estado QA
 
+## LOOP 8.15 - Corregir falso negativo por waitForURL void
+
+Fecha: 2026-07-01.
+
+Estado: fix aplicado localmente en `sisa.web/tests/e2e/helpers/auth.ts`. Validacion local segura pendiente en esta sesion.
+
+Causa:
+
+- `loginAs()` trataba el resultado de `page.waitForURL()` como booleano de exito.
+- Playwright resuelve `waitForURL()` como `void`, por lo que `!leftLoginResult` era `true` aunque la navegacion hubiese ocurrido correctamente.
+
+Evidencia reportada:
+
+- `POST /login` status `200`.
+- `loginOk=true`.
+- `hasAuthorizationHeader=true`.
+- `hasToken=true`.
+- `currentUrl=/dashboard`.
+- El error `POST /login returned 2xx with token, but the page stayed on /login` era falso.
+
+Fix aplicado:
+
+- `loginAs()` ahora hace `await leftLogin` y luego valida `new URL(page.url()).pathname`.
+- Solo falla con `page stayed on /login` si el path actual termina en `/login`.
+- Se agrego comentario: `page.waitForURL resolves void; do not use its resolved value as success boolean.`
+- `/permissions/user/` sigue siendo observacional y no obligatorio dentro de `loginAs()`; la validacion de permisos/shell queda en `waitForOperationalShell()` o tests especificos.
+- No se tocaron backend, seed ni permisos.
+
+Validacion:
+
+- Pendiente de actualizar al final de la corrida LOOP 8.15.
+- No commitear `playwright-report/` ni `test-results/`.
+
 ## LOOP 8.14 - Deteccion de token por Authorization header en E2E
 
 Fecha: 2026-07-01.
