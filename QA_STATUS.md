@@ -1,5 +1,45 @@
 # Estado QA
 
+## LOOP 8.6 - Estabilizacion Playwright menu exacto y empresa activa
+
+Fecha: 2026-07-01.
+
+Estado: ajustes aplicados localmente en `sisa.web/tests/e2e`. Validacion local segura ejecutada. Este loop corresponde al ajuste solicitado como LOOP 8.4 despues del primer `npm run qa:e2e:headed` real; la nueva ejecucion headed real no se corrio porque el entorno no tenia `QA_BASE_URL` y password QA disponibles.
+
+Resultado E2E real previo informado:
+
+- `npm run qa:e2e:headed` contra QA real: `1 passed`, `6 failed`.
+
+Causas detectadas:
+
+- Selector ambiguo: `getByRole('link', { name: 'Clientes' })` matcheaba `Clientes` y `Cercania clientes/proveedores`.
+- Falta de estabilizacion post-login: algunos asserts de menu corrian antes de confirmar shell operativo con empresa activa y permisos hidratados.
+- `qa_sin_permisos` dependia de `selectedCompanyId`: si quedaba `null`, la app redirigia a `company-onboarding` antes de mostrar `AccessDenied`.
+
+Fix aplicado:
+
+- `expectVisibleMenu()` y `expectHiddenMenu()` usan `exact: true` para links del menu.
+- Se agrego `waitForOperationalShell()` para esperar `Empresa activa`, buscador de menu y una pausa corta de estabilizacion.
+- `loginAs()` espera respuesta `/permissions/user/` cuando ocurre, espera `Mapa operativo` y luego `waitForOperationalShell()`.
+- Se agrego debug sanitizado en fallos con solo:
+  - URL actual.
+  - `selectedCompanyId`.
+  - membresias con `companyId`, `role`, `status`.
+  - cantidad visible de links de navegacion.
+- El debug no incluye token, cookies, storage completo ni headers `Authorization`.
+- `qa_sin_permisos` ahora falla explicitamente si no hay empresa activa con el mensaje `QA profile has no selectedCompanyId; seed/default company not applied`.
+
+Validacion:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.web`: `npm run qa:e2e:headed` con QA real -> NO EJECUTADO en esta sesion porque no hay `QA_BASE_URL` y `QA_PASSWORD`/`QA_PASSWORD_QA_*` en el entorno.
+- No commitear `playwright-report/` ni `test-results/`.
+
 ## LOOP 8.5 - Bloqueo de app hasta bootstrap de sesion
 
 Fecha: 2026-07-01.
