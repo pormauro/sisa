@@ -1,5 +1,41 @@
 # Estado QA
 
+## LOOP 8.14 - Deteccion de token por Authorization header en E2E
+
+Fecha: 2026-07-01.
+
+Estado: fix aplicado localmente en `sisa.web/tests/e2e/helpers/auth.ts`. Validacion local segura ejecutada; headed focalizado/completo no se corrio porque el proceso no tiene `QA_BASE_URL` y password QA disponibles.
+
+Causa probable:
+
+- El helper E2E de LOOP 8.13 calculaba `hasToken` mirando solo el body de `POST /login`.
+- La app real (`src/services/authService.ts`) acepta token desde header `Authorization` o desde body (`token`, `access_token`, `Authorization`, `authorization`).
+- Si backend devuelve JWT por header, el E2E producia falso negativo y marcaba login fallido aunque el contrato real fuera valido.
+
+Fix aplicado:
+
+- `readLoginResponseDiagnostics()` ahora calcula `hasAuthorizationHeader` como booleano sin imprimir el valor.
+- `hasToken = hasAuthorizationHeader || payloadHasToken(payload)`.
+- `loginBody` sigue sanitizado.
+- No se imprime ni adjunta `Authorization`, token, bearer, jwt, password, cookies ni localStorage completo.
+
+Interpretacion esperada:
+
+- Si `POST /login` devuelve 2xx con `hasAuthorizationHeader=true` y la pagina sigue en `/login`, el foco pasa a frontend/session/redireccion.
+- Si `POST /login` devuelve 401/403, el foco sigue siendo credenciales/password real o bloqueo no cubierto por columnas revisadas.
+
+Validacion:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- Focalizado `qa_company_admin` headed -> NO EJECUTADO en esta sesion porque no hay `QA_BASE_URL` y `QA_PASSWORD`/`QA_PASSWORD_QA_*` en el entorno.
+- `npm run qa:e2e:headed` completo -> NO EJECUTADO por la misma razon.
+- No commitear `playwright-report/` ni `test-results/`.
+
 ## LOOP 8.13 - Diagnostico real de POST login perfiles QA restantes
 
 Fecha: 2026-07-01.
