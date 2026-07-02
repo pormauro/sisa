@@ -1,5 +1,59 @@
 # Estado QA
 
+## LOOP 8.12 - Diagnostico remoto readonly de perfiles QA restantes
+
+Fecha: 2026-07-01.
+
+Estado: diagnostico remoto de solo lectura ejecutado en `hostinger-codex`, directorio `domains/depros.com.ar/public_html/sistema_test`. No se modificaron archivos remotos ni datos de base. No se leyeron `.env`, secretos, passwords, tokens ni hashes.
+
+Contexto previo:
+
+- `npm run qa:e2e:headed`: `3 passed`, `4 failed`.
+- Pasaron owner commercial flow, multiempresa A/B y owner broad surface.
+- Fallan `qa_company_admin`, `qa_tecnico`, `qa_admin_caja`, `qa_sin_permisos`.
+
+Comandos remotos permitidos ejecutados:
+
+- `pwd` y `ls` limitado para confirmar ubicacion.
+- `php -l scripts/qa/seed-qa-users.php` -> PASS.
+- PHP enviado por stdin sin crear archivos remotos, usando bootstrap de la app para ejecutar solo `DESCRIBE` y `SELECT` sobre usuarios QA, membresias y permisos.
+
+Resultados DB QA:
+
+- Base activa reportada por conexion de la app: `u650890769_sistema_test`.
+- Usuarios existentes y activados:
+  - `qa_company_admin`: `id=23`, `activated=1`, `locked_until=NULL`.
+  - `qa_tecnico`: `id=24`, `activated=1`, `locked_until=NULL`.
+  - `qa_admin_caja`: `id=25`, `activated=1`, `locked_until=NULL`.
+  - `qa_sin_permisos`: `id=26`, `activated=1`, `locked_until=NULL`.
+- Membresias:
+  - `qa_company_admin`: company `72`, role `admin`, status `approved`.
+  - `qa_tecnico`: company `72`, role `member`, status `approved`.
+  - `qa_admin_caja`: company `72`, role `member`, status `approved`.
+  - `qa_sin_permisos`: company `72`, role `member`, status `approved`.
+- Permisos explicitos:
+  - `qa_tecnico@72`: 20 permisos, incluyendo `listClients`, `listJobs`, `listWorkLogs`, `listStatuses`, `listFolders`, `uploadFile`, `downloadFile`.
+  - `qa_admin_caja@72`: 25 permisos, incluyendo `listClients`, `listInvoices`, `listReceipts`, `listPayments`, `listCashBoxes`, `viewAccountingSummary`, `viewClientStatement`.
+  - `qa_company_admin`: sin permisos explicitos esperados porque debe operar por bypass `admin`.
+  - `qa_sin_permisos`: sin permisos explicitos esperados.
+
+Interpretacion:
+
+- El seed/membresia de `qa_company_admin` es correcto para probar bypass admin: admin approved en company `72`.
+- El seed/permisos de `qa_tecnico` es correcto para ver `Clientes` y `Trabajos` en company `72`.
+- El seed/permisos de `qa_admin_caja` es correcto para ver caja/finanzas si logra autenticar.
+- No hay bloqueo evidente por `locked_until`; si el login sigue fallando, revisar otros campos de bloqueo si existen o password distinto al `QA_PASSWORD` usado por Playwright.
+- Para `qa_company_admin` y `qa_tecnico`, si loguean pero no ven menu, el siguiente foco es la respuesta real de `/permissions/user/` y la hidratacion en `PermissionsProvider`, no la DB de seed.
+
+Pendiente recomendado:
+
+- Ejecutar nuevamente `npm run qa:e2e:headed` y revisar artefactos agregados en LOOP 8.11:
+  - `qa_company_admin-permissions-bootstrap-debug`.
+  - `qa_tecnico-permissions-bootstrap-debug`.
+  - `safe-session-debug` con `visibleNavLabels`.
+- Si `qa_admin_caja` o `qa_sin_permisos` siguen sin salir de login, re-seedear con el `QA_PASSWORD` actual o configurar `QA_PASSWORD_QA_ADMIN_CAJA` / `QA_PASSWORD_QA_SIN_PERMISOS` con la clave real, sin imprimirla.
+- No commitear `playwright-report/` ni `test-results/`.
+
 ## LOOP 8.11 - Diagnostico final perfiles QA permisos vs credenciales
 
 Fecha: 2026-07-01.
