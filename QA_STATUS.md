@@ -1,5 +1,56 @@
 # Estado QA
 
+## LOOP 8.17 - Cerrar AccessDenied strict mode y diagnosticar qa_sin_permisos
+
+Fecha: 2026-07-02.
+
+Estado: fix aplicado localmente en `sisa.web/tests/e2e/helpers/assertions.ts` y diagnostico seguro agregado para `qa_sin_permisos`. No se tocaron backend ni seed.
+
+Estado real reportado previo:
+
+- `npm run qa:e2e:headed` -> `4 passed`, `3 failed`.
+- Pasaron: `qa_owner_admin commercial flow`, `qa_multiempresa A/B without leaking finance permissions`, `qa_owner_admin broad company admin surface`, `qa_company_admin broad company admin surface`.
+- Fallaron: `qa_tecnico`, `qa_admin_caja`, `qa_sin_permisos`.
+
+Conclusiones:
+
+- Login OK.
+- Owner OK.
+- Multiempresa OK.
+- Admin bypass OK.
+- El fallback de empresa activa funciona para perfiles con memberships visibles en bootstrap.
+
+Causas/foco:
+
+- `qa_tecnico` y `qa_admin_caja` estaban bloqueados solo por selector ambiguo en `expectAccessDenied()`: el texto global matcheaba `Acceso restringido` y `No tenes acceso a esta seccion`.
+- `qa_sin_permisos` sigue en investigacion por `selectedCompanyId = null` aunque la DB indica membresia `approved` en company `72`.
+- Hipotesis principal: `/companies/member` no entrega la membresia propia para un usuario sin permisos explicitos.
+
+Fix aplicado:
+
+- `expectAccessDenied()` ahora usa `getByRole('heading', { name: /No tenes acceso|No tienes acceso/i })` para evitar strict mode ambiguo.
+- Se agrego captura segura de bootstrap de membresias para E2E: status de `/profile`, `profile.active_company_id`, status de `/companies/member`, cantidad y membresias sanitizadas (`companyId`, `role`, `status`), status de `/user_configurations/default-company`, `selectedCompanyId` final y `visibleNavLabels` desde debug de sesion.
+- En `qa_sin_permisos`, antes de `expectSelectedCompanyId()` se adjuntan `qa_sin_permisos-safe-session-debug`, `qa_sin_permisos-memberships-bootstrap-debug` y screenshot `qa_sin_permisos-before-company-assert`.
+- Se reforzo `selectBootstrapCompanyId()` para aceptar `approved` case-insensitive.
+
+Criterio de diagnostico:
+
+- Si `/companies/member` devuelve vacio o `403` para `qa_sin_permisos`, el problema no esta en frontend: el endpoint de mis membresias debe permitir que un usuario autenticado vea sus propias empresas aunque no tenga permisos explicitos; `listCompanyMembers` aplica para administrar/ver miembros, no para saber mis propias membresias.
+- Si `/companies/member` devuelve la membresia y `selectedCompanyId` sigue `null`, revisar parseo frontend de membresia/status con el artefacto sanitizado.
+- No imprimir secretos: no token, no `Authorization`, no cookies, no `localStorage` completo.
+
+Validacion:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:auth-bootstrap` -> PASS (`4 checks`).
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.web`: `npm run qa:e2e:headed` sin variables QA -> PASS controlado, `7 skipped`.
+- No commitear `playwright-report/` ni `test-results/`.
+
 ## LOOP 8.16 - Fallback de empresa activa para membresias aprobadas
 
 Fecha: 2026-07-02.
