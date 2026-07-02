@@ -1,5 +1,60 @@
 # Estado QA
 
+## LOOP 8.9 - Expectativa multiempresa readonly y diagnostico de credenciales
+
+Fecha: 2026-07-01.
+
+Estado: ajustes aplicados localmente en `sisa.web/tests/e2e`. Validacion local segura ejecutada; ejecucion real headed no se corrio porque el entorno no tenia `QA_BASE_URL` y password QA disponibles.
+
+Resultado E2E real previo informado:
+
+- `npm run qa:e2e:headed`: `2 passed`, `5 failed`.
+- Pasaron: `qa_owner_admin commercial flow` y `qa_owner_admin broad company admin surface`.
+- Esto confirma que login owner, empresa activa y navegacion base estan estables.
+
+Fallas observadas:
+
+- `qa_multiempresa`: luego de corregir el cambio de empresa, `Pagos` ya no fue el fallo principal; quedo `Recibos` visible en Empresa B.
+- `qa_company_admin`, `qa_tecnico`, `qa_admin_caja`, `qa_sin_permisos`: no salieron correctamente de `/login`, mientras `qa_owner_admin` y `qa_multiempresa` si entraron.
+
+Interpretacion:
+
+- Empresa B de `qa_multiempresa` esta definida como readonly comercial; readonly incluye `listInvoices/getInvoice` y `listReceipts/getReceipt`.
+- Por lo tanto, `Recibos` visible en B no es leak si solo habilita lectura.
+- `Pagos` debe seguir oculto en B porque pagos/caja/mutacion financiera no forman parte del readonly esperado.
+- Las fallas de perfiles no-owner apuntan a credenciales/password distintos al `QA_PASSWORD` actual o a perfiles no reseedeados con esa clave.
+
+Fix aplicado:
+
+- `qa_multiempresa` ahora espera en Empresa B: `Clientes`, `Facturas` y `Recibos` visibles; `Pagos` oculto.
+- Se agrego comentario en el spec: Empresa B es readonly comercial y permite facturas/recibos lectura, no pagos/caja/mutacion.
+- `loginAs()` ahora diagnostica fallo de login sin imprimir secretos:
+  - `profile`.
+  - `username` usado.
+  - URL actual.
+  - texto visible de error de login si existe.
+- El diagnostico no incluye password, tokens, cookies, localStorage completo ni headers `Authorization`.
+
+Pendiente si los perfiles siguen fallando login:
+
+- Re-seedear perfiles QA con un password comun conocido por `QA_PASSWORD`, o configurar passwords por perfil:
+  - `QA_PASSWORD_QA_COMPANY_ADMIN`.
+  - `QA_PASSWORD_QA_TECNICO`.
+  - `QA_PASSWORD_QA_ADMIN_CAJA`.
+  - `QA_PASSWORD_QA_SIN_PERMISOS`.
+- No registrar ni imprimir esos valores.
+
+Validacion:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.web`: `npm run qa:e2e:headed` con QA real -> NO EJECUTADO en esta sesion porque no hay `QA_BASE_URL` y `QA_PASSWORD`/`QA_PASSWORD_QA_*` en el entorno.
+- No commitear `playwright-report/` ni `test-results/`.
+
 ## LOOP 8.8 - Separar login de shell y esperar permisos multiempresa
 
 Fecha: 2026-07-01.
