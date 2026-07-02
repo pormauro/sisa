@@ -52,6 +52,8 @@ Validacion:
 - `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
 - `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
 - `sisa.web`: `npm run qa:e2e:headed` sin variables QA -> PASS controlado, `7 skipped`.
+- Resultado real reportado: `sisa.web`: `npm run qa:e2e:headed` -> PASS, `7/7`.
+- Validado: owner admin surface, company admin bypass, multiempresa A/B sin fuga financiera, tecnico sin permisos financieros, admin caja sin superficie tecnica, usuario sin permisos con shell controlado y fallback de empresa activa para membresias `approved` sin default.
 - No commitear `playwright-report/` ni `test-results/`.
 
 ## LOOP 8.17 - Cerrar AccessDenied strict mode y diagnosticar qa_sin_permisos
