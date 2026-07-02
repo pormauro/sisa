@@ -1,5 +1,47 @@
 # Estado QA
 
+## LOOP 8.8 - Separar login de shell y esperar permisos multiempresa
+
+Fecha: 2026-07-01.
+
+Estado: ajustes aplicados localmente en `sisa.web/tests/e2e`. Validacion local segura ejecutada; ejecucion real headed no se corrio porque el entorno no tenia `QA_BASE_URL` y password QA disponibles.
+
+Resultado E2E real previo informado:
+
+- `npm run qa:e2e:headed`: `2 passed`, `5 failed`.
+- Pasaron: `qa_owner_admin commercial flow` y `qa_owner_admin broad surface`.
+
+Fallas observadas:
+
+- `qa_multiempresa`: despues de cambiar a Empresa B, `Pagos` seguia visible. Puede ser cache/permisos cruzados real, pero el helper no esperaba recarga de `/permissions/user/` despues del cambio de empresa.
+- `qa_company_admin`, `qa_tecnico`, `qa_admin_caja`, `qa_sin_permisos`: fallaban dentro de `loginAs()` porque exigia `.sidebar-nav-label` con `Mapa operativo` para todos los perfiles.
+
+Fix aplicado:
+
+- `loginAs()` queda con responsabilidad minima: login, espera opcional de `/permissions/user/` y salida de `/login`.
+- Los tests que validan menu llaman explicitamente `waitForOperationalShell()` despues de `loginAs()`.
+- `qa_sin_permisos` ya no asume shell completo de entrada; valida `selectedCompanyId`, solo revisa menu si existe buscador, y luego navega a `/clients` para validar `AccessDenied`.
+- `selectCompany()` evita click si la empresa ya esta activa, y cuando cambia de empresa espera `/permissions/user/` y shell operativo antes de seguir.
+- `qa_multiempresa` adjunta debug sanitizado inmediatamente despues de seleccionar Empresa B para distinguir si `selectedCompanyId` sigue en A o si B mantiene `Pagos` visible.
+- No se imprimen secretos; el debug sigue sin token, cookies, storage completo ni `Authorization`.
+
+Expectativa documentada pendiente de confirmar con E2E real:
+
+- Empresa A de `qa_multiempresa`: puede ver caja/finanzas.
+- Empresa B de `qa_multiempresa`: no debe ver `Pagos` ni `Recibos`.
+- Si con `selectedCompanyId=73` `Pagos` sigue visible, registrar como bug real de permisos/seed/UI, no como bug del helper.
+
+Validacion:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.web`: `npm run qa:e2e:headed` con QA real -> NO EJECUTADO en esta sesion porque no hay `QA_BASE_URL` y `QA_PASSWORD`/`QA_PASSWORD_QA_*` en el entorno.
+- No commitear `playwright-report/` ni `test-results/`.
+
 ## LOOP 8.7 - Selectores estructurales en espera operativa Playwright
 
 Fecha: 2026-07-01.
