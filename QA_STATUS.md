@@ -1,5 +1,46 @@
 # Estado QA
 
+## LOOP 8.7 - Selectores estructurales en espera operativa Playwright
+
+Fecha: 2026-07-01.
+
+Estado: fix aplicado localmente en `sisa.web/tests/e2e`. Validacion local segura ejecutada; ejecucion real headed no se corrio porque el entorno no tenia `QA_BASE_URL` y password QA disponibles.
+
+Causa:
+
+- `waitForOperationalShell()` usaba `page.getByText('Empresa activa')`.
+- Ese texto aparece varias veces en la pantalla: `CompanySwitcher`, dashboard y textos descriptivos.
+- Playwright strict mode fallo por selector ambiguo.
+
+Impacto:
+
+- El ajuste de espera operativa rompio los 7 tests E2E.
+- Incluso fallo el test comercial que antes pasaba, por bug del selector E2E y no por permisos/negocio.
+
+Fix aplicado:
+
+- `waitForOperationalShell()` ahora usa selectores estructurales no ambiguos:
+  - `.company-switcher-label` contiene `Empresa activa`.
+  - `.company-switcher-trigger` visible.
+  - `.sidebar-nav-label` contiene `Mapa operativo`.
+  - placeholder `Buscar opcion...` visible.
+- `loginAs()` cambio la espera de `Mapa operativo` a `.sidebar-nav-label` con `toContainText()`.
+- Se mantiene menu con `exact: true`.
+- Se mantiene debug sanitizado sin tokens/cookies/localStorage completo/Authorization.
+- `attachSanitizedDebug()` ahora tolera pagina/contexto cerrado y adjunta `{ "debug_error": "page closed before sanitized debug could be collected" }`.
+- No se tocaron permisos ni backend.
+
+Validacion:
+
+- `sisa.web`: `npx playwright test --list` -> PASS; detecta 7 tests en 3 archivos.
+- `sisa.web`: `npm run qa:e2e` sin variables QA -> PASS controlado, `7 skipped`.
+- `sisa.web`: `npm run lint` -> PASS.
+- `sisa.web`: `npm run check:permissions-audit` -> PASS (`41 nav items`, `49 routes`, `16 action checks`).
+- `sisa.web`: `npm run check:commercial-flow` -> PASS (`15 checks`).
+- `sisa.web`: `npm run build` -> PASS con warning baseline de chunks mayores a 500 kB.
+- `sisa.web`: `npm run qa:e2e:headed` con QA real -> NO EJECUTADO en esta sesion porque no hay `QA_BASE_URL` y `QA_PASSWORD`/`QA_PASSWORD_QA_*` en el entorno.
+- No commitear `playwright-report/` ni `test-results/`.
+
 ## LOOP 8.6 - Estabilizacion Playwright menu exacto y empresa activa
 
 Fecha: 2026-07-01.
